@@ -99,11 +99,15 @@ export const UnboxerGame: React.FC<UnboxerGameProps> = ({
       setIsOpening(false);
       setRevealedItem(winItem);
 
+      const isProfit = winItem.value > selectedCrate.cost;
+
       if (winItem.rarity === 'covert' || winItem.rarity === 'mythic' || winItem.rarity === 'exotic') {
         confetti({ particleCount: 120, spread: 90, origin: { y: 0.5 } });
         sound.playLootRare();
+      } else if (isProfit) {
+        sound.playProfit();
       } else {
-        sound.playWin(winItem.value > selectedCrate.cost);
+        sound.playWin(false);
       }
 
       onUpdateStats(prev => ({
@@ -151,7 +155,7 @@ export const UnboxerGame: React.FC<UnboxerGameProps> = ({
           </span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
           {LOOT_CRATES.map((crate) => {
             const isSelected = selectedCrate.id === crate.id;
             const canAfford = balance >= crate.cost;

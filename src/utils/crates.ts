@@ -110,6 +110,33 @@ const MYTHIC_ITEMS: LootItem[] = [
   { id: 'mb-5', name: '★ The Golden Bullshit Trophy ★', description: '100% Solid 24K Gold. Ultimate degenerate glory.', rarity: 'exotic', value: 35000, icon: '🏆', color: '#eab308', bgGradient: 'from-yellow-950 via-amber-950 to-purple-950', dropWeight: 1.2, lore: 'You won the casino. Now keep gambling.' },
 ];
 
+// Crate 5: Diamond Whale Coffer ($1,500)
+const DIAMOND_WHALE_ITEMS: LootItem[] = [
+  { id: 'dw-1', name: 'Vintage 1982 Dom Pérignon', description: 'Chilled in an ice bucket delivered by the VIP manager.', rarity: 'rare', value: 1100, icon: '🍾', color: '#a855f7', bgGradient: 'from-purple-950 to-zinc-950', dropWeight: 36, lore: 'Tastes like high roller comps.' },
+  { id: 'dw-2', name: 'Macau VIP Diamond Tile', description: 'Heavy jade and gold baccarat commission marker.', rarity: 'classified', value: 3200, icon: '🀄', color: '#ec4899', bgGradient: 'from-pink-950 to-zinc-950', dropWeight: 28, lore: 'Direct from Cotai Strip high-limit salons.' },
+  { id: 'dw-3', name: 'Patek Philippe Celestial Watch', description: 'Tracks moonphases and your diminishing savings.', rarity: 'covert', value: 8500, icon: '⌚', color: '#ef4444', bgGradient: 'from-red-950 to-zinc-950', dropWeight: 14, lore: 'You never actually own a Patek, you merely blow the money.' },
+  { id: 'dw-4', name: 'Gulfstream Jet Charter Voucher', description: 'Non-stop one-way flight directly to the Monte Carlo casino tarmac.', rarity: 'mythic', value: 16500, icon: '🛩️', color: '#f59e0b', bgGradient: 'from-amber-950 to-zinc-950', dropWeight: 5.5, lore: 'Skip TSA, head straight to the craps table.' },
+  { id: 'dw-5', name: '★ Karambit | Gamma Doppler Emerald ★', description: 'Flawless 0.001 float luminous emerald blade.', rarity: 'exotic', value: 55000, icon: '🗡️', color: '#eab308', bgGradient: 'from-emerald-950 via-teal-950 to-yellow-950', dropWeight: 1.5, lore: 'Radiates pure radioactive wealth.' },
+];
+
+// Crate 6: The Degenerate Overlord Armory ($5,000)
+const OVERLORD_ITEMS: LootItem[] = [
+  { id: 'ov-1', name: '1 Kilo Pure Platinum Bullion', description: '99.95% fine platinum bar stamped with the casino crest.', rarity: 'classified', value: 4200, icon: '🪙', color: '#ec4899', bgGradient: 'from-pink-950 to-zinc-950', dropWeight: 35, lore: 'Heavier than your worst financial regrets.' },
+  { id: 'ov-2', name: 'Monte Carlo Penthouse Keycard', description: 'Presidential suite key with personal butler on 24/7 call.', rarity: 'covert', value: 14000, icon: '🗝️', color: '#ef4444', bgGradient: 'from-red-950 to-zinc-950', dropWeight: 22, lore: 'Overlooks the Mediterranean and the roulette wheels.' },
+  { id: 'ov-3', name: '★ Butterfly Knife | Lore (Factory New) ★', description: 'Dragon knotwork inlayed over ancient gold steel.', rarity: 'exotic', value: 38000, icon: '🦋', color: '#eab308', bgGradient: 'from-yellow-950 via-amber-950 to-purple-950', dropWeight: 4, lore: 'Smooth spinning motion mesmerizes dealers.' },
+  { id: 'ov-4', name: '1% Ownership Stake in The Bullshit Casino', description: 'Certified registered share certificate signed in gold ink.', rarity: 'exotic', value: 85000, icon: '📜', color: '#eab308', bgGradient: 'from-amber-950 via-yellow-950 to-emerald-950', dropWeight: 2, lore: 'The house always wins, and now you are the house.' },
+  { id: 'ov-5', name: '★ StatTrak™ AK-47 | Case Hardened (Scar #661) ★', description: 'Tier 1 Blue Gem legendary specimen.', rarity: 'exotic', value: 160000, icon: '💎', color: '#eab308', bgGradient: 'from-blue-950 via-cyan-950 to-yellow-950', dropWeight: 0.8, lore: 'Worth more than an actual high-limit casino license.' },
+];
+
+// Crate 7: Sovereign Bullshit Reliquary ($15,000)
+const SOVEREIGN_ITEMS: LootItem[] = [
+  { id: 'sov-1', name: 'Diamond Encrusted Pit Boss Gavel', description: 'Cracks down on card counters and bad bets with 50 carats of VVS1 diamonds.', rarity: 'covert', value: 12000, icon: '🔨', color: '#ef4444', bgGradient: 'from-red-950 to-zinc-950', dropWeight: 34, lore: 'One bang closes the table forever.' },
+  { id: 'sov-2', name: 'Master Key to Fort Knox & Federal Reserve', description: 'A solid titanium bypass key for international gold vaults.', rarity: 'mythic', value: 35000, icon: '🗝️', color: '#f59e0b', bgGradient: 'from-amber-950 to-zinc-950', dropWeight: 20, lore: 'Guaranteed access to emergency liquidity.' },
+  { id: 'sov-3', name: '★ AWP | Gungnir (Souvenir Factory New) ★', description: 'The spear of Odin forged into a celestial precision instrument.', rarity: 'exotic', value: 110000, icon: '🐉', color: '#eab308', bgGradient: 'from-sky-950 via-indigo-950 to-yellow-950', dropWeight: 4.5, lore: 'Never misses the jackpot target.' },
+  { id: 'sov-4', name: 'Imperial Crown of the Sovereign Casino Monarch', description: 'Embossed with 1,000 rubies, sapphires, and uncut Vegas emeralds.', rarity: 'exotic', value: 250000, icon: '👑', color: '#eab308', bgGradient: 'from-purple-950 via-rose-950 to-yellow-950', dropWeight: 1.8, lore: 'Wear it while demanding unlimited ATM bailouts.' },
+  { id: 'sov-5', name: '★ The 1-of-1 Infinity Bullshit Poop Scepter ★', description: 'Mythological supreme artifact of infinite degens. Grants ultimate flex supremacy.', rarity: 'exotic', value: 650000, icon: '💩', color: '#eab308', bgGradient: 'from-yellow-950 via-amber-950 to-purple-950', dropWeight: 0.5, lore: 'The rarest virtual asset ever minted in human civilization.' },
+];
+
 export const LOOT_CRATES: LootCrate[] = [
   {
     id: 'bum-bag',
@@ -150,6 +177,36 @@ export const LOOT_CRATES: LootCrate[] = [
     accentColor: '#f59e0b',
     glowColor: 'rgba(245, 158, 11, 0.4)',
     items: MYTHIC_ITEMS,
+  },
+  {
+    id: 'diamond-whale',
+    name: 'Diamond Whale Coffer',
+    tagline: 'Private jet charters, Patek Philippe celestial watches, and Emerald Doppler blades.',
+    cost: 1500,
+    icon: '🐋',
+    accentColor: '#06b6d4',
+    glowColor: 'rgba(6, 182, 212, 0.4)',
+    items: DIAMOND_WHALE_ITEMS,
+  },
+  {
+    id: 'degenerate-overlord',
+    name: 'Degenerate Overlord Armory',
+    tagline: 'Casino equity shares, platinum bullion, and legendary Case Hardened Blue Gems.',
+    cost: 5000,
+    icon: '🔥',
+    accentColor: '#ef4444',
+    glowColor: 'rgba(239, 68, 68, 0.5)',
+    items: OVERLORD_ITEMS,
+  },
+  {
+    id: 'sovereign-reliquary',
+    name: 'Sovereign Bullshit Reliquary',
+    tagline: 'The absolute apex of digital opulence. Odin Gungnir, Sovereign Crown & The Infinity Poop Scepter.',
+    cost: 15000,
+    icon: '⚡',
+    accentColor: '#eab308',
+    glowColor: 'rgba(234, 179, 8, 0.6)',
+    items: SOVEREIGN_ITEMS,
   },
 ];
 

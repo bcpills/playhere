@@ -26,7 +26,7 @@ export const StatsModal: React.FC<StatsModalProps> = ({
 
   const handleReset = () => {
     sound.playChip();
-    onResetBankroll(500);
+    onResetBankroll(1000);
     setResetConfirm(false);
     onClose();
   };
@@ -143,12 +143,12 @@ export const StatsModal: React.FC<StatsModalProps> = ({
         <div className="mt-6 pt-4 border-t border-zinc-800/80 flex flex-wrap items-center justify-between gap-3">
           {resetConfirm ? (
             <div className="flex items-center gap-2">
-              <span className="text-xs text-rose-400 font-bold">Reset bankroll to 500?</span>
+              <span className="text-xs text-rose-400 font-bold">Reset bankroll to 1,000?</span>
               <button
                 onClick={handleReset}
                 className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-black"
               >
-                Yes, Reset to 500
+                Yes, Reset to 1,000
               </button>
               <button
                 onClick={() => setResetConfirm(false)}
@@ -163,7 +163,7 @@ export const StatsModal: React.FC<StatsModalProps> = ({
               className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              <span>Reset Bankroll to 500 Starting Chips</span>
+              <span>Reset Bankroll to 1,000 Starting Chips</span>
             </button>
           )}
 

@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { GameTab, LootItem, InventoryItem, CasinoStats } from './types';
+import { GameTab, LootItem, InventoryItem, CasinoStats, UserAccount } from './types';
 import { Header } from './components/Header';
+import { LobbyHome } from './components/LobbyHome';
 import { BlackjackGame } from './components/BlackjackGame';
 import { KenoGame } from './components/KenoGame';
 import { UnboxerGame } from './components/UnboxerGame';
 import { TrophyVault } from './components/TrophyVault';
+import { DailyLeaderboard } from './components/DailyLeaderboard';
+import { AccountModal } from './components/AccountModal';
 import { BailoutModal } from './components/BailoutModal';
 import { StatsModal } from './components/StatsModal';
 import { RulesModal } from './components/RulesModal';
+import { DEFAULT_USER_ACCOUNT } from './utils/leaderboard';
 import { sound } from './utils/audio';
 
 const STORAGE_KEYS = {
@@ -15,6 +19,8 @@ const STORAGE_KEYS = {
   INVENTORY: 'bullshit_casino_inventory',
   STATS: 'bullshit_casino_stats',
   SOUND: 'bullshit_casino_sound',
+  ACCOUNT: 'bullshit_casino_account',
+  ATM_HISTORY: 'bullshit_casino_atm_history',
 };
 
 const INITIAL_STATS: CasinoStats = {
@@ -32,10 +38,10 @@ const INITIAL_STATS: CasinoStats = {
 };
 
 export default function App() {
-  // State Initialization from LocalStorage or 500 Default
+  // State Initialization from LocalStorage or 1000 Default
   const [balance, setBalance] = useState<number>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.BALANCE);
-    return saved !== null ? parseInt(saved, 10) : 500;
+    return saved !== null ? parseInt(saved, 10) : 1000;
   });
 
   const [inventory, setInventory] = useState<InventoryItem[]>(() => {
@@ -48,15 +54,26 @@ export default function App() {
     return saved ? JSON.parse(saved) : INITIAL_STATS;
   });
 
+  const [userAccount, setUserAccount] = useState<UserAccount>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.ACCOUNT);
+    return saved ? JSON.parse(saved) : DEFAULT_USER_ACCOUNT;
+  });
+
+  const [atmHistory, setAtmHistory] = useState<number[]>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.ATM_HISTORY);
+    return saved ? JSON.parse(saved) : [];
+  });
+
   const [soundEnabled, setSoundEnabled] = useState<boolean>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.SOUND);
     return saved !== null ? JSON.parse(saved) : true;
   });
 
-  const [currentTab, setCurrentTab] = useState<GameTab>('blackjack');
+  const [currentTab, setCurrentTab] = useState<GameTab>('home');
   const [isBailoutOpen, setIsBailoutOpen] = useState<boolean>(false);
   const [isStatsOpen, setIsStatsOpen] = useState<boolean>(false);
   const [isRulesOpen, setIsRulesOpen] = useState<boolean>(false);
+  const [isAccountOpen, setIsAccountOpen] = useState<boolean>(false);
 
   // Sync sound engine
   useEffect(() => {
@@ -77,6 +94,14 @@ export default function App() {
     localStorage.setItem(STORAGE_KEYS.STATS, JSON.stringify(stats));
   }, [stats]);
 
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.ACCOUNT, JSON.stringify(userAccount));
+  }, [userAccount]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.ATM_HISTORY, JSON.stringify(atmHistory));
+  }, [atmHistory]);
+
   // Balance Update Handler
   const handleUpdateBalance = (delta: number) => {
     setBalance(prev => Math.max(0, prev + delta));
@@ -86,7 +111,7 @@ export default function App() {
     }));
   };
 
-  const handleResetBankroll = (newAmount = 500) => {
+  const handleResetBankroll = (newAmount = 1000) => {
     setBalance(newAmount);
   };
 
@@ -102,6 +127,7 @@ export default function App() {
   };
 
   const handleSellItem = (instanceId: string, value: number) => {
+    sound.playChip();
     setInventory(prev => prev.filter(i => i.instanceId !== instanceId));
     handleUpdateBalance(value);
   };
@@ -109,6 +135,7 @@ export default function App() {
   const handleSellAll = () => {
     const totalVal = inventory.reduce((sum, i) => sum + i.item.value, 0);
     if (totalVal > 0) {
+      sound.playProfit();
       handleUpdateBalance(totalVal);
       setInventory([]);
     }
@@ -117,30 +144,53 @@ export default function App() {
   // Bailout Handler
   const handleClaimBailout = (amount: number) => {
     handleUpdateBalance(amount);
+    setAtmHistory(prev => [...prev, Date.now()]);
     setStats(prev => ({
       ...prev,
       bailoutCount: prev.bailoutCount + 1,
     }));
   };
 
+  // Daily Bonus Handler
+  const handleClaimDailyBonus = (amount: number) => {
+    handleUpdateBalance(amount);
+  };
+
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col font-sans selection:bg-amber-500 selection:text-black">
-      {/* Fixed / Sticky Header */}
+      {/* Sticky Top Header */}
       <Header
         balance={balance}
         netProfit={stats.netProfit}
         currentTab={currentTab}
+        userAccount={userAccount}
         onTabChange={setCurrentTab}
         onOpenBailout={() => setIsBailoutOpen(true)}
         onOpenStats={() => setIsStatsOpen(true)}
         onOpenRules={() => setIsRulesOpen(true)}
+        onOpenAccount={() => setIsAccountOpen(true)}
         inventoryCount={inventory.length}
         soundEnabled={soundEnabled}
         onToggleSound={() => setSoundEnabled(prev => !prev)}
       />
 
       {/* Main Game Stage */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 flex flex-col justify-start">
+      <main className="flex-1 max-w-5xl w-full mx-auto p-2.5 sm:p-4 flex flex-col justify-start">
+        {currentTab === 'home' && (
+          <LobbyHome
+            balance={balance}
+            netProfit={stats.netProfit}
+            stats={stats}
+            inventory={inventory}
+            userAccount={userAccount}
+            onNavigate={setCurrentTab}
+            onOpenBailout={() => setIsBailoutOpen(true)}
+            onOpenStats={() => setIsStatsOpen(true)}
+            onOpenRules={() => setIsRulesOpen(true)}
+            onOpenAccount={() => setIsAccountOpen(true)}
+          />
+        )}
+
         {currentTab === 'blackjack' && (
           <BlackjackGame
             balance={balance}
@@ -174,35 +224,36 @@ export default function App() {
             onUpdateBalance={handleUpdateBalance}
           />
         )}
+
+        {currentTab === 'leaderboard' && (
+          <DailyLeaderboard
+            userAccount={userAccount}
+            stats={stats}
+            inventory={inventory}
+            balance={balance}
+            onOpenAccount={() => setIsAccountOpen(true)}
+          />
+        )}
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-zinc-800/80 bg-zinc-950/60 py-3 sm:py-4 px-4 sm:px-6 text-center text-[11px] sm:text-xs text-zinc-500">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>The Bullshit Casino © 2026 • Provably Absurd Virtual Chips Only</span>
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setIsRulesOpen(true)}
-              className="hover:text-zinc-300 transition-colors underline"
-            >
-              Paytables & Rules
-            </button>
-            <button
-              onClick={() => setIsBailoutOpen(true)}
-              className="hover:text-amber-400 transition-colors"
-            >
-              ATM of Shame Refill
-            </button>
-          </div>
-        </div>
-      </footer>
-
       {/* Modals */}
+      <AccountModal
+        isOpen={isAccountOpen}
+        onClose={() => setIsAccountOpen(false)}
+        account={userAccount}
+        stats={stats}
+        balance={balance}
+        onUpdateAccount={setUserAccount}
+        onClaimDailyBonus={handleClaimDailyBonus}
+        onResetBankroll={handleResetBankroll}
+      />
+
       <BailoutModal
         isOpen={isBailoutOpen}
         onClose={() => setIsBailoutOpen(false)}
         onClaimBailout={handleClaimBailout}
         currentBalance={balance}
+        atmHistory={atmHistory}
       />
 
       <StatsModal
@@ -220,3 +271,4 @@ export default function App() {
     </div>
   );
 }
+

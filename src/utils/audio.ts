@@ -179,6 +179,39 @@ class SoundEngine {
     osc.stop(t + 0.03);
   }
 
+  /**
+   * Subtle, crisp, satisfying chime that triggers whenever a round generates net profit.
+   * Pleasant, delicate, and non-intrusive.
+   */
+  playProfit() {
+    if (!this.enabled) return;
+    this.initCtx();
+    if (!this.ctx) return;
+
+    const t = this.ctx.currentTime;
+    // Elegant arpeggiated bright chime (D5 -> F#5 -> A5 -> D6)
+    const freqs = [587.33, 739.99, 880.00, 1174.66];
+    
+    freqs.forEach((freq, idx) => {
+      if (!this.ctx) return;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, t + idx * 0.04);
+
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.setValueAtTime(0.14, t + idx * 0.04);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + idx * 0.04 + 0.28);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(t + idx * 0.04);
+      osc.stop(t + idx * 0.04 + 0.3);
+    });
+  }
+
   playWin(isBig = false) {
     if (!this.enabled) return;
     this.initCtx();

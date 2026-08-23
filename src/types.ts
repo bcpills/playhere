@@ -1,4 +1,4 @@
-export type GameTab = 'blackjack' | 'keno' | 'unboxer' | 'inventory';
+export type GameTab = 'home' | 'blackjack' | 'keno' | 'unboxer' | 'inventory' | 'leaderboard';
 
 export type Suit = '♠' | '♥' | '♦' | '♣';
 export type Rank = '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '10' | 'J' | 'Q' | 'K' | 'A';
@@ -99,4 +99,39 @@ export interface CasinoStats {
   biggestMultiplier: number;
   sideBetWinsBlackjack: number;
   bailoutCount: number;
+}
+
+export type VIPTier = 
+  | 'Bronze Degen' 
+  | 'Silver Grinder' 
+  | 'Gold Regular' 
+  | 'Platinum Shark' 
+  | 'Diamond High-Roller' 
+  | 'Whale of the Lounge' 
+  | 'Sovereign Degenerate';
+
+export interface UserAccount {
+  id: string;
+  username: string;
+  avatar: string;
+  title: string;
+  bio: string;
+  luckyNumber: number;
+  createdAt: number;
+  lastDailyClaim: number;
+  dailyStreak: number;
+}
+
+export type LeaderboardCategory = 'profit' | 'multiplier' | 'volume' | 'vault';
+
+export interface LeaderboardEntry {
+  id: string;
+  rank: number;
+  username: string;
+  avatar: string;
+  vipTier: VIPTier;
+  score: number;
+  formattedScore: string;
+  badge?: string;
+  isUser?: boolean;
 }

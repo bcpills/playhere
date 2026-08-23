@@ -1,6 +1,7 @@
 import React from 'react';
-import { GameTab } from '../types';
+import { GameTab, UserAccount } from '../types';
 import { 
+  Home,
   Spade, 
   Dices, 
   Package, 
@@ -10,8 +11,8 @@ import {
   HelpCircle, 
   Volume2, 
   VolumeX,
-  Coins,
-  Sparkles
+  Award,
+  Crown
 } from 'lucide-react';
 import { sound } from '../utils/audio';
 
@@ -19,10 +20,12 @@ interface HeaderProps {
   balance: number;
   netProfit: number;
   currentTab: GameTab;
+  userAccount: UserAccount;
   onTabChange: (tab: GameTab) => void;
   onOpenBailout: () => void;
   onOpenStats: () => void;
   onOpenRules: () => void;
+  onOpenAccount: () => void;
   inventoryCount: number;
   soundEnabled: boolean;
   onToggleSound: () => void;
@@ -32,52 +35,75 @@ export const Header: React.FC<HeaderProps> = ({
   balance,
   netProfit,
   currentTab,
+  userAccount,
   onTabChange,
   onOpenBailout,
   onOpenStats,
   onOpenRules,
+  onOpenAccount,
   inventoryCount,
   soundEnabled,
   onToggleSound,
 }) => {
   const tabs = [
-    { id: 'blackjack' as GameTab, label: 'Blackjack', icon: Spade, badge: 'Side Bets' },
-    { id: 'keno' as GameTab, label: 'Keno Lounge', icon: Dices, badge: '95% RTP' },
-    { id: 'unboxer' as GameTab, label: 'Loot Crates', icon: Package, badge: 'CS Cases' },
+    { id: 'home' as GameTab, label: 'Lobby', icon: Home },
+    { id: 'blackjack' as GameTab, label: 'Blackjack', icon: Spade },
+    { id: 'keno' as GameTab, label: 'Keno', icon: Dices },
+    { id: 'unboxer' as GameTab, label: 'Crates', icon: Package },
     { id: 'inventory' as GameTab, label: 'Vault', icon: Trophy, count: inventoryCount },
+    { id: 'leaderboard' as GameTab, label: 'Leaderboard', icon: Crown },
   ];
 
   return (
     <header className="sticky top-0 z-40 w-full bg-zinc-950/95 backdrop-blur-md border-b border-zinc-800 shadow-xl">
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 sm:py-3">
+      <div className="max-w-5xl mx-auto px-3 sm:px-4 py-2 sm:py-2.5">
         {/* Top Tier: Brand, Balance, Actions */}
         <div className="flex items-center justify-between gap-2">
-          {/* Logo / Title */}
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-amber-600 to-yellow-400 p-0.5 shadow-lg shadow-amber-500/20 flex items-center justify-center shrink-0">
-              <div className="w-full h-full bg-zinc-950 rounded-[10px] flex items-center justify-center text-lg sm:text-xl font-black text-amber-400">
+          {/* Logo / Title (Clickable to Lobby) */}
+          <div 
+            onClick={() => {
+              sound.playChip();
+              onTabChange('home');
+            }}
+            className="flex items-center gap-2 cursor-pointer group"
+          >
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-600 to-yellow-400 p-0.5 shadow-md shadow-amber-500/20 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+              <div className="w-full h-full bg-zinc-950 rounded-[9px] flex items-center justify-center text-base font-black text-amber-400">
                 🃏
               </div>
             </div>
             <div className="flex flex-col">
-              <h1 className="text-sm sm:text-lg font-black tracking-wider uppercase text-zinc-100 flex items-center gap-1.5 leading-none">
+              <h1 className="text-xs sm:text-base font-black tracking-wider uppercase text-zinc-100 flex items-center gap-1.5 leading-none group-hover:text-amber-300 transition-colors">
                 <span>The Bullshit Casino</span>
               </h1>
-              <span className="text-[10px] text-amber-400/90 font-medium tracking-tight mt-0.5">
-                Provably Satirical • High Stakes
+              <span className="text-[9px] text-amber-400/90 font-medium tracking-tight mt-0.5 hidden xs:block">
+                Provably Satirical
               </span>
             </div>
           </div>
 
           {/* Balance & Quick Actions */}
-          <div className="flex items-center gap-1.5 sm:gap-2.5">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            {/* Account Profile Button */}
+            <button
+              onClick={() => {
+                sound.playChip();
+                onOpenAccount();
+              }}
+              title="Gambler VIP Profile & Daily Bonus"
+              className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-200 transition-colors text-xs font-bold shadow-inner"
+            >
+              <span className="text-sm">{userAccount.avatar}</span>
+              <span className="hidden sm:inline text-[11px] font-black truncate max-w-[80px]">
+                {userAccount.username}
+              </span>
+            </button>
+
             {/* Balance Pill */}
-            <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 rounded-xl sm:rounded-2xl bg-zinc-900 border border-zinc-700 shadow-inner">
-              <div className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center text-xs font-bold">
-                🪙
-              </div>
+            <div className="flex items-center gap-1.5 px-2 sm:px-3 py-1 rounded-xl bg-zinc-900 border border-zinc-700 shadow-inner">
+              <span className="text-xs">🪙</span>
               <div className="flex flex-col text-right">
-                <span className="text-[9px] uppercase font-bold text-zinc-400 tracking-wider hidden sm:block">
+                <span className="text-[8px] uppercase font-bold text-zinc-400 tracking-wider hidden sm:block">
                   Bankroll
                 </span>
                 <span className="text-xs sm:text-sm font-black text-amber-300 font-mono leading-none">
@@ -93,11 +119,11 @@ export const Header: React.FC<HeaderProps> = ({
                 sound.playChip();
                 onOpenBailout();
               }}
-              title="Emergency ATM of Shame Bailout"
-              className="p-1.5 sm:px-3 sm:py-1.5 rounded-xl bg-red-950/70 hover:bg-red-900 border border-red-500/50 text-red-300 text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm"
+              title="Emergency ATM Bailout"
+              className="p-1.5 sm:px-2.5 sm:py-1 rounded-xl bg-red-950/70 hover:bg-red-900 border border-red-500/50 text-red-300 text-xs font-bold flex items-center gap-1 transition-all shadow-sm"
             >
-              <ShieldAlert className="w-4 h-4 text-red-400 shrink-0" />
-              <span className="hidden md:inline">ATM Bailout</span>
+              <ShieldAlert className="w-3.5 h-3.5 text-red-400 shrink-0" />
+              <span className="hidden sm:inline text-[11px]">ATM</span>
             </button>
 
             {/* Stats Button */}
@@ -107,9 +133,9 @@ export const Header: React.FC<HeaderProps> = ({
                 onOpenStats();
               }}
               title="Career Dossier"
-              className="p-1.5 sm:p-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300 transition-colors"
+              className="p-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300 transition-colors"
             >
-              <BarChart2 className="w-4 h-4" />
+              <BarChart2 className="w-3.5 h-3.5" />
             </button>
 
             {/* Rules Button */}
@@ -119,9 +145,9 @@ export const Header: React.FC<HeaderProps> = ({
                 onOpenRules();
               }}
               title="Rules & Paytables"
-              className="p-1.5 sm:p-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300 transition-colors"
+              className="p-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300 transition-colors"
             >
-              <HelpCircle className="w-4 h-4" />
+              <HelpCircle className="w-3.5 h-3.5" />
             </button>
 
             {/* Audio Toggle */}
@@ -131,15 +157,15 @@ export const Header: React.FC<HeaderProps> = ({
                 sound.playChip();
               }}
               title={soundEnabled ? 'Mute SFX' : 'Enable SFX'}
-              className="p-1.5 sm:p-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300 transition-colors"
+              className="p-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300 transition-colors"
             >
-              {soundEnabled ? <Volume2 className="w-4 h-4 text-emerald-400" /> : <VolumeX className="w-4 h-4 text-zinc-500" />}
+              {soundEnabled ? <Volume2 className="w-3.5 h-3.5 text-emerald-400" /> : <VolumeX className="w-3.5 h-3.5 text-zinc-500" />}
             </button>
           </div>
         </div>
 
         {/* Tab Navigation Bar */}
-        <nav className="flex items-center gap-1 sm:gap-2 mt-2 sm:mt-2.5 overflow-x-auto no-scrollbar py-0.5">
+        <nav className="flex items-center gap-1 sm:gap-1.5 mt-2 overflow-x-auto no-scrollbar py-0.5">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = currentTab === tab.id;
@@ -152,25 +178,17 @@ export const Header: React.FC<HeaderProps> = ({
                   sound.playChip();
                   onTabChange(tab.id);
                 }}
-                className={`flex-1 min-w-[76px] sm:min-w-[120px] flex items-center justify-center gap-1.5 px-2 sm:px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all relative ${
+                className={`flex-1 min-w-[64px] sm:min-w-[85px] flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all relative ${
                   isActive
-                    ? 'bg-amber-500 text-zinc-950 shadow-lg shadow-amber-500/20 font-black'
+                    ? 'bg-amber-500 text-zinc-950 shadow-md shadow-amber-500/20 font-black'
                     : 'bg-zinc-900/90 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/90 border border-zinc-800'
                 }`}
               >
-                <Icon className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isActive ? 'text-zinc-950' : 'text-zinc-400'}`} />
-                <span className="truncate">{tab.label}</span>
-
-                {tab.badge && (
-                  <span className={`hidden sm:inline-block text-[9px] px-1.5 py-0.2 rounded-full font-bold uppercase ${
-                    isActive ? 'bg-zinc-950 text-amber-300' : 'bg-zinc-800 text-amber-400'
-                  }`}>
-                    {tab.badge}
-                  </span>
-                )}
+                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-zinc-950' : 'text-zinc-400'}`} />
+                <span className="truncate text-[11px] sm:text-xs">{tab.label}</span>
 
                 {typeof tab.count === 'number' && tab.count > 0 && (
-                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
+                  <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-black ${
                     isActive ? 'bg-zinc-950 text-amber-300' : 'bg-purple-600 text-white'
                   }`}>
                     {tab.count}
@@ -184,3 +202,4 @@ export const Header: React.FC<HeaderProps> = ({
     </header>
   );
 };
+

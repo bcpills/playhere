@@ -142,9 +142,13 @@ export const KenoGame: React.FC<KenoGameProps> = ({
       if (mult >= 20) {
         sound.playWin(true);
         confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
+      } else if (winAmount > wager) {
+        sound.playProfit();
       } else {
         sound.playWin(false);
       }
+    } else {
+      sound.playLoss();
     }
 
     // Autoplay trigger
