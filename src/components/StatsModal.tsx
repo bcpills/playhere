@@ -1,14 +1,12 @@
-import React, { useState } from 'react';
-import { BarChart2, Award, Flame, Coins, Trophy, Zap, ShieldAlert, Sparkles, RotateCcw } from 'lucide-react';
+import React from 'react';
+import { BarChart2, Coins, Trophy, Zap, ShieldAlert, Sparkles, Lock } from 'lucide-react';
 import { CasinoStats } from '../types';
-import { sound } from '../utils/audio';
 
 interface StatsModalProps {
   isOpen: boolean;
   onClose: () => void;
   stats: CasinoStats;
   currentBalance: number;
-  onResetBankroll: (amount: number) => void;
 }
 
 export const StatsModal: React.FC<StatsModalProps> = ({
@@ -16,20 +14,10 @@ export const StatsModal: React.FC<StatsModalProps> = ({
   onClose,
   stats,
   currentBalance,
-  onResetBankroll,
 }) => {
-  const [resetConfirm, setResetConfirm] = useState(false);
-
   if (!isOpen) return null;
 
   const isNetPositive = stats.netProfit >= 0;
-
-  const handleReset = () => {
-    sound.playChip();
-    onResetBankroll(1000);
-    setResetConfirm(false);
-    onClose();
-  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
@@ -139,33 +127,14 @@ export const StatsModal: React.FC<StatsModalProps> = ({
           </div>
         </div>
 
-        {/* Bankroll Reset / Actions */}
-        <div className="mt-6 pt-4 border-t border-zinc-800/80 flex flex-wrap items-center justify-between gap-3">
-          {resetConfirm ? (
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-rose-400 font-bold">Reset bankroll to 1,000?</span>
-              <button
-                onClick={handleReset}
-                className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-black"
-              >
-                Yes, Reset to 1,000
-              </button>
-              <button
-                onClick={() => setResetConfirm(false)}
-                className="px-3 py-1.5 rounded-xl bg-zinc-800 text-zinc-300 text-xs font-bold"
-              >
-                Cancel
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => setResetConfirm(true)}
-              className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>Reset Bankroll to 1,000 Starting Chips</span>
-            </button>
-          )}
+        {/* Tournament Rules Footer */}
+        <div className="mt-6 pt-4 border-t border-zinc-800/80 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-1.5 text-zinc-400">
+            <Lock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <span className="text-[11px]">
+              Daily chip bankroll is fixed at 1,000 chips (refills at 12:00 AM EST). No resets.
+            </span>
+          </div>
 
           <button
             onClick={onClose}

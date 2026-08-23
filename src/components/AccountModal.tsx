@@ -1,28 +1,23 @@
 import React, { useState } from 'react';
-import { UserAccount, CasinoStats, VIPTier } from '../types';
+import { UserAccount, CasinoStats, VIPTier, ContactPlatform } from '../types';
 import { 
   AVATAR_OPTIONS, 
   getVIPTier, 
   getVIPTierInfo, 
-  VIP_TIER_THRESHOLDS, 
-  calculateDailyBonus 
+  VIP_TIER_THRESHOLDS 
 } from '../utils/leaderboard';
 import { sound } from '../utils/audio';
-import confetti from 'canvas-confetti';
 import { 
-  User, 
   Award, 
-  Sparkles, 
-  Flame, 
-  Gift, 
-  Clock, 
-  Check, 
   Edit3, 
   Save, 
-  RotateCcw, 
   ShieldCheck,
-  TrendingUp,
-  Coins
+  Send,
+  MessageSquare,
+  Flame,
+  Coins,
+  CheckCircle2,
+  Lock
 } from 'lucide-react';
 
 interface AccountModalProps {
@@ -32,8 +27,6 @@ interface AccountModalProps {
   stats: CasinoStats;
   balance: number;
   onUpdateAccount: (updater: (prev: UserAccount) => UserAccount) => void;
-  onClaimDailyBonus: (amount: number) => void;
-  onResetBankroll: () => void;
 }
 
 export const AccountModal: React.FC<AccountModalProps> = ({
@@ -43,8 +36,6 @@ export const AccountModal: React.FC<AccountModalProps> = ({
   stats,
   balance,
   onUpdateAccount,
-  onClaimDailyBonus,
-  onResetBankroll,
 }) => {
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [editUsername, setEditUsername] = useState<string>(account.username);
@@ -52,6 +43,8 @@ export const AccountModal: React.FC<AccountModalProps> = ({
   const [editTitle, setEditTitle] = useState<string>(account.title);
   const [editBio, setEditBio] = useState<string>(account.bio);
   const [editLuckyNumber, setEditLuckyNumber] = useState<number>(account.luckyNumber);
+  const [editPlatform, setEditPlatform] = useState<ContactPlatform>(account.contactPlatform || 'discord');
+  const [editHandle, setEditHandle] = useState<string>(account.contactHandle || '');
 
   if (!isOpen) return null;
 
@@ -72,40 +65,19 @@ export const AccountModal: React.FC<AccountModalProps> = ({
     remainingWager = Math.max(0, nextTarget - stats.totalWagered);
   }
 
-  // Daily Claim Logic (24 hr cooldown)
-  const ONE_DAY_MS = 86400000;
-  const now = Date.now();
-  const timeSinceLastClaim = now - (account.lastDailyClaim || 0);
-  const canClaimDaily = timeSinceLastClaim >= ONE_DAY_MS;
-  const msUntilNextClaim = Math.max(0, ONE_DAY_MS - timeSinceLastClaim);
-  const hoursUntilClaim = Math.floor(msUntilNextClaim / (1000 * 60 * 60));
-  const minutesUntilClaim = Math.floor((msUntilNextClaim % (1000 * 60 * 60)) / (1000 * 60));
-
-  const bonusCalc = calculateDailyBonus(account, stats);
-
   const handleSaveProfile = () => {
     sound.playChip();
     onUpdateAccount(prev => ({
       ...prev,
-      username: editUsername.trim() || 'Anonymous Degen',
+      username: editUsername.trim() || 'Anonymous Gambler',
       avatar: editAvatar,
-      title: editTitle.trim() || 'Lounge Regular',
-      bio: editBio.trim() || 'Just a humble gambler.',
+      title: editTitle.trim() || 'Casino High-Roller',
+      bio: editBio.trim() || 'Daily tournament contender.',
       luckyNumber: editLuckyNumber,
+      contactPlatform: editPlatform,
+      contactHandle: editHandle.trim() || prev.contactHandle,
     }));
     setIsEditing(false);
-  };
-
-  const handleClaimBonusClick = () => {
-    if (!canClaimDaily) return;
-    sound.playProfit();
-    confetti({ particleCount: 90, spread: 70, origin: { y: 0.6 } });
-    onClaimDailyBonus(bonusCalc.amount);
-    onUpdateAccount(prev => ({
-      ...prev,
-      lastDailyClaim: Date.now(),
-      dailyStreak: prev.dailyStreak + 1,
-    }));
   };
 
   return (
@@ -119,10 +91,10 @@ export const AccountModal: React.FC<AccountModalProps> = ({
             </div>
             <div>
               <h2 className="text-base sm:text-lg font-black uppercase tracking-wider text-zinc-100">
-                VIP Gambler Account
+                VIP Gambler Profile
               </h2>
               <span className="text-[11px] text-zinc-400">
-                ID: {account.id} • Member for {Math.max(1, Math.round((Date.now() - account.createdAt) / 86400000))} Days
+                Member for {Math.max(1, Math.round((Date.now() - account.createdAt) / 86400000))} Days • 12:00 AM EST Daily Cycle
               </span>
             </div>
           </div>
@@ -157,7 +129,22 @@ export const AccountModal: React.FC<AccountModalProps> = ({
                 </span>
               </div>
 
-              <p className="text-xs font-bold text-amber-400">
+              {/* Contact Handle Badge */}
+              <div className="flex items-center justify-center sm:justify-start gap-2 pt-0.5">
+                <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded flex items-center gap-1 ${
+                  account.contactPlatform === 'discord'
+                    ? 'bg-[#5865F2]/20 text-indigo-300 border border-[#5865F2]/40'
+                    : 'bg-[#229ED9]/20 text-sky-300 border border-[#229ED9]/40'
+                }`}>
+                  {account.contactPlatform === 'discord' ? <MessageSquare className="w-3 h-3" /> : <Send className="w-3 h-3" />}
+                  <span>{account.contactPlatform}</span>
+                </span>
+                <span className="text-xs font-mono font-bold text-zinc-300">
+                  {account.contactHandle || 'Not specified'}
+                </span>
+              </div>
+
+              <p className="text-xs font-bold text-amber-400 pt-0.5">
                 "{account.title}"
               </p>
 
@@ -167,12 +154,12 @@ export const AccountModal: React.FC<AccountModalProps> = ({
 
               <div className="flex items-center justify-center sm:justify-start gap-3 pt-2 text-[11px] text-zinc-400">
                 <span className="flex items-center gap-1 font-mono">
-                  <Flame className="w-3.5 h-3.5 text-orange-400" />
-                  <strong>{account.dailyStreak} Day Streak</strong>
+                  <Coins className="w-3.5 h-3.5 text-amber-400" />
+                  <strong>Balance: {balance.toLocaleString()} Chips</strong>
                 </span>
                 <span>•</span>
                 <span className="font-mono">
-                  Lucky #: <strong className="text-amber-300">{account.luckyNumber}</strong>
+                  Peak All-Time: <strong className="text-amber-300">{Math.max(account.peakBalanceAllTime || 0, balance).toLocaleString()}</strong>
                 </span>
               </div>
             </div>
@@ -198,7 +185,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({
           <div className="p-4 rounded-2xl bg-zinc-900 border border-amber-500/40 space-y-3 mb-4 animate-fade-in">
             <h4 className="text-xs font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
               <Edit3 className="w-3.5 h-3.5" />
-              <span>Customize Profile Dossier</span>
+              <span>Update Profile & Payout Contact</span>
             </h4>
 
             {/* Avatar Selector Grid */}
@@ -226,11 +213,11 @@ export const AccountModal: React.FC<AccountModalProps> = ({
               </div>
             </div>
 
-            {/* Inputs */}
+            {/* Nickname & Platform */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               <div>
                 <label className="text-[10px] font-black uppercase text-zinc-400 block mb-1">
-                  Gambler Handle
+                  Gambler Nickname
                 </label>
                 <input
                   type="text"
@@ -255,9 +242,52 @@ export const AccountModal: React.FC<AccountModalProps> = ({
               </div>
             </div>
 
+            {/* Payout Platform & Handle */}
+            <div className="p-3 rounded-xl bg-zinc-950/80 border border-zinc-800 space-y-2">
+              <label className="text-[10px] font-black uppercase text-zinc-300 block">
+                Winner Payout Channel (Discord or Telegram)
+              </label>
+
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEditPlatform('discord')}
+                  className={`py-1.5 px-3 rounded-lg border flex items-center justify-center gap-1.5 text-xs font-bold ${
+                    editPlatform === 'discord'
+                      ? 'bg-[#5865F2]/20 border-[#5865F2] text-indigo-300'
+                      : 'bg-zinc-900 border-zinc-800 text-zinc-500'
+                  }`}
+                >
+                  <MessageSquare className="w-3.5 h-3.5 text-[#5865F2]" />
+                  <span>Discord</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setEditPlatform('telegram')}
+                  className={`py-1.5 px-3 rounded-lg border flex items-center justify-center gap-1.5 text-xs font-bold ${
+                    editPlatform === 'telegram'
+                      ? 'bg-[#229ED9]/20 border-[#229ED9] text-sky-300'
+                      : 'bg-zinc-900 border-zinc-800 text-zinc-500'
+                  }`}
+                >
+                  <Send className="w-3.5 h-3.5 text-[#229ED9]" />
+                  <span>Telegram</span>
+                </button>
+              </div>
+
+              <input
+                type="text"
+                value={editHandle}
+                onChange={(e) => setEditHandle(e.target.value)}
+                placeholder={editPlatform === 'discord' ? 'e.g. username#1234 or @username' : 'e.g. @telegram_handle'}
+                className="w-full px-3 py-1.5 rounded-xl bg-zinc-900 border border-zinc-800 text-xs font-mono text-zinc-100 focus:outline-none focus:border-amber-400"
+              />
+            </div>
+
             <div>
               <label className="text-[10px] font-black uppercase text-zinc-400 block mb-1">
-                Gambling Manifesto / Bio
+                Gambler Bio / Manifesto
               </label>
               <input
                 type="text"
@@ -271,7 +301,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({
             <div className="flex items-center justify-between pt-2">
               <div className="flex items-center gap-2">
                 <label className="text-[10px] font-black uppercase text-zinc-400">
-                  Lucky Number (1-99):
+                  Lucky #:
                 </label>
                 <input
                   type="number"
@@ -301,52 +331,6 @@ export const AccountModal: React.FC<AccountModalProps> = ({
             </div>
           </div>
         )}
-
-        {/* Daily Bonus Reward Section */}
-        <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-950/40 via-zinc-900 to-zinc-950 border border-purple-500/30 mb-4 shadow-lg">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-2xl bg-purple-600/30 border border-purple-500/50 flex items-center justify-center text-2xl shadow-inner shrink-0">
-                🎁
-              </div>
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <h4 className="text-sm font-black uppercase text-zinc-100">
-                    Daily Degenerate Reward
-                  </h4>
-                  <span className="text-[10px] px-2 py-0.2 rounded-full bg-purple-950 text-purple-300 border border-purple-500/40 font-mono font-bold">
-                    +{bonusCalc.amount} CHIPS
-                  </span>
-                </div>
-                <p className="text-[11px] text-zinc-400 mt-0.5">
-                  Includes +{bonusCalc.tierBonus} VIP perk & +{bonusCalc.streakBonus} streak bonus
-                </p>
-              </div>
-            </div>
-
-            <button
-              disabled={!canClaimDaily}
-              onClick={handleClaimBonusClick}
-              className={`w-full sm:w-auto px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-lg transition-all ${
-                canClaimDaily
-                  ? 'bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-zinc-950 animate-bounce hover:brightness-110 shadow-amber-500/20 cursor-pointer'
-                  : 'bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700'
-              }`}
-            >
-              {canClaimDaily ? (
-                <>
-                  <Gift className="w-4 h-4 text-zinc-950" />
-                  <span>Claim +{bonusCalc.amount} Chips</span>
-                </>
-              ) : (
-                <>
-                  <Clock className="w-3.5 h-3.5" />
-                  <span>Next in {hoursUntilClaim}h {minutesUntilClaim}m</span>
-                </>
-              )}
-            </button>
-          </div>
-        </div>
 
         {/* VIP Tier Progression Bar */}
         <div className="p-4 rounded-2xl bg-zinc-900/70 border border-zinc-800 space-y-2 mb-4">
@@ -381,52 +365,23 @@ export const AccountModal: React.FC<AccountModalProps> = ({
           </div>
         </div>
 
-        {/* VIP Tier Benefits Overview */}
-        <div className="space-y-1.5 mb-4">
-          <span className="text-[10px] font-black uppercase tracking-wider text-zinc-400 block px-1">
-            VIP Tier Benefits & Ranks
-          </span>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-xs">
-            {VIP_TIER_THRESHOLDS.map((tier) => {
-              const isCurrent = tier.tier === currentVIPTier;
-              return (
-                <div
-                  key={tier.tier}
-                  className={`p-2 rounded-xl border flex items-center justify-between ${
-                    isCurrent
-                      ? 'bg-amber-500/10 border-amber-500/50 shadow-sm'
-                      : 'bg-zinc-900/40 border-zinc-800/80 opacity-70'
-                  }`}
-                >
-                  <div className="flex items-center gap-1.5">
-                    <span className={`text-[10px] font-black uppercase px-2 py-0.2 rounded-md ${tier.badgeBg}`}>
-                      {tier.tier}
-                    </span>
-                  </div>
-                  <span className="text-[10px] font-mono text-zinc-400">
-                    {tier.minWager === 0 ? 'Default' : `${tier.minWager.toLocaleString()}+ Wager`}
-                  </span>
-                </div>
-              );
-            })}
+        {/* Tournament Rules Reminder */}
+        <div className="p-3.5 rounded-2xl bg-zinc-900/50 border border-zinc-800/80 mb-4 text-xs text-zinc-400 space-y-1.5">
+          <div className="flex items-center gap-1.5 font-bold text-zinc-200">
+            <Lock className="w-3.5 h-3.5 text-amber-400" />
+            <span>Daily Bankroll Rules</span>
           </div>
+          <p className="text-[11px] text-zinc-500 leading-relaxed">
+            • 1,000 Starting Chips are refilled automatically at <strong>12:00 AM EST</strong> every night.
+            <br />
+            • Up to <strong>5 ATM reloads of 100 chips</strong> each day with a 10-minute cooldown.
+            <br />
+            • No voluntary resets — your skill and daily luck determine your placement on the leaderboard and payout records.
+          </p>
         </div>
 
         {/* Modal Bottom Actions */}
-        <div className="pt-3 border-t border-zinc-800 flex items-center justify-between text-xs">
-          <button
-            onClick={() => {
-              if (window.confirm('Reset bankroll back to 1,000 chips?')) {
-                onResetBankroll(1000);
-                onClose();
-              }
-            }}
-            className="flex items-center gap-1 text-zinc-500 hover:text-rose-400 transition-colors text-[11px]"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span>Reset Bankroll (1,000 Chips)</span>
-          </button>
-
+        <div className="pt-3 border-t border-zinc-800 flex items-center justify-end text-xs">
           <button
             onClick={() => {
               sound.playChip();

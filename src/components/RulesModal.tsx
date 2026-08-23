@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { HelpCircle, Sparkles, Shield, Dices, Package } from 'lucide-react';
+import { HelpCircle, Sparkles, Shield, Dices, Package, Trophy, Clock, Coins, Send, MessageSquare } from 'lucide-react';
 
 interface RulesModalProps {
   isOpen: boolean;
@@ -7,7 +7,7 @@ interface RulesModalProps {
 }
 
 export const RulesModal: React.FC<RulesModalProps> = ({ isOpen, onClose }) => {
-  const [activeTab, setActiveTab] = useState<'blackjack' | 'keno' | 'unboxer'>('blackjack');
+  const [activeTab, setActiveTab] = useState<'tournament' | 'blackjack' | 'keno' | 'unboxer'>('tournament');
 
   if (!isOpen) return null;
 
@@ -18,7 +18,7 @@ export const RulesModal: React.FC<RulesModalProps> = ({ isOpen, onClose }) => {
           <div className="flex items-center gap-2">
             <HelpCircle className="w-5 h-5 text-amber-400" />
             <h3 className="text-base font-black uppercase tracking-wider text-zinc-100">
-              Casino Rules & Mathematical Odds
+              Casino Rules & Tournament Guidelines
             </h3>
           </div>
           <button
@@ -30,7 +30,18 @@ export const RulesModal: React.FC<RulesModalProps> = ({ isOpen, onClose }) => {
         </div>
 
         {/* Tab switcher */}
-        <div className="flex gap-2 mb-4 border-b border-zinc-800/80 pb-2">
+        <div className="flex flex-wrap gap-2 mb-4 border-b border-zinc-800/80 pb-2">
+          <button
+            onClick={() => setActiveTab('tournament')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase transition-all flex items-center gap-1.5 ${
+              activeTab === 'tournament'
+                ? 'bg-amber-500 text-zinc-950 shadow-md'
+                : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900'
+            }`}
+          >
+            <Trophy className="w-3.5 h-3.5" />
+            <span>🏆 Daily Tournament & Economy</span>
+          </button>
           <button
             onClick={() => setActiveTab('blackjack')}
             className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase transition-all ${
@@ -49,7 +60,7 @@ export const RulesModal: React.FC<RulesModalProps> = ({ isOpen, onClose }) => {
                 : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900'
             }`}
           >
-            🎱 40-Ball Keno (~95% RTP)
+            🎱 40-Ball Keno
           </button>
           <button
             onClick={() => setActiveTab('unboxer')}
@@ -65,6 +76,50 @@ export const RulesModal: React.FC<RulesModalProps> = ({ isOpen, onClose }) => {
 
         {/* Tab Content */}
         <div className="space-y-4 text-xs sm:text-sm text-zinc-300 leading-relaxed">
+          {activeTab === 'tournament' && (
+            <div className="space-y-3">
+              <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-2">
+                <div className="flex items-center gap-2 text-amber-300 font-black uppercase text-xs">
+                  <Coins className="w-4 h-4" />
+                  <span>1. Daily 1,000 Starting Chips (12:00 AM EST Reset)</span>
+                </div>
+                <p className="text-xs text-zinc-400">
+                  Every player starts with exactly <strong>1,000 chips</strong> every day at <strong>12:00 AM EST (midnight)</strong>. There are no voluntary resets — your skill and daily luck determine your rank.
+                </p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-emerald-950/30 border border-emerald-500/40 space-y-2">
+                <div className="flex items-center gap-2 text-emerald-300 font-black uppercase text-xs">
+                  <Clock className="w-4 h-4" />
+                  <span>2. 5x ATM of Shame Reloads (100 Chips, 10 Min Cooldown)</span>
+                </div>
+                <p className="text-xs text-zinc-400">
+                  If you bust, you can visit the <strong>ATM of Shame</strong> to claim <strong>100 emergency stimulus chips</strong>. You get a maximum of <strong>5 pulls per day</strong>, with a mandatory <strong>10-minute cooldown</strong> between pulls.
+                </p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-purple-950/30 border border-purple-500/40 space-y-2">
+                <div className="flex items-center gap-2 text-purple-300 font-black uppercase text-xs">
+                  <Trophy className="w-4 h-4" />
+                  <span>3. Daily Winner Crown & Manual Payouts</span>
+                </div>
+                <p className="text-xs text-zinc-400">
+                  At 12:00 AM EST, the daily leaderboard concludes and the #1 player is crowned <strong>Yesterday's Winner</strong>. The casino owner and moderators view the winner's Discord or Telegram handle in the Moderator Portal and reach out to manually gift the daily tournament prize.
+                </p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-zinc-900 border border-zinc-800 space-y-2">
+                <div className="flex items-center gap-2 text-yellow-300 font-black uppercase text-xs">
+                  <Sparkles className="w-4 h-4" />
+                  <span>4. All-Time Top 20 Chip Heights (Hall of Fame)</span>
+                </div>
+                <p className="text-xs text-zinc-400">
+                  Whenever a player reaches a peak chip balance that breaks into the <strong>Top 20 of all time</strong>, their record is permanently etched into the casino Hall of Fame.
+                </p>
+              </div>
+            </div>
+          )}
+
           {activeTab === 'blackjack' && (
             <div className="space-y-4">
               <div className="p-3.5 rounded-2xl bg-zinc-900/80 border border-zinc-800">

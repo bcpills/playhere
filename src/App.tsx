@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { GameTab, LootItem, InventoryItem, CasinoStats, UserAccount } from './types';
+import { 
+  GameTab, 
+  LootItem, 
+  InventoryItem, 
+  CasinoStats, 
+  UserAccount, 
+  DailyWinnerRecord, 
+  AllTimePeakRecord 
+} from './types';
 import { Header } from './components/Header';
 import { LobbyHome } from './components/LobbyHome';
 import { BlackjackGame } from './components/BlackjackGame';
@@ -11,7 +19,20 @@ import { AccountModal } from './components/AccountModal';
 import { BailoutModal } from './components/BailoutModal';
 import { StatsModal } from './components/StatsModal';
 import { RulesModal } from './components/RulesModal';
-import { DEFAULT_USER_ACCOUNT } from './utils/leaderboard';
+import { SignupModal } from './components/SignupModal';
+import { ModeratorModal } from './components/ModeratorModal';
+import { 
+  DEFAULT_USER_ACCOUNT, 
+  INITIAL_DAILY_WINNERS, 
+  INITIAL_ALL_TIME_PEAKS,
+  updateAllTimePeaksWithUser,
+  getDailyLeaderboard
+} from './utils/leaderboard';
+import { 
+  getCurrentEstDateString, 
+  getYesterdayEstDateString, 
+  formatEstDateFriendly 
+} from './utils/estTime';
 import { sound } from './utils/audio';
 
 const STORAGE_KEYS = {
@@ -21,6 +42,8 @@ const STORAGE_KEYS = {
   SOUND: 'bullshit_casino_sound',
   ACCOUNT: 'bullshit_casino_account',
   ATM_HISTORY: 'bullshit_casino_atm_history',
+  DAILY_WINNERS: 'bullshit_casino_daily_winners',
+  ALL_TIME_PEAKS: 'bullshit_casino_all_time_peaks',
 };
 
 const INITIAL_STATS: CasinoStats = {
@@ -64,6 +87,16 @@ export default function App() {
     return saved ? JSON.parse(saved) : [];
   });
 
+  const [dailyWinners, setDailyWinners] = useState<DailyWinnerRecord[]>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.DAILY_WINNERS);
+    return saved ? JSON.parse(saved) : INITIAL_DAILY_WINNERS;
+  });
+
+  const [allTimePeaks, setAllTimePeaks] = useState<AllTimePeakRecord[]>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.ALL_TIME_PEAKS);
+    return saved ? JSON.parse(saved) : INITIAL_ALL_TIME_PEAKS;
+  });
+
   const [soundEnabled, setSoundEnabled] = useState<boolean>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.SOUND);
     return saved !== null ? JSON.parse(saved) : true;
@@ -74,6 +107,7 @@ export default function App() {
   const [isStatsOpen, setIsStatsOpen] = useState<boolean>(false);
   const [isRulesOpen, setIsRulesOpen] = useState<boolean>(false);
   const [isAccountOpen, setIsAccountOpen] = useState<boolean>(false);
+  const [isModeratorOpen, setIsModeratorOpen] = useState<boolean>(false);
 
   // Sync sound engine
   useEffect(() => {
@@ -102,6 +136,79 @@ export default function App() {
     localStorage.setItem(STORAGE_KEYS.ATM_HISTORY, JSON.stringify(atmHistory));
   }, [atmHistory]);
 
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.DAILY_WINNERS, JSON.stringify(dailyWinners));
+  }, [dailyWinners]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.ALL_TIME_PEAKS, JSON.stringify(allTimePeaks));
+  }, [allTimePeaks]);
+
+  // Track Peak Balance and check if it reaches Top 20 All-Time
+  useEffect(() => {
+    if (balance > (userAccount.peakBalanceAllTime || 0)) {
+      setUserAccount(prev => ({
+        ...prev,
+        peakBalanceAllTime: balance,
+      }));
+      // Check for Hall of Fame qualification
+      setAllTimePeaks(prevPeaks => updateAllTimePeaksWithUser(prevPeaks, userAccount, stats, balance));
+    }
+  }, [balance, userAccount, stats]);
+
+  // 12:00 AM EST Daily Reset Lifecycle Engine
+  useEffect(() => {
+    const checkDailyEstReset = () => {
+      const currentEstDate = getCurrentEstDateString();
+      const lastActiveDate = userAccount.lastActiveEstDate;
+
+      // If date has rolled over past 12:00 AM EST
+      if (lastActiveDate && lastActiveDate !== currentEstDate) {
+        const yesterdayEstDate = getYesterdayEstDateString();
+        
+        // Check if yesterday's winner was logged
+        const alreadyLogged = dailyWinners.some(w => w.dateEst === yesterdayEstDate);
+        if (!alreadyLogged) {
+          // Determine yesterday's top player from yesterday's daily leaderboard
+          const standings = getDailyLeaderboard('profit', userAccount, stats, inventory, balance);
+          const topRanked = standings[0];
+
+          if (topRanked) {
+            const newWinnerRecord: DailyWinnerRecord = {
+              id: `win-${yesterdayEstDate}`,
+              dateEst: yesterdayEstDate,
+              formattedDate: formatEstDateFriendly(yesterdayEstDate),
+              username: topRanked.username,
+              avatar: topRanked.avatar,
+              vipTier: topRanked.vipTier,
+              contactPlatform: topRanked.contactPlatform || 'discord',
+              contactHandle: topRanked.contactHandle || (topRanked.isUser ? userAccount.contactHandle : '@champion'),
+              winningChips: topRanked.score,
+              formattedScore: `${topRanked.score.toLocaleString()} Chips`,
+              payoutStatus: 'Pending',
+              payoutNote: 'Awaiting manual contact by casino moderator.',
+            };
+
+            setDailyWinners(prev => [newWinnerRecord, ...prev]);
+          }
+        }
+
+        // Daily Reset: Refill bankroll to 1,000 Starting Chips, reset ATM history for the day
+        setBalance(1000);
+        setAtmHistory([]);
+        setUserAccount(prev => ({
+          ...prev,
+          lastActiveEstDate: currentEstDate,
+          dailyStreak: (prev.dailyStreak || 1) + 1,
+        }));
+      }
+    };
+
+    checkDailyEstReset();
+    const interval = setInterval(checkDailyEstReset, 15000); // Check every 15s
+    return () => clearInterval(interval);
+  }, [userAccount, stats, inventory, balance, dailyWinners]);
+
   // Balance Update Handler
   const handleUpdateBalance = (delta: number) => {
     setBalance(prev => Math.max(0, prev + delta));
@@ -109,10 +216,6 @@ export default function App() {
       ...prev,
       netProfit: prev.netProfit + delta,
     }));
-  };
-
-  const handleResetBankroll = (newAmount = 1000) => {
-    setBalance(newAmount);
   };
 
   // Inventory Handlers
@@ -141,7 +244,7 @@ export default function App() {
     }
   };
 
-  // Bailout Handler
+  // Bailout Handler (100 chips, 5 pulls/day, 10-min cooldown)
   const handleClaimBailout = (amount: number) => {
     handleUpdateBalance(amount);
     setAtmHistory(prev => [...prev, Date.now()]);
@@ -151,9 +254,19 @@ export default function App() {
     }));
   };
 
-  // Daily Bonus Handler
-  const handleClaimDailyBonus = (amount: number) => {
-    handleUpdateBalance(amount);
+  // Signup Completion Handler
+  const handleCompleteSignup = (signupData: Partial<UserAccount>) => {
+    setUserAccount(prev => ({
+      ...prev,
+      ...signupData,
+      isRegistered: true,
+      lastActiveEstDate: getCurrentEstDateString(),
+    }));
+  };
+
+  // Moderator update winner
+  const handleUpdateWinner = (winnerId: string, updates: Partial<DailyWinnerRecord>) => {
+    setDailyWinners(prev => prev.map(w => w.id === winnerId ? { ...w, ...updates } : w));
   };
 
   return (
@@ -183,11 +296,13 @@ export default function App() {
             stats={stats}
             inventory={inventory}
             userAccount={userAccount}
+            dailyWinners={dailyWinners}
             onNavigate={setCurrentTab}
             onOpenBailout={() => setIsBailoutOpen(true)}
             onOpenStats={() => setIsStatsOpen(true)}
             onOpenRules={() => setIsRulesOpen(true)}
             onOpenAccount={() => setIsAccountOpen(true)}
+            onOpenModeratorLog={() => setIsModeratorOpen(true)}
           />
         )}
 
@@ -231,12 +346,22 @@ export default function App() {
             stats={stats}
             inventory={inventory}
             balance={balance}
+            dailyWinners={dailyWinners}
+            allTimePeaks={allTimePeaks}
             onOpenAccount={() => setIsAccountOpen(true)}
+            onOpenModeratorLog={() => setIsModeratorOpen(true)}
           />
         )}
       </main>
 
-      {/* Modals */}
+      {/* Mandatory Signup Modal if user is not yet registered */}
+      <SignupModal
+        isOpen={!userAccount.isRegistered || !userAccount.contactHandle}
+        onCompleteSignup={handleCompleteSignup}
+        initialAccount={userAccount}
+      />
+
+      {/* Profile & Settings Modal */}
       <AccountModal
         isOpen={isAccountOpen}
         onClose={() => setIsAccountOpen(false)}
@@ -244,10 +369,9 @@ export default function App() {
         stats={stats}
         balance={balance}
         onUpdateAccount={setUserAccount}
-        onClaimDailyBonus={handleClaimDailyBonus}
-        onResetBankroll={handleResetBankroll}
       />
 
+      {/* ATM of Shame Modal */}
       <BailoutModal
         isOpen={isBailoutOpen}
         onClose={() => setIsBailoutOpen(false)}
@@ -256,19 +380,27 @@ export default function App() {
         atmHistory={atmHistory}
       />
 
+      {/* Career Dossier Modal */}
       <StatsModal
         isOpen={isStatsOpen}
         onClose={() => setIsStatsOpen(false)}
         stats={stats}
         currentBalance={balance}
-        onResetBankroll={handleResetBankroll}
       />
 
+      {/* Rules & Guidelines Modal */}
       <RulesModal
         isOpen={isRulesOpen}
         onClose={() => setIsRulesOpen(false)}
       />
+
+      {/* Owner & Moderator Payout Log Portal */}
+      <ModeratorModal
+        isOpen={isModeratorOpen}
+        onClose={() => setIsModeratorOpen(false)}
+        dailyWinners={dailyWinners}
+        onUpdateWinner={handleUpdateWinner}
+      />
     </div>
   );
 }
-

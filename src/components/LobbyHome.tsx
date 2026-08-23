@@ -1,25 +1,25 @@
-import React from 'react';
-import { GameTab, CasinoStats, InventoryItem, UserAccount } from '../types';
+import React, { useState, useEffect } from 'react';
+import { GameTab, CasinoStats, InventoryItem, UserAccount, DailyWinnerRecord } from '../types';
 import { 
   Spade, 
   Dices, 
   Package, 
   Trophy, 
   ShieldAlert, 
-  TrendingUp, 
   Sparkles, 
-  Award, 
-  Flame, 
   ChevronRight,
   HelpCircle,
   BarChart2,
   Crown,
-  Gift,
-  Zap,
-  Clock
+  Clock,
+  Send,
+  MessageSquare,
+  ShieldCheck
 } from 'lucide-react';
 import { sound } from '../utils/audio';
-import { getVIPTier, getVIPTierInfo, getTimeUntilDailyReset } from '../utils/leaderboard';
+import { getVIPTier, getVIPTierInfo, getYesterdayWinner } from '../utils/leaderboard';
+import { getTimeUntilEstMidnight } from '../utils/estTime';
+import { AdBanner } from './AdBanner';
 
 interface LobbyHomeProps {
   balance: number;
@@ -27,11 +27,13 @@ interface LobbyHomeProps {
   stats: CasinoStats;
   inventory: InventoryItem[];
   userAccount: UserAccount;
+  dailyWinners: DailyWinnerRecord[];
   onNavigate: (tab: GameTab) => void;
   onOpenBailout: () => void;
   onOpenStats: () => void;
   onOpenRules: () => void;
   onOpenAccount: () => void;
+  onOpenModeratorLog: () => void;
 }
 
 export const LobbyHome: React.FC<LobbyHomeProps> = ({
@@ -40,18 +42,30 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
   stats,
   inventory,
   userAccount,
+  dailyWinners,
   onNavigate,
   onOpenBailout,
   onOpenStats,
   onOpenRules,
   onOpenAccount,
+  onOpenModeratorLog,
 }) => {
-  const vaultValue = inventory.reduce((sum, item) => sum + item.item.value, 0);
+  const [countdown, setCountdown] = useState<string>('');
+
+  useEffect(() => {
+    const updateTime = () => {
+      const { formatted } = getTimeUntilEstMidnight();
+      setCountdown(formatted);
+    };
+
+    updateTime();
+    const interval = setInterval(updateTime, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   const vipTier = getVIPTier(stats.totalWagered);
   const tierInfo = getVIPTierInfo(vipTier);
-
-  const ONE_DAY_MS = 86400000;
-  const canClaimDaily = Date.now() - (userAccount.lastDailyClaim || 0) >= ONE_DAY_MS;
+  const yesterdayWinner = getYesterdayWinner(dailyWinners);
 
   return (
     <div className="w-full max-w-5xl mx-auto space-y-4 sm:space-y-6 pb-6">
@@ -68,7 +82,7 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
                 onOpenAccount();
               }}
               className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-600/30 to-yellow-400/20 border-2 border-amber-400/50 flex items-center justify-center text-3xl shadow-xl shrink-0 cursor-pointer hover:scale-105 transition-transform"
-              title="Click to edit VIP Profile & Claim Daily Bonus"
+              title="Click to edit VIP Profile & Payout Handle"
             >
               {userAccount.avatar}
             </div>
@@ -76,47 +90,52 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
             <div className="space-y-1">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-sm sm:text-base font-black text-zinc-100">
-                  {userAccount.username}
+                  {userAccount.username || 'Gambler'}
                 </span>
                 <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border ${tierInfo.badgeBg}`}>
                   {vipTier}
                 </span>
-                <span className="text-[10px] text-zinc-400 font-mono">
-                  Session: <strong className={netProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}>{netProfit >= 0 ? `+${netProfit.toLocaleString()}` : netProfit.toLocaleString()}</strong>
-                </span>
+
+                {userAccount.contactHandle && (
+                  <span className={`text-[10px] font-mono px-2 py-0.2 rounded flex items-center gap-1 ${
+                    userAccount.contactPlatform === 'discord'
+                      ? 'bg-[#5865F2]/20 text-indigo-300'
+                      : 'bg-[#229ED9]/20 text-sky-300'
+                  }`}>
+                    {userAccount.contactPlatform === 'discord' ? <MessageSquare className="w-2.5 h-2.5" /> : <Send className="w-2.5 h-2.5" />}
+                    <span>{userAccount.contactHandle}</span>
+                  </span>
+                )}
               </div>
               <h2 className="text-base sm:text-xl font-black tracking-wide text-zinc-200 uppercase">
                 The Bullshit Casino Lounge
               </h2>
               <p className="text-xs text-zinc-400 max-w-xl">
-                High-volatility 40-ball Keno, multi-side-bet Vegas Blackjack, and authentic animated CS-style loot crate unboxing.
+                1,000 daily starting chips. 12:00 AM EST reset. 5 ATM reloads (100 chips each). No resets.
               </p>
             </div>
           </div>
 
-          {/* Quick Bankroll & Daily Claim Action */}
+          {/* Quick Bankroll & Reset Status */}
           <div className="w-full md:w-auto flex items-center justify-between md:justify-end gap-2.5 p-3 rounded-2xl bg-zinc-950/80 border border-zinc-800 shadow-inner">
             <div className="flex flex-col">
               <span className="text-[9px] uppercase font-bold text-zinc-400 tracking-wider">
-                Current Bankroll
+                Daily Bankroll
               </span>
               <span className="text-lg sm:text-xl font-black text-amber-300 font-mono leading-none">
                 {balance.toLocaleString()} <span className="text-xs text-amber-500 font-normal">Chips</span>
               </span>
             </div>
 
-            {canClaimDaily && (
-              <button
-                onClick={() => {
-                  sound.playChip();
-                  onOpenAccount();
-                }}
-                className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-black uppercase tracking-wider flex items-center gap-1 animate-pulse shadow-md"
-              >
-                <Gift className="w-3.5 h-3.5" />
-                <span>Daily Bonus</span>
-              </button>
-            )}
+            <div className="flex flex-col text-right pl-2 border-l border-zinc-800">
+              <span className="text-[9px] uppercase font-bold text-zinc-500 flex items-center gap-1 justify-end">
+                <Clock className="w-2.5 h-2.5 text-amber-400" />
+                <span>12 AM EST</span>
+              </span>
+              <span className="text-xs font-mono font-bold text-amber-400">
+                {countdown || 'Active'}
+              </span>
+            </div>
 
             {balance <= 100 && (
               <button
@@ -133,6 +152,34 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Yesterday's Winner Mini-Banner */}
+      {yesterdayWinner && (
+        <div 
+          onClick={() => {
+            sound.playChip();
+            onNavigate('leaderboard');
+          }}
+          className="p-3 sm:px-4 rounded-2xl bg-gradient-to-r from-amber-950/30 via-zinc-900 to-zinc-950 border border-amber-500/30 hover:border-amber-500/60 cursor-pointer transition-all flex items-center justify-between gap-3 text-xs"
+        >
+          <div className="flex items-center gap-2.5">
+            <span className="text-xl shrink-0">👑</span>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="font-bold text-zinc-400">Yesterday's Crowned Winner:</span>
+              <strong className="text-zinc-100 font-black">{yesterdayWinner.username}</strong>
+              <span className="text-amber-300 font-mono font-bold">({yesterdayWinner.formattedScore})</span>
+              <span className="text-[10px] text-zinc-500 font-mono">
+                via {yesterdayWinner.contactPlatform}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1 text-amber-400 font-bold text-xs shrink-0">
+            <span>Leaderboard</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+          </div>
+        </div>
+      )}
 
       {/* Main Game & Feature Portals (Bento Grid) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
@@ -304,7 +351,7 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
           </div>
         </div>
 
-        {/* 4. Daily Leaderboard Portal Card */}
+        {/* 4. Daily Leaderboard & Hall of Fame Card */}
         <div 
           id="portal-leaderboard"
           onClick={() => {
@@ -321,37 +368,37 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
                 </div>
                 <div>
                   <h3 className="text-base font-black uppercase text-zinc-100 group-hover:text-amber-300 transition-colors flex items-center gap-1.5">
-                    <span>Daily Leaderboard</span>
+                    <span>Tournament & Top 20</span>
                   </h3>
-                  <span className="text-[10px] font-mono text-amber-400">4 CATEGORIES • LIVE RANKS</span>
+                  <span className="text-[10px] font-mono text-amber-400">12:00 AM EST RESET</span>
                 </div>
               </div>
 
               <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-950 text-emerald-300 border border-emerald-500/40">
-                +2,500 1st Prize
+                Manual Payouts
               </span>
             </div>
 
             <p className="text-xs text-zinc-400">
-              Climb the ranks in Daily Net Profit, Max Multipliers, Total Wager Volume, and Trophy Vault Worth. Daily midnight UTC prize distribution!
+              Compete daily for the crown and reach the <strong>All-Time Top 20 Hall of Fame</strong>. Winners logged directly for casino moderators.
             </p>
 
             <div className="flex flex-wrap gap-1.5 pt-1">
               <span className="text-[10px] px-2 py-0.5 rounded-lg bg-zinc-950 text-emerald-400 border border-zinc-800">
-                📈 Top Profit
+                🏆 Yesterday's Winner
               </span>
               <span className="text-[10px] px-2 py-0.5 rounded-lg bg-zinc-950 text-amber-400 border border-zinc-800">
-                ⚡ Multipliers
+                ⭐ Top 20 Peak Heights
               </span>
               <span className="text-[10px] px-2 py-0.5 rounded-lg bg-zinc-950 text-purple-400 border border-zinc-800">
-                🎰 High Rollers
+                🛡️ Moderator Portal
               </span>
             </div>
           </div>
 
           <div className="mt-4 pt-3 border-t border-zinc-800/80 flex items-center justify-between text-xs">
             <span className="text-zinc-500 font-mono text-[11px]">
-              Season Ends at 00:00 UTC
+              Daily 1,000 Chip Cycle
             </span>
             <div className="flex items-center gap-1 text-amber-400 font-black uppercase tracking-wider group-hover:translate-x-1 transition-transform">
               <span>View Leaderboard</span>
@@ -361,37 +408,28 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
         </div>
       </div>
 
-      {/* Career Quick Stats & Quick Actions Toolbar */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3 rounded-2xl bg-zinc-950/80 border border-zinc-800 shadow-inner">
-        <div className="flex flex-col p-2 rounded-xl bg-zinc-900/60 border border-zinc-800/80 text-center">
-          <span className="text-[9px] uppercase font-bold text-zinc-500">Total Wagered</span>
-          <span className="text-xs sm:text-sm font-black text-zinc-200 font-mono">{stats.totalWagered.toLocaleString()}</span>
-        </div>
+      {/* Ad Banner placement */}
+      <AdBanner placement="lobby-strip" />
 
-        <div className="flex flex-col p-2 rounded-xl bg-zinc-900/60 border border-zinc-800/80 text-center">
-          <span className="text-[9px] uppercase font-bold text-zinc-500">Total Won</span>
-          <span className="text-xs sm:text-sm font-black text-emerald-400 font-mono">{stats.totalWon.toLocaleString()}</span>
-        </div>
-
-        <div className="flex flex-col p-2 rounded-xl bg-zinc-900/60 border border-zinc-800/80 text-center">
-          <span className="text-[9px] uppercase font-bold text-zinc-500">Biggest Win</span>
-          <span className="text-xs sm:text-sm font-black text-amber-300 font-mono">{stats.biggestWin.toLocaleString()}</span>
-        </div>
-
-        <div className="flex flex-col p-2 rounded-xl bg-zinc-900/60 border border-zinc-800/80 text-center">
-          <span className="text-[9px] uppercase font-bold text-zinc-500">Max Multiplier</span>
-          <span className="text-xs sm:text-sm font-black text-purple-300 font-mono">{stats.biggestMultiplier > 0 ? `${stats.biggestMultiplier}x` : '—'}</span>
-        </div>
-      </div>
-
-      {/* Bottom Hub Actions: Rules, Dossier, ATM */}
+      {/* Bottom Hub Actions */}
       <div className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-2xl bg-zinc-900/40 border border-zinc-800/60 text-xs">
         <div className="flex items-center gap-2 text-zinc-400">
           <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
-          <span className="text-[11px]">Fair ~95% RTP calibrated on all games. Real simulated card shoe & RNG.</span>
+          <span className="text-[11px]">No resets. Start with 1,000 chips at 12:00 AM EST every day.</span>
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              sound.playChip();
+              onOpenModeratorLog();
+            }}
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-purple-950/60 hover:bg-purple-900/80 text-purple-300 border border-purple-500/40 font-bold text-[11px]"
+          >
+            <ShieldCheck className="w-3.5 h-3.5 text-purple-400" />
+            <span>Mod Log</span>
+          </button>
+
           <button
             onClick={() => {
               sound.playChip();
@@ -418,4 +456,3 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
     </div>
   );
 };
-

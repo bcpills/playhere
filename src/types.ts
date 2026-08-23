@@ -65,7 +65,7 @@ export interface LootItem {
   icon: string;
   color: string;
   bgGradient: string;
-  dropWeight: number; // For RNG wheel
+  dropWeight: number;
   lore: string;
 }
 
@@ -110,6 +110,8 @@ export type VIPTier =
   | 'Whale of the Lounge' 
   | 'Sovereign Degenerate';
 
+export type ContactPlatform = 'discord' | 'telegram';
+
 export interface UserAccount {
   id: string;
   username: string;
@@ -118,8 +120,13 @@ export interface UserAccount {
   bio: string;
   luckyNumber: number;
   createdAt: number;
-  lastDailyClaim: number;
+  contactPlatform: ContactPlatform;
+  contactHandle: string;
+  isRegistered: boolean;
   dailyStreak: number;
+  lastDailyClaim: number;
+  lastActiveEstDate: string; // YYYY-MM-DD in EST
+  peakBalanceAllTime: number; // Highest chip count reached
 }
 
 export type LeaderboardCategory = 'profit' | 'multiplier' | 'volume' | 'vault';
@@ -132,6 +139,39 @@ export interface LeaderboardEntry {
   vipTier: VIPTier;
   score: number;
   formattedScore: string;
+  contactPlatform?: ContactPlatform;
+  contactHandle?: string;
   badge?: string;
+  isUser?: boolean;
+}
+
+export interface DailyWinnerRecord {
+  id: string;
+  dateEst: string; // YYYY-MM-DD
+  formattedDate: string;
+  username: string;
+  avatar: string;
+  vipTier: VIPTier;
+  contactPlatform: ContactPlatform;
+  contactHandle: string;
+  winningChips: number;
+  formattedScore: string;
+  payoutStatus: 'Pending' | 'Paid' | 'Processing';
+  payoutNote?: string;
+  paidAt?: number;
+  isUser?: boolean;
+}
+
+export interface AllTimePeakRecord {
+  id: string;
+  rank: number;
+  username: string;
+  avatar: string;
+  contactPlatform: ContactPlatform;
+  contactHandle: string;
+  vipTier: VIPTier;
+  peakChips: number;
+  formattedScore: string;
+  dateAchieved: string;
   isUser?: boolean;
 }
