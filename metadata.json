@@ -1,0 +1,6 @@
+{
+  "name": "The Bullshit Casino",
+  "description": "A satirical, high-stakes mini casino featuring Keno with 3 difficulties, Blackjack with 21+3, Perfect Pairs, and Lucky Ladies side bets, and an authentic animated CS-style loot crate unboxer.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
