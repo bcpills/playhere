@@ -30,7 +30,7 @@ export const AdBanner: React.FC<AdBannerProps> = ({ placement, className = '' })
         </div>
 
         <button
-          onClick={() => window.open('mailto:sponsor@bullshitcasino.io?subject=Casino%20Sponsorship%20Inquiry', '_blank')}
+          onClick={() => window.open('mailto:sponsor@freebiesonly.com?subject=Sponsorship%20Inquiry', '_blank')}
           className="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300 text-xs font-bold flex items-center gap-1.5 transition-colors shrink-0"
         >
           <span>Inquire Ad Space</span>
@@ -47,7 +47,7 @@ export const AdBanner: React.FC<AdBannerProps> = ({ placement, className = '' })
           <span className="px-1.5 py-0.2 rounded text-[8px] font-black uppercase bg-zinc-900 border border-zinc-800 text-zinc-500">
             SPONSOR
           </span>
-          <span>Official Tournament Partner: The Bullshit Lounge • Provably Fair Gameplay</span>
+          <span>Official Tournament Partner: FreebiesOnly Lounge • Provably Fair Gameplay</span>
         </div>
         <span className="text-[10px] text-zinc-600 font-mono hidden sm:inline">
           AD-ZONE-728

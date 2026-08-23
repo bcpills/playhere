@@ -6,12 +6,14 @@ import {
   LeaderboardCategory, 
   LeaderboardEntry,
   DailyWinnerRecord,
-  AllTimePeakRecord
+  AllTimePeakRecord,
+  PlayerProfileData
 } from '../types';
 import { 
   getDailyLeaderboard, 
-  getYesterdayWinner,
-  getVIPTierInfo 
+  getYesterdayWinner, 
+  getVIPTierInfo,
+  isUserAdmin
 } from '../utils/leaderboard';
 import { getTimeUntilEstMidnight } from '../utils/estTime';
 import { sound } from '../utils/audio';
@@ -42,6 +44,7 @@ interface DailyLeaderboardProps {
   allTimePeaks: AllTimePeakRecord[];
   onOpenAccount: () => void;
   onOpenModeratorLog: () => void;
+  onInspectPlayer?: (player: PlayerProfileData) => void;
 }
 
 export const DailyLeaderboard: React.FC<DailyLeaderboardProps> = ({
@@ -53,10 +56,12 @@ export const DailyLeaderboard: React.FC<DailyLeaderboardProps> = ({
   allTimePeaks,
   onOpenAccount,
   onOpenModeratorLog,
+  onInspectPlayer,
 }) => {
   const [activeView, setActiveView] = useState<'daily' | 'all-time'>('daily');
   const [category, setCategory] = useState<LeaderboardCategory>('profit');
   const [countdown, setCountdown] = useState<string>('');
+  const isAdmin = isUserAdmin(userAccount);
 
   // Live ticking countdown timer to 12:00 AM EST
   useEffect(() => {
@@ -140,16 +145,18 @@ export const DailyLeaderboard: React.FC<DailyLeaderboardProps> = ({
             </div>
           </div>
 
-          <button
-            onClick={() => {
-              sound.playChip();
-              onOpenModeratorLog();
-            }}
-            className="px-3 py-2 rounded-2xl bg-purple-950/60 hover:bg-purple-900/80 border border-purple-500/40 text-purple-200 text-xs font-bold flex items-center gap-1.5 shadow-sm transition-colors"
-          >
-            <ShieldCheck className="w-4 h-4 text-purple-400" />
-            <span className="hidden sm:inline">Moderator Log</span>
-          </button>
+          {isAdmin && (
+            <button
+              onClick={() => {
+                sound.playChip();
+                onOpenModeratorLog();
+              }}
+              className="px-3 py-2 rounded-2xl bg-purple-950/80 hover:bg-purple-900 border border-purple-500/60 text-purple-200 text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-md transition-all animate-in fade-in"
+            >
+              <ShieldCheck className="w-4 h-4 text-purple-400" />
+              <span className="hidden sm:inline">Pending Payouts</span>
+            </button>
+          )}
 
           <button
             onClick={() => {

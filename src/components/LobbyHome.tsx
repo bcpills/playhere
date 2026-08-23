@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { GameTab, CasinoStats, InventoryItem, UserAccount, DailyWinnerRecord } from '../types';
+import { GameTab, CasinoStats, InventoryItem, UserAccount, DailyWinnerRecord, PlayerProfileData } from '../types';
 import { GoogleIcon } from './GoogleIcon';
 import { 
   Spade, 
@@ -18,7 +18,7 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import { sound } from '../utils/audio';
-import { getVIPTier, getVIPTierInfo, getYesterdayWinner } from '../utils/leaderboard';
+import { getVIPTier, getVIPTierInfo, getYesterdayWinner, isUserAdmin } from '../utils/leaderboard';
 import { getTimeUntilEstMidnight } from '../utils/estTime';
 import { AdBanner } from './AdBanner';
 
@@ -35,6 +35,8 @@ interface LobbyHomeProps {
   onOpenRules: () => void;
   onOpenAccount: () => void;
   onOpenModeratorLog: () => void;
+  onInspectPlayer?: (player: PlayerProfileData) => void;
+  onToggleChat?: () => void;
 }
 
 export const LobbyHome: React.FC<LobbyHomeProps> = ({
@@ -50,8 +52,11 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
   onOpenRules,
   onOpenAccount,
   onOpenModeratorLog,
+  onInspectPlayer,
+  onToggleChat,
 }) => {
   const [countdown, setCountdown] = useState<string>('');
+  const isAdmin = isUserAdmin(userAccount);
 
   useEffect(() => {
     const updateTime = () => {
@@ -116,7 +121,7 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
                 )}
               </div>
               <h2 className="text-base sm:text-xl font-black tracking-wide text-zinc-200 uppercase">
-                The Bullshit Casino Lounge
+                FreebiesOnly Lounge
               </h2>
               <p className="text-xs text-zinc-400 max-w-xl">
                 1,000 daily starting chips. 12:00 AM EST reset. 5 ATM reloads (100 chips each). No resets.
@@ -427,16 +432,31 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => {
-              sound.playChip();
-              onOpenModeratorLog();
-            }}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-purple-950/60 hover:bg-purple-900/80 text-purple-300 border border-purple-500/40 font-bold text-[11px]"
-          >
-            <ShieldCheck className="w-3.5 h-3.5 text-purple-400" />
-            <span>Mod Log</span>
-          </button>
+          {onToggleChat && (
+            <button
+              onClick={() => {
+                sound.playChip();
+                onToggleChat();
+              }}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold text-[11px]"
+            >
+              <MessageSquare className="w-3.5 h-3.5 text-amber-400" />
+              <span>Lounge Chat</span>
+            </button>
+          )}
+
+          {isAdmin && (
+            <button
+              onClick={() => {
+                sound.playChip();
+                onOpenModeratorLog();
+              }}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-purple-950/80 hover:bg-purple-900 text-purple-200 border border-purple-500/60 font-black text-[11px] shadow-sm animate-in fade-in"
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-purple-400" />
+              <span>Pending Payouts</span>
+            </button>
+          )}
 
           <button
             onClick={() => {

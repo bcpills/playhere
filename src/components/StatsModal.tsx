@@ -32,7 +32,7 @@ export const StatsModal: React.FC<StatsModalProps> = ({
                 Career Casino Dossier
               </h3>
               <p className="text-xs text-zinc-400">
-                Your lifelong track record at The Bullshit Casino
+                Your lifelong track record at FreebiesOnly
               </p>
             </div>
           </div>

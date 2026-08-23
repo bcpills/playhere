@@ -322,9 +322,67 @@ export const KenoGame: React.FC<KenoGameProps> = ({
           </div>
         </div>
 
-        {/* Right Column: Dynamic Paytable & Live Draw Controls */}
-        <div className="space-y-4 flex flex-col justify-between">
-          {/* Dynamic Paytable Display */}
+        {/* Right Column: Live Draw Controls at top, Paytable underneath */}
+        <div className="space-y-3 flex flex-col justify-start">
+          {/* Primary Action Button */}
+          <button
+            id="start-keno-draw-btn"
+            disabled={activeDrawing || selectedNumbers.length === 0 || wager > balance || wager <= 0}
+            onClick={handleStartDraw}
+            className="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-zinc-950 font-black text-sm uppercase tracking-wider shadow-xl shadow-amber-500/20 transition-all transform active:scale-98 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <Sparkles className="w-5 h-5 text-zinc-950" />
+            <span>
+              {activeDrawing
+                ? 'Hopper Drawing Balls...'
+                : selectedNumbers.length === 0
+                ? 'Pick at Least 1 Number'
+                : `Draw 10 Balls (${wager.toLocaleString()} Chips)`}
+            </span>
+          </button>
+
+          {/* Speed & Autoplay Bar */}
+          <div className="p-2.5 rounded-2xl bg-zinc-950/90 border border-zinc-800 flex items-center justify-between gap-2 text-xs">
+            <div className="flex items-center gap-1">
+              <span className="text-[10px] font-bold uppercase text-zinc-500 mr-1">Speed:</span>
+              {(['normal', 'fast', 'instant'] as const).map(spd => (
+                <button
+                  key={spd}
+                  onClick={() => setGameSpeed(spd)}
+                  className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase ${
+                    gameSpeed === spd
+                      ? 'bg-amber-500 text-zinc-950'
+                      : 'bg-zinc-900 text-zinc-400 hover:text-zinc-200'
+                  }`}
+                >
+                  {spd}
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={() => setAutoPlay(prev => !prev)}
+              className={`px-3 py-1 rounded-lg text-[11px] font-black uppercase flex items-center gap-1 cursor-pointer ${
+                autoPlay
+                  ? 'bg-rose-600 text-white animate-pulse'
+                  : 'bg-zinc-900 text-zinc-400 hover:text-zinc-200 border border-zinc-800'
+              }`}
+            >
+              {autoPlay ? <Square className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+              <span>{autoPlay ? 'Stop Auto' : 'Autoplay'}</span>
+            </button>
+          </div>
+
+          {/* Wager Chip Selector */}
+          <ChipSelector
+            currentBet={wager}
+            onBetChange={setWager}
+            maxBet={balance}
+            disabled={activeDrawing}
+            minBet={1}
+          />
+
+          {/* Dynamic Paytable Display (Positioned below all controls) */}
           <div className="p-3.5 sm:p-4 rounded-3xl bg-zinc-950/90 border border-zinc-800 shadow-xl space-y-2 flex-1">
             <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
               <div className="flex items-center gap-1.5 text-xs font-black uppercase text-zinc-200">
@@ -339,7 +397,7 @@ export const KenoGame: React.FC<KenoGameProps> = ({
                 Select 1 to 10 numbers on the board to preview payout odds and multiplier ladder.
               </div>
             ) : (
-              <div className="space-y-1 text-xs">
+              <div className="space-y-1 text-xs max-h-[300px] overflow-y-auto pr-1">
                 {Array.from({ length: selectedNumbers.length + 1 }, (_, i) => selectedNumbers.length - i).map((hitCount) => {
                   const mult = getKenoMultiplier(selectedNumbers.length, hitCount, difficulty);
                   const isCurrentHitLevel = drawnNumbers.length > 0 && currentHits === hitCount;
@@ -373,64 +431,6 @@ export const KenoGame: React.FC<KenoGameProps> = ({
               </div>
             )}
           </div>
-
-          {/* Speed & Autoplay Bar */}
-          <div className="p-3 rounded-2xl bg-zinc-950/90 border border-zinc-800 flex items-center justify-between gap-2 text-xs">
-            <div className="flex items-center gap-1">
-              <span className="text-[10px] font-bold uppercase text-zinc-500 mr-1">Speed:</span>
-              {(['normal', 'fast', 'instant'] as const).map(spd => (
-                <button
-                  key={spd}
-                  onClick={() => setGameSpeed(spd)}
-                  className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase ${
-                    gameSpeed === spd
-                      ? 'bg-amber-500 text-zinc-950'
-                      : 'bg-zinc-900 text-zinc-400 hover:text-zinc-200'
-                  }`}
-                >
-                  {spd}
-                </button>
-              ))}
-            </div>
-
-            <button
-              onClick={() => setAutoPlay(prev => !prev)}
-              className={`px-3 py-1 rounded-lg text-[11px] font-black uppercase flex items-center gap-1 ${
-                autoPlay
-                  ? 'bg-rose-600 text-white animate-pulse'
-                  : 'bg-zinc-900 text-zinc-400 hover:text-zinc-200 border border-zinc-800'
-              }`}
-            >
-              {autoPlay ? <Square className="w-3 h-3" /> : <Play className="w-3 h-3" />}
-              <span>{autoPlay ? 'Stop Auto' : 'Autoplay'}</span>
-            </button>
-          </div>
-
-          {/* Wager Chip Selector */}
-          <ChipSelector
-            currentBet={wager}
-            onBetChange={setWager}
-            maxBet={balance}
-            disabled={activeDrawing}
-            minBet={1}
-          />
-
-          {/* Draw Execution Button */}
-          <button
-            id="start-keno-draw-btn"
-            disabled={activeDrawing || selectedNumbers.length === 0 || wager > balance || wager <= 0}
-            onClick={handleStartDraw}
-            className="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-zinc-950 font-black text-sm uppercase tracking-wider shadow-xl shadow-amber-500/20 transition-all transform active:scale-98 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-          >
-            <Sparkles className="w-5 h-5 text-zinc-950" />
-            <span>
-              {activeDrawing
-                ? 'Hopper Drawing Balls...'
-                : selectedNumbers.length === 0
-                ? 'Pick at Least 1 Number'
-                : `Draw 10 Balls (${wager.toLocaleString()} Chips)`}
-            </span>
-          </button>
         </div>
       </div>
     </div>

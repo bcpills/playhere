@@ -114,6 +114,17 @@ export const INITIAL_ALL_TIME_PEAKS: AllTimePeakRecord[] = [
 ];
 
 /**
+ * Only Thomasjoe55@gmail.com has Administrator access
+ */
+export const ADMIN_EMAIL = 'thomasjoe55@gmail.com';
+
+export function isUserAdmin(account?: UserAccount | null): boolean {
+  if (!account) return false;
+  const email = (account.email || account.googleEmail || '').toLowerCase().trim();
+  return email === ADMIN_EMAIL.toLowerCase();
+}
+
+/**
  * Historical crowned daily winners archive
  */
 export const INITIAL_DAILY_WINNERS: DailyWinnerRecord[] = [
@@ -121,6 +132,34 @@ export const INITIAL_DAILY_WINNERS: DailyWinnerRecord[] = [
     id: 'win-2026-08-22',
     dateEst: getYesterdayEstDateString(),
     formattedDate: formatEstDateFriendly(getYesterdayEstDateString()),
+    username: 'ApexPredator_77',
+    avatar: '🦁',
+    vipTier: 'Whale of the Lounge',
+    contactPlatform: 'telegram',
+    contactHandle: '@apex_degen77',
+    winningChips: 48900,
+    formattedScore: '48,900 Chips',
+    payoutStatus: 'Pending',
+    payoutNote: 'Awaiting wallet address confirmation on Telegram.',
+  },
+  {
+    id: 'win-2026-08-21',
+    dateEst: '2026-08-21',
+    formattedDate: 'Aug 21, 2026',
+    username: 'LuckyLucy77',
+    avatar: '🦁',
+    vipTier: 'Gold Regular',
+    contactPlatform: 'discord',
+    contactHandle: 'LuckyLucy#7777',
+    winningChips: 37400,
+    formattedScore: '37,400 Chips',
+    payoutStatus: 'Pending',
+    payoutNote: 'Claim ticket opened in Discord. Payout in progress.',
+  },
+  {
+    id: 'win-2026-08-20',
+    dateEst: '2026-08-20',
+    formattedDate: 'Aug 20, 2026',
     username: 'Vegas_Viper',
     avatar: '🦈',
     vipTier: 'Whale of the Lounge',
@@ -130,12 +169,12 @@ export const INITIAL_DAILY_WINNERS: DailyWinnerRecord[] = [
     formattedScore: '34,850 Chips',
     payoutStatus: 'Paid',
     payoutNote: 'Manual payout transferred via Telegram wallet. Tx: #TX-88214',
-    paidAt: Date.now() - 3600000 * 8,
+    paidAt: Date.now() - 3600000 * 28,
   },
   {
-    id: 'win-2026-08-21',
-    dateEst: '2026-08-21',
-    formattedDate: 'Aug 21, 2026',
+    id: 'win-2026-08-19',
+    dateEst: '2026-08-19',
+    formattedDate: 'Aug 19, 2026',
     username: 'CardCounter_Dan',
     avatar: '🃏',
     vipTier: 'Platinum Shark',
@@ -145,12 +184,12 @@ export const INITIAL_DAILY_WINNERS: DailyWinnerRecord[] = [
     formattedScore: '28,400 Chips',
     payoutStatus: 'Paid',
     payoutNote: 'Claimed via Discord mod ticket. Payout confirmed.',
-    paidAt: Date.now() - 86400000,
+    paidAt: Date.now() - 86400000 * 2,
   },
   {
-    id: 'win-2026-08-20',
-    dateEst: '2026-08-20',
-    formattedDate: 'Aug 20, 2026',
+    id: 'win-2026-08-18',
+    dateEst: '2026-08-18',
+    formattedDate: 'Aug 18, 2026',
     username: 'CryptoWhale_420',
     avatar: '🚀',
     vipTier: 'Diamond High-Roller',
@@ -160,7 +199,7 @@ export const INITIAL_DAILY_WINNERS: DailyWinnerRecord[] = [
     formattedScore: '41,200 Chips',
     payoutStatus: 'Paid',
     payoutNote: 'Paid manually by server owner.',
-    paidAt: Date.now() - 86400000 * 2,
+    paidAt: Date.now() - 86400000 * 3,
   },
 ];
 

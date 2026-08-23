@@ -107,7 +107,7 @@ const MYTHIC_ITEMS: LootItem[] = [
   { id: 'mb-2', name: 'Diamond Roulette Ball', description: 'Precision weighted for maximum chaos.', rarity: 'classified', value: 2000, icon: '💎', color: '#ec4899', bgGradient: 'from-pink-950 to-zinc-950', dropWeight: 26, lore: 'Spins forever on 00.' },
   { id: 'mb-3', name: 'Crown of the Pit Boss King', description: 'Worn by the legend who broke the bank.', rarity: 'covert', value: 5500, icon: '👑', color: '#ef4444', bgGradient: 'from-red-950 to-zinc-950', dropWeight: 12, lore: 'All hail the degenerate sovereign.' },
   { id: 'mb-4', name: '★ M9 Bayonet | Doppler Sapphire ★', description: 'Deep crystalline blue hue that blinds the dealer.', rarity: 'exotic', value: 18000, icon: '🗡️', color: '#eab308', bgGradient: 'from-yellow-950 to-purple-950', dropWeight: 3.5, lore: 'Pure sapphire reflection.' },
-  { id: 'mb-5', name: '★ The Golden Bullshit Trophy ★', description: '100% Solid 24K Gold. Ultimate degenerate glory.', rarity: 'exotic', value: 35000, icon: '🏆', color: '#eab308', bgGradient: 'from-yellow-950 via-amber-950 to-purple-950', dropWeight: 1.2, lore: 'You won the casino. Now keep gambling.' },
+  { id: 'mb-5', name: '★ The Golden FreebiesOnly Trophy ★', description: '100% Solid 24K Gold. Ultimate high-roller glory.', rarity: 'exotic', value: 35000, icon: '🏆', color: '#eab308', bgGradient: 'from-yellow-950 via-amber-950 to-purple-950', dropWeight: 1.2, lore: 'You won the casino. Now keep gambling.' },
 ];
 
 // Crate 5: Diamond Whale Coffer ($1,500)
@@ -124,7 +124,7 @@ const OVERLORD_ITEMS: LootItem[] = [
   { id: 'ov-1', name: '1 Kilo Pure Platinum Bullion', description: '99.95% fine platinum bar stamped with the casino crest.', rarity: 'classified', value: 4200, icon: '🪙', color: '#ec4899', bgGradient: 'from-pink-950 to-zinc-950', dropWeight: 35, lore: 'Heavier than your worst financial regrets.' },
   { id: 'ov-2', name: 'Monte Carlo Penthouse Keycard', description: 'Presidential suite key with personal butler on 24/7 call.', rarity: 'covert', value: 14000, icon: '🗝️', color: '#ef4444', bgGradient: 'from-red-950 to-zinc-950', dropWeight: 22, lore: 'Overlooks the Mediterranean and the roulette wheels.' },
   { id: 'ov-3', name: '★ Butterfly Knife | Lore (Factory New) ★', description: 'Dragon knotwork inlayed over ancient gold steel.', rarity: 'exotic', value: 38000, icon: '🦋', color: '#eab308', bgGradient: 'from-yellow-950 via-amber-950 to-purple-950', dropWeight: 4, lore: 'Smooth spinning motion mesmerizes dealers.' },
-  { id: 'ov-4', name: '1% Ownership Stake in The Bullshit Casino', description: 'Certified registered share certificate signed in gold ink.', rarity: 'exotic', value: 85000, icon: '📜', color: '#eab308', bgGradient: 'from-amber-950 via-yellow-950 to-emerald-950', dropWeight: 2, lore: 'The house always wins, and now you are the house.' },
+  { id: 'ov-4', name: '1% Ownership Stake in FreebiesOnly', description: 'Certified registered share certificate signed in gold ink.', rarity: 'exotic', value: 85000, icon: '📜', color: '#eab308', bgGradient: 'from-amber-950 via-yellow-950 to-emerald-950', dropWeight: 2, lore: 'The house always wins, and now you are the house.' },
   { id: 'ov-5', name: '★ StatTrak™ AK-47 | Case Hardened (Scar #661) ★', description: 'Tier 1 Blue Gem legendary specimen.', rarity: 'exotic', value: 160000, icon: '💎', color: '#eab308', bgGradient: 'from-blue-950 via-cyan-950 to-yellow-950', dropWeight: 0.8, lore: 'Worth more than an actual high-limit casino license.' },
 ];
 
@@ -170,7 +170,7 @@ export const LOOT_CRATES: LootCrate[] = [
   },
   {
     id: 'mythic-bullshit',
-    name: 'The Bullshit Mythic Crate',
+    name: 'The FreebiesOnly Mythic Crate',
     tagline: 'Ridiculous golden artifacts, legendary knifes, and maximum flex.',
     cost: 500,
     icon: '👑',
@@ -200,7 +200,7 @@ export const LOOT_CRATES: LootCrate[] = [
   },
   {
     id: 'sovereign-reliquary',
-    name: 'Sovereign Bullshit Reliquary',
+    name: 'Sovereign FreebiesOnly Reliquary',
     tagline: 'The absolute apex of digital opulence. Odin Gungnir, Sovereign Crown & The Infinity Poop Scepter.',
     cost: 15000,
     icon: '⚡',

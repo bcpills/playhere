@@ -13,9 +13,13 @@ import {
   Volume2, 
   VolumeX,
   Award,
-  Crown
+  Crown,
+  MessageSquare,
+  ShieldCheck,
+  Clock
 } from 'lucide-react';
 import { sound } from '../utils/audio';
+import { isUserAdmin } from '../utils/leaderboard';
 
 interface HeaderProps {
   balance: number;
@@ -27,9 +31,13 @@ interface HeaderProps {
   onOpenStats: () => void;
   onOpenRules: () => void;
   onOpenAccount: () => void;
+  onToggleChat: () => void;
+  onOpenPendingPayouts: () => void;
   inventoryCount: number;
   soundEnabled: boolean;
   onToggleSound: () => void;
+  pendingPayoutsCount: number;
+  isChatOpen: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -42,10 +50,16 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenStats,
   onOpenRules,
   onOpenAccount,
+  onToggleChat,
+  onOpenPendingPayouts,
   inventoryCount,
   soundEnabled,
   onToggleSound,
+  pendingPayoutsCount,
+  isChatOpen,
 }) => {
+  const isAdmin = isUserAdmin(userAccount);
+
   const tabs = [
     { id: 'home' as GameTab, label: 'Lobby', icon: Home },
     { id: 'blackjack' as GameTab, label: 'Blackjack', icon: Spade },
@@ -58,7 +72,7 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="sticky top-0 z-40 w-full bg-zinc-950/95 backdrop-blur-md border-b border-zinc-800 shadow-xl">
       <div className="max-w-5xl mx-auto px-3 sm:px-4 py-2 sm:py-2.5">
-        {/* Top Tier: Brand, Balance, Actions */}
+        {/* Top Tier: Brand, Balance, Admin Portal & Actions */}
         <div className="flex items-center justify-between gap-2">
           {/* Logo / Title (Clickable to Lobby) */}
           <div 
@@ -75,23 +89,65 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
             <div className="flex flex-col">
               <h1 className="text-xs sm:text-base font-black tracking-wider uppercase text-zinc-100 flex items-center gap-1.5 leading-none group-hover:text-amber-300 transition-colors">
-                <span>The Bullshit Casino</span>
+                <span>FreebiesOnly</span>
               </h1>
               <span className="text-[9px] text-amber-400/90 font-medium tracking-tight mt-0.5 hidden xs:block">
-                Provably Satirical
+                High-Stakes VIP Lounge
               </span>
             </div>
           </div>
 
-          {/* Balance & Quick Actions */}
+          {/* Actions & Balance */}
           <div className="flex items-center gap-1.5 sm:gap-2">
+            {/* ADMIN-ONLY PENDING PAYOUTS BUTTON */}
+            {isAdmin && (
+              <button
+                id="header-admin-payouts-btn"
+                onClick={() => {
+                  sound.playChip();
+                  onOpenPendingPayouts();
+                }}
+                title="Admin Pending Payouts Portal (Thomas Joe)"
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-purple-950/90 hover:bg-purple-900 border border-purple-500/60 text-purple-200 text-xs font-black uppercase tracking-wider transition-all shadow-md animate-in fade-in"
+              >
+                <ShieldCheck className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+                <span className="hidden md:inline text-[11px]">Pending Payouts</span>
+                {pendingPayoutsCount > 0 && (
+                  <span className="px-1.5 py-0.2 rounded-full text-[9px] font-mono font-black bg-amber-500 text-zinc-950">
+                    {pendingPayoutsCount}
+                  </span>
+                )}
+              </button>
+            )}
+
+            {/* LIVE CASINO CHAT TOGGLE BUTTON */}
+            <button
+              id="header-chat-btn"
+              onClick={() => {
+                sound.playChip();
+                onToggleChat();
+              }}
+              title="Open Casino Lounge Chat"
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-xs font-black uppercase transition-all ${
+                isChatOpen
+                  ? 'bg-amber-500 text-zinc-950 border-amber-400 shadow-md'
+                  : 'bg-zinc-900 hover:bg-zinc-800 border-zinc-700 text-zinc-200 shadow-inner'
+              }`}
+            >
+              <div className="relative">
+                <MessageSquare className="w-3.5 h-3.5" />
+                <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              </div>
+              <span className="hidden xs:inline text-[11px]">Chat</span>
+            </button>
+
             {/* Account Profile Button */}
             <button
               onClick={() => {
                 sound.playChip();
                 onOpenAccount();
               }}
-              title="Gambler VIP Profile & Google Account"
+              title="Gambler VIP Profile & Account"
               className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-200 transition-colors text-xs font-bold shadow-inner"
             >
               <div className="relative">
@@ -210,4 +266,3 @@ export const Header: React.FC<HeaderProps> = ({
     </header>
   );
 };
-

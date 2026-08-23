@@ -127,6 +127,8 @@ export interface UserAccount {
   lastDailyClaim: number;
   lastActiveEstDate: string; // YYYY-MM-DD in EST
   peakBalanceAllTime: number; // Highest chip count reached
+  authMethod?: 'google' | 'email' | 'guest';
+  email?: string;
   googleLinked?: boolean;
   googleEmail?: string;
   googleName?: string;
@@ -178,4 +180,39 @@ export interface AllTimePeakRecord {
   formattedScore: string;
   dateAchieved: string;
   isUser?: boolean;
+}
+
+export interface ChatMessage {
+  id: string;
+  senderId: string;
+  username: string;
+  avatar: string;
+  vipTier: VIPTier;
+  text: string;
+  timestamp: number;
+  badge?: string;
+  type?: 'chat' | 'system' | 'jackpot' | 'mod_action';
+  contactPlatform?: ContactPlatform;
+  contactHandle?: string;
+  balance?: number;
+  isUser?: boolean;
+  isAdmin?: boolean;
+}
+
+export interface PlayerProfileData {
+  id: string;
+  username: string;
+  avatar: string;
+  vipTier: VIPTier;
+  contactPlatform?: ContactPlatform;
+  contactHandle?: string;
+  balance: number;
+  peakBalance?: number;
+  bio?: string;
+  luckyNumber?: number;
+  totalWagered?: number;
+  cratesOpened?: number;
+  isUser?: boolean;
+  isAdmin?: boolean;
+  email?: string;
 }

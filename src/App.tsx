@@ -6,7 +6,9 @@ import {
   CasinoStats, 
   UserAccount, 
   DailyWinnerRecord, 
-  AllTimePeakRecord 
+  AllTimePeakRecord,
+  ChatMessage,
+  PlayerProfileData
 } from './types';
 import { Header } from './components/Header';
 import { LobbyHome } from './components/LobbyHome';
@@ -21,12 +23,16 @@ import { StatsModal } from './components/StatsModal';
 import { RulesModal } from './components/RulesModal';
 import { SignupModal } from './components/SignupModal';
 import { ModeratorModal } from './components/ModeratorModal';
+import { CasinoChat } from './components/CasinoChat';
+import { PlayerProfileModal } from './components/PlayerProfileModal';
 import { 
   DEFAULT_USER_ACCOUNT, 
   INITIAL_DAILY_WINNERS, 
   INITIAL_ALL_TIME_PEAKS,
   updateAllTimePeaksWithUser,
-  getDailyLeaderboard
+  getDailyLeaderboard,
+  isUserAdmin,
+  ADMIN_EMAIL
 } from './utils/leaderboard';
 import { 
   getCurrentEstDateString, 
@@ -36,15 +42,20 @@ import {
 import { sound } from './utils/audio';
 
 const STORAGE_KEYS = {
-  BALANCE: 'bullshit_casino_balance',
-  INVENTORY: 'bullshit_casino_inventory',
-  STATS: 'bullshit_casino_stats',
-  SOUND: 'bullshit_casino_sound',
-  ACCOUNT: 'bullshit_casino_account',
-  ATM_HISTORY: 'bullshit_casino_atm_history',
-  DAILY_WINNERS: 'bullshit_casino_daily_winners',
-  ALL_TIME_PEAKS: 'bullshit_casino_all_time_peaks',
+  BALANCE: 'freebiesonly_balance',
+  INVENTORY: 'freebiesonly_inventory',
+  STATS: 'freebiesonly_stats',
+  SOUND: 'freebiesonly_sound',
+  ACCOUNT: 'freebiesonly_account',
+  ATM_HISTORY: 'freebiesonly_atm_history',
+  DAILY_WINNERS: 'freebiesonly_daily_winners',
+  ALL_TIME_PEAKS: 'freebiesonly_all_time_peaks',
 };
+
+// Helper to get from new key with fallback to legacy key
+function getStoredItem(key: string, legacyKey: string): string | null {
+  return localStorage.getItem(key) ?? localStorage.getItem(legacyKey);
+}
 
 const INITIAL_STATS: CasinoStats = {
   totalWagered: 0,
@@ -63,42 +74,42 @@ const INITIAL_STATS: CasinoStats = {
 export default function App() {
   // State Initialization from LocalStorage or 1000 Default
   const [balance, setBalance] = useState<number>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.BALANCE);
+    const saved = getStoredItem(STORAGE_KEYS.BALANCE, 'bullshit_casino_balance');
     return saved !== null ? parseInt(saved, 10) : 1000;
   });
 
   const [inventory, setInventory] = useState<InventoryItem[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.INVENTORY);
+    const saved = getStoredItem(STORAGE_KEYS.INVENTORY, 'bullshit_casino_inventory');
     return saved ? JSON.parse(saved) : [];
   });
 
   const [stats, setStats] = useState<CasinoStats>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.STATS);
+    const saved = getStoredItem(STORAGE_KEYS.STATS, 'bullshit_casino_stats');
     return saved ? JSON.parse(saved) : INITIAL_STATS;
   });
 
   const [userAccount, setUserAccount] = useState<UserAccount>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.ACCOUNT);
+    const saved = getStoredItem(STORAGE_KEYS.ACCOUNT, 'bullshit_casino_account');
     return saved ? JSON.parse(saved) : DEFAULT_USER_ACCOUNT;
   });
 
   const [atmHistory, setAtmHistory] = useState<number[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.ATM_HISTORY);
+    const saved = getStoredItem(STORAGE_KEYS.ATM_HISTORY, 'bullshit_casino_atm_history');
     return saved ? JSON.parse(saved) : [];
   });
 
   const [dailyWinners, setDailyWinners] = useState<DailyWinnerRecord[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.DAILY_WINNERS);
+    const saved = getStoredItem(STORAGE_KEYS.DAILY_WINNERS, 'bullshit_casino_daily_winners');
     return saved ? JSON.parse(saved) : INITIAL_DAILY_WINNERS;
   });
 
   const [allTimePeaks, setAllTimePeaks] = useState<AllTimePeakRecord[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.ALL_TIME_PEAKS);
+    const saved = getStoredItem(STORAGE_KEYS.ALL_TIME_PEAKS, 'bullshit_casino_all_time_peaks');
     return saved ? JSON.parse(saved) : INITIAL_ALL_TIME_PEAKS;
   });
 
   const [soundEnabled, setSoundEnabled] = useState<boolean>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.SOUND);
+    const saved = getStoredItem(STORAGE_KEYS.SOUND, 'bullshit_casino_sound');
     return saved !== null ? JSON.parse(saved) : true;
   });
 
@@ -108,6 +119,17 @@ export default function App() {
   const [isRulesOpen, setIsRulesOpen] = useState<boolean>(false);
   const [isAccountOpen, setIsAccountOpen] = useState<boolean>(false);
   const [isModeratorOpen, setIsModeratorOpen] = useState<boolean>(false);
+  const [isChatOpen, setIsChatOpen] = useState<boolean>(false);
+
+  // Player profile inspection
+  const [selectedPlayer, setSelectedPlayer] = useState<PlayerProfileData | null>(null);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState<boolean>(false);
+
+  // Chat external broadcasts
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+
+  const isAdmin = isUserAdmin(userAccount);
+  const pendingPayoutsCount = dailyWinners.filter(w => w.payoutStatus === 'Pending').length;
 
   // Sync sound engine
   useEffect(() => {
@@ -276,6 +298,7 @@ export default function App() {
       googleEmail: undefined,
       googleName: undefined,
       googlePicture: undefined,
+      email: undefined,
     }));
     // Reset session balance to starting 1000 chips
     setBalance(1000);
@@ -286,6 +309,46 @@ export default function App() {
   // Moderator update winner
   const handleUpdateWinner = (winnerId: string, updates: Partial<DailyWinnerRecord>) => {
     setDailyWinners(prev => prev.map(w => w.id === winnerId ? { ...w, ...updates } : w));
+  };
+
+  // Inspect Player Profile
+  const handleInspectPlayer = (player: PlayerProfileData) => {
+    const isMe = player.id === userAccount.id || player.isUser;
+    setSelectedPlayer({
+      ...player,
+      balance: isMe ? balance : player.balance,
+      isUser: isMe,
+    });
+    setIsProfileModalOpen(true);
+  };
+
+  // Admin Balance Reset Handler
+  const handleAdminResetBalance = (playerId: string, username: string, resetAmount: number, reason?: string) => {
+    const isMe = playerId === userAccount.id || (selectedPlayer && selectedPlayer.isUser);
+
+    if (isMe) {
+      setBalance(resetAmount);
+    }
+
+    if (selectedPlayer && selectedPlayer.id === playerId) {
+      setSelectedPlayer(prev => prev ? { ...prev, balance: resetAmount } : null);
+    }
+
+    // Broadcast system notice to the live chat
+    const adminNotice: ChatMessage = {
+      id: 'mod-notice-' + Date.now(),
+      senderId: 'sys-admin',
+      username: '🛡️ Admin Thomas Joe',
+      avatar: '👑',
+      vipTier: 'Sovereign Degenerate',
+      text: `Reset ${username}'s bankroll to ${resetAmount.toLocaleString()} chips. [Audit: ${reason || 'Administrative bankroll reset'}]`,
+      timestamp: Date.now(),
+      type: 'mod_action',
+      badge: 'ADMIN MOD',
+      isAdmin: true,
+    };
+
+    setChatMessages(prev => [...prev, adminNotice]);
   };
 
   return (
@@ -301,9 +364,13 @@ export default function App() {
         onOpenStats={() => setIsStatsOpen(true)}
         onOpenRules={() => setIsRulesOpen(true)}
         onOpenAccount={() => setIsAccountOpen(true)}
+        onToggleChat={() => setIsChatOpen(prev => !prev)}
+        onOpenPendingPayouts={() => setIsModeratorOpen(true)}
         inventoryCount={inventory.length}
         soundEnabled={soundEnabled}
         onToggleSound={() => setSoundEnabled(prev => !prev)}
+        pendingPayoutsCount={pendingPayoutsCount}
+        isChatOpen={isChatOpen}
       />
 
       {/* Main Game Stage */}
@@ -322,6 +389,8 @@ export default function App() {
             onOpenRules={() => setIsRulesOpen(true)}
             onOpenAccount={() => setIsAccountOpen(true)}
             onOpenModeratorLog={() => setIsModeratorOpen(true)}
+            onInspectPlayer={handleInspectPlayer}
+            onToggleChat={() => setIsChatOpen(prev => !prev)}
           />
         )}
 
@@ -369,9 +438,30 @@ export default function App() {
             allTimePeaks={allTimePeaks}
             onOpenAccount={() => setIsAccountOpen(true)}
             onOpenModeratorLog={() => setIsModeratorOpen(true)}
+            onInspectPlayer={handleInspectPlayer}
           />
         )}
       </main>
+
+      {/* Live Casino Lounge Chat (Drawer / Popup) */}
+      <CasinoChat
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
+        userAccount={userAccount}
+        balance={balance}
+        onInspectPlayer={handleInspectPlayer}
+        externalMessages={chatMessages}
+        onSendMessage={(msg) => setChatMessages(prev => [...prev, msg])}
+      />
+
+      {/* Player Profile Inspection & Admin Balance Reset Modal */}
+      <PlayerProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        player={selectedPlayer}
+        currentUserAccount={userAccount}
+        onResetBalance={handleAdminResetBalance}
+      />
 
       {/* Mandatory Signup Modal if user is not yet registered */}
       <SignupModal
@@ -417,13 +507,16 @@ export default function App() {
         onClose={() => setIsRulesOpen(false)}
       />
 
-      {/* Owner & Moderator Payout Log Portal */}
-      <ModeratorModal
-        isOpen={isModeratorOpen}
-        onClose={() => setIsModeratorOpen(false)}
-        dailyWinners={dailyWinners}
-        onUpdateWinner={handleUpdateWinner}
-      />
+      {/* Owner & Admin Pending Payouts Portal (Thomas Joe) */}
+      {isAdmin && (
+        <ModeratorModal
+          isOpen={isModeratorOpen}
+          onClose={() => setIsModeratorOpen(false)}
+          dailyWinners={dailyWinners}
+          onUpdateWinner={handleUpdateWinner}
+          onInspectPlayer={handleInspectPlayer}
+        />
+      )}
     </div>
   );
 }

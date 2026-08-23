@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { DailyWinnerRecord, ContactPlatform } from '../types';
+import { DailyWinnerRecord, ContactPlatform, PlayerProfileData } from '../types';
 import { sound } from '../utils/audio';
 import { 
   ShieldCheck, 
@@ -16,7 +16,10 @@ import {
   Search,
   CheckCircle2,
   Clock,
-  Edit3
+  Edit3,
+  Filter,
+  User,
+  AlertCircle
 } from 'lucide-react';
 
 interface ModeratorModalProps {
@@ -24,6 +27,7 @@ interface ModeratorModalProps {
   onClose: () => void;
   dailyWinners: DailyWinnerRecord[];
   onUpdateWinner: (winnerId: string, updates: Partial<DailyWinnerRecord>) => void;
+  onInspectPlayer?: (player: PlayerProfileData) => void;
 }
 
 export const ModeratorModal: React.FC<ModeratorModalProps> = ({
@@ -31,9 +35,11 @@ export const ModeratorModal: React.FC<ModeratorModalProps> = ({
   onClose,
   dailyWinners,
   onUpdateWinner,
+  onInspectPlayer,
 }) => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [filterStatus, setFilterStatus] = useState<'pending' | 'paid' | 'all'>('pending');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [noteText, setNoteText] = useState<string>('');
 
@@ -47,6 +53,7 @@ export const ModeratorModal: React.FC<ModeratorModalProps> = ({
   };
 
   const handleSaveNote = (winnerId: string) => {
+    sound.playChip();
     onUpdateWinner(winnerId, { payoutNote: noteText });
     setEditingId(null);
     setNoteText('');
@@ -69,26 +76,32 @@ export const ModeratorModal: React.FC<ModeratorModalProps> = ({
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `casino_winners_payout_log_${Date.now()}.csv`);
+    link.setAttribute('download', `casino_pending_payouts_log_${Date.now()}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
-  const filteredWinners = dailyWinners.filter(w => 
-    w.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    w.contactHandle.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    w.dateEst.includes(searchQuery)
-  );
+  const pendingWinners = dailyWinners.filter(w => w.payoutStatus === 'Pending');
+  const paidWinners = dailyWinners.filter(w => w.payoutStatus === 'Paid');
 
-  const pendingCount = dailyWinners.filter(w => w.payoutStatus === 'Pending').length;
-  const paidCount = dailyWinners.filter(w => w.payoutStatus === 'Paid').length;
+  const filteredWinners = dailyWinners.filter(w => {
+    const matchesSearch = 
+      w.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      w.contactHandle.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      w.dateEst.includes(searchQuery);
+
+    if (!matchesSearch) return false;
+    if (filterStatus === 'pending') return w.payoutStatus === 'Pending';
+    if (filterStatus === 'paid') return w.payoutStatus === 'Paid';
+    return true;
+  });
 
   return (
     <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4">
-      <div className="w-full max-w-4xl max-h-[92vh] rounded-3xl bg-zinc-950 border-2 border-purple-500/50 shadow-2xl flex flex-col relative overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div className="w-full max-w-4xl max-h-[92vh] rounded-3xl bg-zinc-950 border-2 border-purple-500/60 shadow-2xl flex flex-col relative overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
-        <div className="p-4 sm:p-5 border-b border-zinc-800/80 bg-zinc-900/60 flex items-center justify-between gap-3">
+        <div className="p-4 sm:p-5 border-b border-zinc-800/80 bg-zinc-900/70 flex items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-purple-950 border border-purple-500/50 flex items-center justify-center text-purple-400 shadow-md">
               <ShieldCheck className="w-5 h-5" />
@@ -96,14 +109,14 @@ export const ModeratorModal: React.FC<ModeratorModalProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-base sm:text-lg font-black uppercase tracking-wider text-zinc-100">
-                  Owner & Moderator Payout Log
+                  Pending Payouts & Winner Registry
                 </h2>
                 <span className="text-[10px] px-2 py-0.5 rounded-full font-black uppercase bg-purple-500/20 text-purple-300 border border-purple-500/40">
-                  ADMIN PORTAL
+                  ADMIN ONLY
                 </span>
               </div>
               <p className="text-xs text-zinc-400">
-                Daily 12:00 AM EST crowned tournament champions & manual contact registry.
+                Thomas Joe Administrator Portal: review unpaid daily winners and confirm manual prize distributions.
               </p>
             </div>
           </div>
@@ -111,7 +124,7 @@ export const ModeratorModal: React.FC<ModeratorModalProps> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={handleExportCSV}
-              className="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300 text-xs font-bold flex items-center gap-1.5 transition-colors"
+              className="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               <Download className="w-3.5 h-3.5 text-zinc-400" />
               <span className="hidden sm:inline">Export CSV</span>
@@ -119,48 +132,90 @@ export const ModeratorModal: React.FC<ModeratorModalProps> = ({
 
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-400 hover:text-zinc-200 flex items-center justify-center transition-colors"
+              className="w-8 h-8 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-400 hover:text-zinc-200 flex items-center justify-center transition-colors cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        {/* Quick Stats Summary */}
-        <div className="grid grid-cols-3 gap-2 sm:gap-3 p-4 bg-zinc-900/30 border-b border-zinc-800/80 text-xs">
-          <div className="p-3 rounded-2xl bg-zinc-900/80 border border-zinc-800">
-            <span className="text-[10px] uppercase font-bold text-zinc-500 block">Total Crowned Winners</span>
-            <span className="text-lg font-black font-mono text-zinc-100">{dailyWinners.length}</span>
+        {/* Stats & Filter Bar */}
+        <div className="p-3 sm:p-4 bg-zinc-900/40 border-b border-zinc-800/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shrink-0">
+          {/* Status Tabs */}
+          <div className="flex items-center gap-1.5 w-full sm:w-auto">
+            <button
+              onClick={() => {
+                sound.playChip();
+                setFilterStatus('pending');
+              }}
+              className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase flex items-center gap-1.5 transition-all cursor-pointer ${
+                filterStatus === 'pending'
+                  ? 'bg-amber-500 text-zinc-950 shadow-md font-black'
+                  : 'bg-zinc-900 text-zinc-400 hover:text-zinc-200 border border-zinc-800'
+              }`}
+            >
+              <Clock className="w-3.5 h-3.5" />
+              <span>Unpaid ({pendingWinners.length})</span>
+            </button>
+
+            <button
+              onClick={() => {
+                sound.playChip();
+                setFilterStatus('paid');
+              }}
+              className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase flex items-center gap-1.5 transition-all cursor-pointer ${
+                filterStatus === 'paid'
+                  ? 'bg-emerald-600 text-white shadow-md'
+                  : 'bg-zinc-900 text-zinc-400 hover:text-zinc-200 border border-zinc-800'
+              }`}
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>Paid ({paidWinners.length})</span>
+            </button>
+
+            <button
+              onClick={() => {
+                sound.playChip();
+                setFilterStatus('all');
+              }}
+              className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase flex items-center gap-1.5 transition-all cursor-pointer ${
+                filterStatus === 'all'
+                  ? 'bg-purple-600 text-white shadow-md'
+                  : 'bg-zinc-900 text-zinc-400 hover:text-zinc-200 border border-zinc-800'
+              }`}
+            >
+              <span>All ({dailyWinners.length})</span>
+            </button>
           </div>
 
-          <div className="p-3 rounded-2xl bg-zinc-900/80 border border-zinc-800">
-            <span className="text-[10px] uppercase font-bold text-zinc-500 block">Pending Payouts</span>
-            <span className="text-lg font-black font-mono text-amber-400">{pendingCount}</span>
+          {/* Search Input */}
+          <div className="relative w-full sm:w-64">
+            <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-zinc-500" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Search winners or handles..."
+              className="w-full pl-8 pr-3 py-1.5 rounded-xl bg-zinc-900 border border-zinc-700 text-xs text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-purple-400"
+            />
           </div>
-
-          <div className="p-3 rounded-2xl bg-zinc-900/80 border border-zinc-800">
-            <span className="text-[10px] uppercase font-bold text-zinc-500 block">Completed Payouts</span>
-            <span className="text-lg font-black font-mono text-emerald-400">{paidCount}</span>
-          </div>
-        </div>
-
-        {/* Search Bar */}
-        <div className="p-3 sm:px-4 bg-zinc-950 border-b border-zinc-800/80 flex items-center gap-2">
-          <Search className="w-4 h-4 text-zinc-500 shrink-0" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            placeholder="Search by winner username, Discord/Telegram handle, or date..."
-            className="w-full bg-transparent text-xs sm:text-sm text-zinc-200 placeholder:text-zinc-600 focus:outline-none"
-          />
         </div>
 
         {/* Winners List / Table */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
           {filteredWinners.length === 0 ? (
-            <div className="text-center py-12 text-zinc-500 text-xs">
-              No crowned winners found matching your query.
+            <div className="text-center py-16 space-y-2">
+              <div className="w-12 h-12 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center mx-auto text-zinc-500">
+                <CheckCircle2 className="w-6 h-6 text-emerald-400" />
+              </div>
+              <h3 className="text-sm font-bold text-zinc-300">
+                {filterStatus === 'pending' ? 'No Unpaid Payouts Pending!' : 'No records found.'}
+              </h3>
+              <p className="text-xs text-zinc-500 max-w-sm mx-auto">
+                {filterStatus === 'pending'
+                  ? 'All crowned tournament champions have been verified and marked as paid.'
+                  : 'Try adjusting your search filter above.'}
+              </p>
             </div>
           ) : (
             filteredWinners.map((winner) => (
@@ -168,19 +223,58 @@ export const ModeratorModal: React.FC<ModeratorModalProps> = ({
                 key={winner.id}
                 className={`p-4 rounded-2xl border transition-all ${
                   winner.payoutStatus === 'Pending'
-                    ? 'bg-amber-950/20 border-amber-500/40 shadow-md'
+                    ? 'bg-amber-950/20 border-amber-500/50 shadow-lg'
                     : 'bg-zinc-900/60 border-zinc-800 hover:border-zinc-700'
                 }`}
               >
                 <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
                   {/* Winner Profile & Date */}
                   <div className="flex items-center gap-3">
-                    <span className="text-3xl shrink-0">{winner.avatar}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (onInspectPlayer) {
+                          sound.playChip();
+                          onInspectPlayer({
+                            id: winner.id,
+                            username: winner.username,
+                            avatar: winner.avatar,
+                            vipTier: winner.vipTier,
+                            contactPlatform: winner.contactPlatform,
+                            contactHandle: winner.contactHandle,
+                            balance: winner.winningChips,
+                          });
+                        }
+                      }}
+                      title="Inspect Player Profile & Reset Balance"
+                      className="text-3xl shrink-0 hover:scale-110 transition-transform cursor-pointer"
+                    >
+                      {winner.avatar}
+                    </button>
+
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-black text-zinc-100">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (onInspectPlayer) {
+                              sound.playChip();
+                              onInspectPlayer({
+                                id: winner.id,
+                                username: winner.username,
+                                avatar: winner.avatar,
+                                vipTier: winner.vipTier,
+                                contactPlatform: winner.contactPlatform,
+                                contactHandle: winner.contactHandle,
+                                balance: winner.winningChips,
+                              });
+                            }
+                          }}
+                          className="text-sm font-black text-zinc-100 hover:text-amber-400 transition-colors text-left cursor-pointer"
+                        >
                           {winner.username}
-                        </span>
+                        </button>
+
                         <span className="text-[10px] px-2 py-0.2 rounded-full font-bold uppercase bg-zinc-800 text-zinc-300">
                           {winner.dateEst}
                         </span>
@@ -207,7 +301,7 @@ export const ModeratorModal: React.FC<ModeratorModalProps> = ({
                         <button
                           onClick={() => handleCopyHandle(winner)}
                           title="Copy Contact Handle"
-                          className="p-1 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200 transition-colors"
+                          className="p-1 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer"
                         >
                           {copiedId === winner.id ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                         </button>
@@ -218,94 +312,110 @@ export const ModeratorModal: React.FC<ModeratorModalProps> = ({
                   {/* Winning Score & Payout Status Buttons */}
                   <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
                     <div className="text-left md:text-right">
-                      <span className="text-[10px] uppercase font-bold text-zinc-500 block">Winning Score</span>
+                      <span className="text-[10px] uppercase font-bold text-zinc-500 block">Winning Height</span>
                       <span className="text-base font-black font-mono text-amber-300">
                         {winner.formattedScore}
                       </span>
                     </div>
 
-                    {/* Status Dropdown / Action */}
-                    <div className="flex items-center gap-1.5">
+                    {/* Status Action: Mark as Paid / Pending */}
+                    <button
+                      onClick={() => {
+                        sound.playProfit();
+                        const isNowPaid = winner.payoutStatus !== 'Paid';
+                        onUpdateWinner(winner.id, { 
+                          payoutStatus: isNowPaid ? 'Paid' : 'Pending',
+                          paidAt: isNowPaid ? Date.now() : undefined,
+                          payoutNote: isNowPaid 
+                            ? (winner.payoutNote || 'Marked as paid by Admin Thomas Joe') 
+                            : winner.payoutNote
+                        });
+                      }}
+                      className={`px-3.5 py-2 rounded-xl text-xs font-black uppercase transition-all flex items-center gap-1.5 shadow-md cursor-pointer ${
+                        winner.payoutStatus === 'Paid'
+                          ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                          : 'bg-amber-500 hover:bg-yellow-400 text-zinc-950'
+                      }`}
+                    >
+                      {winner.payoutStatus === 'Paid' ? (
+                        <>
+                          <CheckCircle2 className="w-4 h-4 text-white" />
+                          <span>Marked Paid</span>
+                        </>
+                      ) : (
+                        <>
+                          <Clock className="w-4 h-4 text-zinc-950" />
+                          <span>Mark as Paid</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Payout Note Field */}
+                <div className="mt-3 pt-2.5 border-t border-zinc-800/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs">
+                  {editingId === winner.id ? (
+                    <div className="w-full flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={noteText}
+                        onChange={e => setNoteText(e.target.value)}
+                        placeholder="Add payout reference note / tx hash..."
+                        className="flex-1 px-3 py-1.5 rounded-lg bg-zinc-950 border border-zinc-700 text-xs text-zinc-200 focus:outline-none focus:border-purple-400"
+                      />
                       <button
-                        onClick={() => onUpdateWinner(winner.id, { 
-                          payoutStatus: winner.payoutStatus === 'Paid' ? 'Pending' : 'Paid',
-                          paidAt: winner.payoutStatus === 'Paid' ? undefined : Date.now()
-                        })}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase transition-all flex items-center gap-1.5 ${
-                          winner.payoutStatus === 'Paid'
-                            ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md'
-                            : 'bg-amber-600 hover:bg-amber-500 text-white shadow-md'
-                        }`}
+                        onClick={() => handleSaveNote(winner.id)}
+                        className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs cursor-pointer"
                       >
-                        {winner.payoutStatus === 'Paid' ? (
-                          <>
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            <span>Paid</span>
-                          </>
-                        ) : (
-                          <>
-                            <Clock className="w-3.5 h-3.5" />
-                            <span>Pending Payout</span>
-                          </>
-                        )}
+                        Save
                       </button>
+                      <button
+                        onClick={() => setEditingId(null)}
+                        className="px-2.5 py-1.5 rounded-lg bg-zinc-800 text-zinc-400 text-xs cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="text-zinc-400 flex items-center gap-1.5">
+                        <FileText className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+                        <span>
+                          {winner.payoutNote ? (
+                            <span className="text-zinc-300 font-mono text-[11px]">{winner.payoutNote}</span>
+                          ) : (
+                            <span className="text-zinc-600 italic">No transaction note added yet</span>
+                          )}
+                        </span>
+                      </div>
 
                       <button
                         onClick={() => {
                           setEditingId(winner.id);
                           setNoteText(winner.payoutNote || '');
                         }}
-                        title="Add/Edit Payout Note"
-                        className="p-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition-colors"
+                        className="text-[11px] font-bold text-purple-400 hover:text-purple-300 flex items-center gap-1 cursor-pointer"
                       >
-                        <Edit3 className="w-3.5 h-3.5" />
+                        <Edit3 className="w-3 h-3" />
+                        <span>{winner.payoutNote ? 'Edit Note' : 'Add Tx Note'}</span>
                       </button>
-                    </div>
-                  </div>
+                    </>
+                  )}
                 </div>
-
-                {/* Notes Display / Edit */}
-                {editingId === winner.id ? (
-                  <div className="mt-3 pt-3 border-t border-zinc-800 flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={noteText}
-                      onChange={e => setNoteText(e.target.value)}
-                      placeholder="e.g. Transferred $50 USDT to wallet. Tx: #123456"
-                      className="flex-1 px-3 py-1.5 rounded-xl bg-zinc-950 border border-zinc-700 text-xs text-zinc-200 focus:outline-none focus:border-purple-400"
-                    />
-                    <button
-                      onClick={() => handleSaveNote(winner.id)}
-                      className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold"
-                    >
-                      Save Note
-                    </button>
-                    <button
-                      onClick={() => setEditingId(null)}
-                      className="px-2 py-1.5 rounded-xl bg-zinc-800 text-zinc-400 text-xs"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                ) : winner.payoutNote ? (
-                  <div className="mt-2.5 pt-2 border-t border-zinc-800/80 text-xs text-zinc-400 flex items-center gap-2">
-                    <FileText className="w-3.5 h-3.5 text-purple-400 shrink-0" />
-                    <span className="italic">"{winner.payoutNote}"</span>
-                  </div>
-                ) : null}
               </div>
             ))
           )}
         </div>
 
         {/* Footer */}
-        <div className="p-3.5 border-t border-zinc-800/80 bg-zinc-900/60 flex items-center justify-between text-xs text-zinc-400">
+        <div className="p-3 sm:px-4 bg-zinc-900/60 border-t border-zinc-800/80 flex items-center justify-between text-xs text-zinc-400 shrink-0">
           <span className="text-[11px]">
-            Casino moderators manually reach out to daily winners via Discord or Telegram to process grand prizes.
+            Unpaid Winners: <strong className="text-amber-400 font-mono">{pendingWinners.length}</strong> | Paid: <strong className="text-emerald-400 font-mono">{paidWinners.length}</strong>
           </span>
+
           <button
             onClick={onClose}
-            className="px-4 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold transition-colors"
+            className="px-4 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold transition-colors cursor-pointer"
           >
             Close Portal
           </button>
