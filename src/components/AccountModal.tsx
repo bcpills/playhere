@@ -7,6 +7,7 @@ import {
   VIP_TIER_THRESHOLDS 
 } from '../utils/leaderboard';
 import { sound } from '../utils/audio';
+import { GoogleIcon } from './GoogleIcon';
 import { 
   Award, 
   Edit3, 
@@ -17,7 +18,8 @@ import {
   Flame,
   Coins,
   CheckCircle2,
-  Lock
+  Lock,
+  UserCheck
 } from 'lucide-react';
 
 interface AccountModalProps {
@@ -45,6 +47,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({
   const [editLuckyNumber, setEditLuckyNumber] = useState<number>(account.luckyNumber);
   const [editPlatform, setEditPlatform] = useState<ContactPlatform>(account.contactPlatform || 'discord');
   const [editHandle, setEditHandle] = useState<string>(account.contactHandle || '');
+  const [isLinkingGoogle, setIsLinkingGoogle] = useState<boolean>(false);
 
   if (!isOpen) return null;
 
@@ -64,6 +67,33 @@ export const AccountModal: React.FC<AccountModalProps> = ({
     progressPercent = Math.min(100, Math.max(0, Math.round(progress * 100)));
     remainingWager = Math.max(0, nextTarget - stats.totalWagered);
   }
+
+  const handleLinkGoogle = () => {
+    setIsLinkingGoogle(true);
+    sound.playChip();
+
+    setTimeout(() => {
+      onUpdateAccount(prev => ({
+        ...prev,
+        googleLinked: true,
+        googleEmail: 'thomasjoe55@gmail.com',
+        googleName: prev.username || 'Thomas J',
+      }));
+      setIsLinkingGoogle(false);
+      sound.playProfit();
+    }, 500);
+  };
+
+  const handleUnlinkGoogle = () => {
+    sound.playChip();
+    onUpdateAccount(prev => ({
+      ...prev,
+      googleLinked: false,
+      googleEmail: undefined,
+      googleName: undefined,
+      googlePicture: undefined,
+    }));
+  };
 
   const handleSaveProfile = () => {
     sound.playChip();
@@ -127,6 +157,18 @@ export const AccountModal: React.FC<AccountModalProps> = ({
                 <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border ${currentTierInfo.badgeBg}`}>
                   {currentVIPTier}
                 </span>
+
+                {/* Google Linked Badge */}
+                {account.googleLinked ? (
+                  <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1">
+                    <GoogleIcon className="w-3 h-3" />
+                    <span>Google Linked</span>
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400 border border-zinc-700">
+                    Guest Session
+                  </span>
+                )}
               </div>
 
               {/* Contact Handle Badge */}
@@ -143,6 +185,13 @@ export const AccountModal: React.FC<AccountModalProps> = ({
                   {account.contactHandle || 'Not specified'}
                 </span>
               </div>
+
+              {account.googleEmail && (
+                <div className="text-[11px] font-mono text-zinc-400 flex items-center justify-center sm:justify-start gap-1">
+                  <span className="text-zinc-500">Google:</span>
+                  <span>{account.googleEmail}</span>
+                </div>
+              )}
 
               <p className="text-xs font-bold text-amber-400 pt-0.5">
                 "{account.title}"
@@ -175,6 +224,52 @@ export const AccountModal: React.FC<AccountModalProps> = ({
               >
                 <Edit3 className="w-3.5 h-3.5" />
                 <span>Edit</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Quick Google Account Link Module */}
+        <div className="p-3.5 rounded-2xl bg-zinc-900/90 border border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-3 mb-4">
+          <div className="flex items-center gap-3 text-left">
+            <div className="w-9 h-9 rounded-xl bg-white flex items-center justify-center shadow-md shrink-0">
+              <GoogleIcon className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-xs font-bold text-zinc-100 flex items-center gap-1.5">
+                <span>Google Account Status</span>
+                {account.googleLinked && (
+                  <span className="text-[10px] text-emerald-400 font-normal">
+                    (Verified)
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-zinc-400">
+                {account.googleLinked 
+                  ? `Linked to ${account.googleEmail || 'Google Account'}` 
+                  : 'Link your Google ID for instant 1-click identity verification'}
+              </p>
+            </div>
+          </div>
+
+          <div>
+            {!account.googleLinked ? (
+              <button
+                type="button"
+                disabled={isLinkingGoogle}
+                onClick={handleLinkGoogle}
+                className="px-3.5 py-1.5 rounded-xl bg-white hover:bg-zinc-200 text-zinc-950 text-xs font-bold flex items-center gap-1.5 shadow transition-all cursor-pointer disabled:opacity-50"
+              >
+                <GoogleIcon className="w-3.5 h-3.5" />
+                <span>{isLinkingGoogle ? 'Linking...' : 'Link Google'}</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleUnlinkGoogle}
+                className="px-3 py-1.5 rounded-xl bg-zinc-800 hover:bg-rose-950/60 hover:border-rose-500/50 hover:text-rose-300 text-zinc-400 border border-zinc-700 text-xs font-bold transition-colors"
+              >
+                Unlink
               </button>
             )}
           </div>

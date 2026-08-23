@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { GameTab, CasinoStats, InventoryItem, UserAccount, DailyWinnerRecord } from '../types';
+import { GoogleIcon } from './GoogleIcon';
 import { 
   Spade, 
   Dices, 
@@ -95,6 +96,13 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
                 <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border ${tierInfo.badgeBg}`}>
                   {vipTier}
                 </span>
+
+                {userAccount.googleLinked && (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1">
+                    <GoogleIcon className="w-2.5 h-2.5" />
+                    <span>Google Verified</span>
+                  </span>
+                )}
 
                 {userAccount.contactHandle && (
                   <span className={`text-[10px] font-mono px-2 py-0.2 rounded flex items-center gap-1 ${

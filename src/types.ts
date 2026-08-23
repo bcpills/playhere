@@ -127,6 +127,10 @@ export interface UserAccount {
   lastDailyClaim: number;
   lastActiveEstDate: string; // YYYY-MM-DD in EST
   peakBalanceAllTime: number; // Highest chip count reached
+  googleLinked?: boolean;
+  googleEmail?: string;
+  googleName?: string;
+  googlePicture?: string;
 }
 
 export type LeaderboardCategory = 'profit' | 'multiplier' | 'volume' | 'vault';

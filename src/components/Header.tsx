@@ -1,5 +1,6 @@
 import React from 'react';
 import { GameTab, UserAccount } from '../types';
+import { GoogleIcon } from './GoogleIcon';
 import { 
   Home,
   Spade, 
@@ -90,12 +91,19 @@ export const Header: React.FC<HeaderProps> = ({
                 sound.playChip();
                 onOpenAccount();
               }}
-              title="Gambler VIP Profile & Daily Bonus"
+              title="Gambler VIP Profile & Google Account"
               className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-200 transition-colors text-xs font-bold shadow-inner"
             >
-              <span className="text-sm">{userAccount.avatar}</span>
+              <div className="relative">
+                <span className="text-sm">{userAccount.avatar}</span>
+                {userAccount.googleLinked && (
+                  <div className="absolute -bottom-1 -right-1 w-3 h-3 rounded-full bg-zinc-950 flex items-center justify-center p-0.5 border border-zinc-700">
+                    <GoogleIcon className="w-2.5 h-2.5" />
+                  </div>
+                )}
+              </div>
               <span className="hidden sm:inline text-[11px] font-black truncate max-w-[80px]">
-                {userAccount.username}
+                {userAccount.username || 'Gambler'}
               </span>
             </button>
 
