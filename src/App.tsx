@@ -264,6 +264,25 @@ export default function App() {
     }));
   };
 
+  // Sign Out Handler
+  const handleSignOut = () => {
+    // Reset account registration state so the user can switch or sign in with another identity
+    setUserAccount(prev => ({
+      ...DEFAULT_USER_ACCOUNT,
+      username: '',
+      contactHandle: '',
+      isRegistered: false,
+      googleLinked: false,
+      googleEmail: undefined,
+      googleName: undefined,
+      googlePicture: undefined,
+    }));
+    // Reset session balance to starting 1000 chips
+    setBalance(1000);
+    setAtmHistory([]);
+    sound.playChip();
+  };
+
   // Moderator update winner
   const handleUpdateWinner = (winnerId: string, updates: Partial<DailyWinnerRecord>) => {
     setDailyWinners(prev => prev.map(w => w.id === winnerId ? { ...w, ...updates } : w));
@@ -361,14 +380,18 @@ export default function App() {
         initialAccount={userAccount}
       />
 
-      {/* Profile & Settings Modal */}
+      {/* Profile, Google Security & Session Account Panel */}
       <AccountModal
         isOpen={isAccountOpen}
         onClose={() => setIsAccountOpen(false)}
         account={userAccount}
         stats={stats}
         balance={balance}
+        inventoryCount={inventory.length}
         onUpdateAccount={setUserAccount}
+        onSignOut={handleSignOut}
+        onOpenStats={() => setIsStatsOpen(true)}
+        onOpenRules={() => setIsRulesOpen(true)}
       />
 
       {/* ATM of Shame Modal */}
