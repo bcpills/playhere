@@ -207,21 +207,8 @@ export const DailyLeaderboard: React.FC<DailyLeaderboardProps> = ({
                   </span>
                 </div>
 
-                {/* Contact Handle */}
+                {/* Winner info */}
                 <div className="flex items-center gap-2 mt-1">
-                  <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded flex items-center gap-1 ${
-                    yesterdayWinner.contactPlatform === 'discord'
-                      ? 'bg-[#5865F2]/20 text-indigo-300 border border-[#5865F2]/40'
-                      : 'bg-[#229ED9]/20 text-sky-300 border border-[#229ED9]/40'
-                  }`}>
-                    {yesterdayWinner.contactPlatform === 'discord' ? <MessageSquare className="w-3 h-3" /> : <Send className="w-3 h-3" />}
-                    <span>{yesterdayWinner.contactPlatform}</span>
-                  </span>
-
-                  <span className="text-xs font-mono font-bold text-zinc-300">
-                    {yesterdayWinner.contactHandle}
-                  </span>
-
                   <span className={`text-[10px] px-2 py-0.5 rounded font-black uppercase ${
                     yesterdayWinner.payoutStatus === 'Paid'
                       ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
@@ -229,6 +216,11 @@ export const DailyLeaderboard: React.FC<DailyLeaderboardProps> = ({
                   }`}>
                     {yesterdayWinner.payoutStatus === 'Paid' ? '✓ Payout Sent' : '⏳ Payout Pending'}
                   </span>
+                  {isAdmin && (
+                    <span className="text-[10px] text-zinc-400 font-mono">
+                      ({yesterdayWinner.contactPlatform}: {yesterdayWinner.contactHandle})
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -348,11 +340,6 @@ export const DailyLeaderboard: React.FC<DailyLeaderboardProps> = ({
                     <span className="text-[9px] px-2 py-0.2 rounded-full font-black uppercase bg-amber-500 text-zinc-950">
                       YOU
                     </span>
-                    {userAccount.contactHandle && (
-                      <span className="text-[10px] text-zinc-400 font-mono">
-                        ({userAccount.contactPlatform}: {userAccount.contactHandle})
-                      </span>
-                    )}
                   </div>
                   <span className="text-xs text-zinc-400">
                     Your Current Standings: <strong className="text-amber-300 font-mono">{userDailyRank.formattedScore}</strong>
@@ -399,11 +386,6 @@ export const DailyLeaderboard: React.FC<DailyLeaderboardProps> = ({
                   <div className="text-base font-mono font-black text-amber-300">
                     {top3Daily[1].formattedScore}
                   </div>
-                  {top3Daily[1].contactHandle && (
-                    <div className="text-[10px] text-zinc-500 font-mono mt-1">
-                      {top3Daily[1].contactPlatform}: {top3Daily[1].contactHandle}
-                    </div>
-                  )}
                 </div>
               </div>
             )}
@@ -435,11 +417,6 @@ export const DailyLeaderboard: React.FC<DailyLeaderboardProps> = ({
                   <div className="text-lg font-mono font-black text-amber-300">
                     {top3Daily[0].formattedScore}
                   </div>
-                  {top3Daily[0].contactHandle && (
-                    <div className="text-[10px] text-amber-400/80 font-mono mt-1">
-                      {top3Daily[0].contactPlatform}: {top3Daily[0].contactHandle}
-                    </div>
-                  )}
                   <div className="text-xs font-black text-emerald-400 mt-1">
                     👑 Crowns at 12:00 AM EST
                   </div>
@@ -473,11 +450,6 @@ export const DailyLeaderboard: React.FC<DailyLeaderboardProps> = ({
                   <div className="text-base font-mono font-black text-amber-300">
                     {top3Daily[2].formattedScore}
                   </div>
-                  {top3Daily[2].contactHandle && (
-                    <div className="text-[10px] text-zinc-500 font-mono mt-1">
-                      {top3Daily[2].contactPlatform}: {top3Daily[2].contactHandle}
-                    </div>
-                  )}
                 </div>
               </div>
             )}
@@ -533,11 +505,6 @@ export const DailyLeaderboard: React.FC<DailyLeaderboardProps> = ({
                           {entry.isUser && (
                             <span className="text-[9px] font-black uppercase px-1.5 py-0.2 rounded bg-amber-500 text-zinc-950">
                               YOU
-                            </span>
-                          )}
-                          {entry.contactHandle && (
-                            <span className="text-[10px] text-zinc-500 font-mono hidden sm:inline">
-                              @{entry.contactHandle}
                             </span>
                           )}
                         </div>
@@ -625,13 +592,6 @@ export const DailyLeaderboard: React.FC<DailyLeaderboardProps> = ({
                               YOU
                             </span>
                           )}
-                          <span className={`text-[9px] font-black uppercase px-1.5 py-0.2 rounded flex items-center gap-1 ${
-                            record.contactPlatform === 'discord'
-                              ? 'bg-[#5865F2]/20 text-indigo-300'
-                              : 'bg-[#229ED9]/20 text-sky-300'
-                          }`}>
-                            {record.contactPlatform === 'discord' ? 'Discord' : 'Telegram'}
-                          </span>
                         </div>
 
                         <div className="flex items-center gap-2 text-[10px] text-zinc-500 mt-0.5">
@@ -646,9 +606,6 @@ export const DailyLeaderboard: React.FC<DailyLeaderboardProps> = ({
                     <div className="text-right">
                       <div className="text-sm sm:text-base font-mono font-black text-amber-300">
                         {record.formattedScore} Chips
-                      </div>
-                      <div className="text-[10px] text-zinc-500 font-mono">
-                        {record.contactHandle}
                       </div>
                     </div>
                   </div>

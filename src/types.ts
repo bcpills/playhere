@@ -168,6 +168,19 @@ export interface DailyWinnerRecord {
   isUser?: boolean;
 }
 
+export interface FakePlayer {
+  id: string;
+  username: string;
+  avatar: string;
+  contactPlatform: ContactPlatform;
+  contactHandle: string;
+  vipTier: VIPTier;
+  balance: number;
+  baseMultiplier: number;
+  baseVolume: number;
+  baseVault: number;
+}
+
 export interface AllTimePeakRecord {
   id: string;
   rank: number;
@@ -191,12 +204,14 @@ export interface ChatMessage {
   text: string;
   timestamp: number;
   badge?: string;
-  type?: 'chat' | 'system' | 'jackpot' | 'mod_action';
+  type?: 'chat' | 'system' | 'jackpot' | 'mod_action' | 'rain';
   contactPlatform?: ContactPlatform;
   contactHandle?: string;
   balance?: number;
   isUser?: boolean;
   isAdmin?: boolean;
+  rainAmount?: number;
+  rainRecipients?: number;
 }
 
 export interface PlayerProfileData {

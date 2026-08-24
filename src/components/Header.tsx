@@ -97,8 +97,8 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           </div>
 
-          {/* Actions & Balance */}
-          <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* Actions & Balance (Scrollable by swiping on mobile) */}
+          <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar shrink-0 max-w-[68%] sm:max-w-none py-0.5">
             {/* ADMIN-ONLY PENDING PAYOUTS BUTTON */}
             {isAdmin && (
               <button
@@ -108,7 +108,7 @@ export const Header: React.FC<HeaderProps> = ({
                   onOpenPendingPayouts();
                 }}
                 title="Admin Pending Payouts Portal (Thomas Joe)"
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-purple-950/90 hover:bg-purple-900 border border-purple-500/60 text-purple-200 text-xs font-black uppercase tracking-wider transition-all shadow-md animate-in fade-in"
+                className="shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-purple-950/90 hover:bg-purple-900 border border-purple-500/60 text-purple-200 text-xs font-black uppercase tracking-wider transition-all shadow-md animate-in fade-in"
               >
                 <ShieldCheck className="w-3.5 h-3.5 text-purple-400 shrink-0" />
                 <span className="hidden md:inline text-[11px]">Pending Payouts</span>
@@ -128,7 +128,7 @@ export const Header: React.FC<HeaderProps> = ({
                 onToggleChat();
               }}
               title="Open Casino Lounge Chat"
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-xs font-black uppercase transition-all ${
+              className={`shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-xs font-black uppercase transition-all ${
                 isChatOpen
                   ? 'bg-amber-500 text-zinc-950 border-amber-400 shadow-md'
                   : 'bg-zinc-900 hover:bg-zinc-800 border-zinc-700 text-zinc-200 shadow-inner'
@@ -148,7 +148,7 @@ export const Header: React.FC<HeaderProps> = ({
                 onOpenAccount();
               }}
               title="Gambler VIP Profile & Account"
-              className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-200 transition-colors text-xs font-bold shadow-inner"
+              className="shrink-0 flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-200 transition-colors text-xs font-bold shadow-inner"
             >
               <div className="relative">
                 <span className="text-sm">{userAccount.avatar}</span>
@@ -164,7 +164,7 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
 
             {/* Balance Pill */}
-            <div className="flex items-center gap-1.5 px-2 sm:px-3 py-1 rounded-xl bg-zinc-900 border border-zinc-700 shadow-inner">
+            <div className="shrink-0 flex items-center gap-1.5 px-2 sm:px-3 py-1 rounded-xl bg-zinc-900 border border-zinc-700 shadow-inner">
               <span className="text-xs">🪙</span>
               <div className="flex flex-col text-right">
                 <span className="text-[8px] uppercase font-bold text-zinc-400 tracking-wider hidden sm:block">
@@ -184,7 +184,7 @@ export const Header: React.FC<HeaderProps> = ({
                 onOpenBailout();
               }}
               title="Emergency ATM Bailout"
-              className="p-1.5 sm:px-2.5 sm:py-1 rounded-xl bg-red-950/70 hover:bg-red-900 border border-red-500/50 text-red-300 text-xs font-bold flex items-center gap-1 transition-all shadow-sm"
+              className="shrink-0 p-1.5 sm:px-2.5 sm:py-1 rounded-xl bg-red-950/70 hover:bg-red-900 border border-red-500/50 text-red-300 text-xs font-bold flex items-center gap-1 transition-all shadow-sm"
             >
               <ShieldAlert className="w-3.5 h-3.5 text-red-400 shrink-0" />
               <span className="hidden sm:inline text-[11px]">ATM</span>
@@ -197,7 +197,7 @@ export const Header: React.FC<HeaderProps> = ({
                 onOpenStats();
               }}
               title="Career Dossier"
-              className="p-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300 transition-colors"
+              className="shrink-0 p-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300 transition-colors"
             >
               <BarChart2 className="w-3.5 h-3.5" />
             </button>
@@ -209,7 +209,7 @@ export const Header: React.FC<HeaderProps> = ({
                 onOpenRules();
               }}
               title="Rules & Paytables"
-              className="p-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300 transition-colors"
+              className="shrink-0 p-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300 transition-colors"
             >
               <HelpCircle className="w-3.5 h-3.5" />
             </button>
@@ -221,7 +221,7 @@ export const Header: React.FC<HeaderProps> = ({
                 sound.playChip();
               }}
               title={soundEnabled ? 'Mute SFX' : 'Enable SFX'}
-              className="p-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300 transition-colors"
+              className="shrink-0 p-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300 transition-colors"
             >
               {soundEnabled ? <Volume2 className="w-3.5 h-3.5 text-emerald-400" /> : <VolumeX className="w-3.5 h-3.5 text-zinc-500" />}
             </button>

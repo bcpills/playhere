@@ -7,7 +7,8 @@ import {
   VIPTier, 
   DailyWinnerRecord, 
   AllTimePeakRecord,
-  ContactPlatform 
+  ContactPlatform,
+  FakePlayer
 } from '../types';
 import { 
   getCurrentEstDateString, 
@@ -60,57 +61,82 @@ export const DEFAULT_USER_ACCOUNT: UserAccount = {
   peakBalanceAllTime: 1000,
 };
 
-// Seeded competitors for the live daily tournament
-interface BaseCompetitor {
-  id: string;
-  username: string;
-  avatar: string;
-  contactPlatform: ContactPlatform;
-  contactHandle: string;
-  vipTier: VIPTier;
-  baseProfit: number;
-  baseMultiplier: number;
-  baseVolume: number;
-  baseVault: number;
-}
-
-const COMPETITORS: BaseCompetitor[] = [
-  { id: 'bot-1', username: 'Vegas_Viper', avatar: '🦈', contactPlatform: 'telegram', contactHandle: '@vegasviper_vip', vipTier: 'Whale of the Lounge', baseProfit: 14200, baseMultiplier: 1000, baseVolume: 85000, baseVault: 78000 },
-  { id: 'bot-2', username: 'CardCounter_Dan', avatar: '🃏', contactPlatform: 'discord', contactHandle: 'CardCounter#8821', vipTier: 'Platinum Shark', baseProfit: 9850, baseMultiplier: 250, baseVolume: 42000, baseVault: 34000 },
-  { id: 'bot-3', username: 'CryptoWhale_420', avatar: '🚀', contactPlatform: 'telegram', contactHandle: '@cryptowhale420', vipTier: 'Diamond High-Roller', baseProfit: 7600, baseMultiplier: 600, baseVolume: 120000, baseVault: 185000 },
-  { id: 'bot-4', username: 'LuckyLucy77', avatar: '🦁', contactPlatform: 'discord', contactHandle: 'LuckyLucy#7777', vipTier: 'Gold Regular', baseProfit: 4500, baseMultiplier: 1500, baseVolume: 22000, baseVault: 19500 },
-  { id: 'bot-5', username: 'MonteCarloMax', avatar: '🎩', contactPlatform: 'telegram', contactHandle: '@montecarlo_max', vipTier: 'Platinum Shark', baseProfit: 3200, baseMultiplier: 80, baseVolume: 31000, baseVault: 45000 },
-  { id: 'bot-6', username: 'Degen_Ape_007', avatar: '🦍', contactPlatform: 'discord', contactHandle: 'Ape007#0007', vipTier: 'Diamond High-Roller', baseProfit: 2100, baseMultiplier: 200, baseVolume: 65000, baseVault: 52000 },
-  { id: 'bot-7', username: 'HighStakesHannah', avatar: '💎', contactPlatform: 'telegram', contactHandle: '@hannah_stakes', vipTier: 'Silver Grinder', baseProfit: 1450, baseMultiplier: 120, baseVolume: 14000, baseVault: 8500 },
-  { id: 'bot-8', username: 'RedSevenRider', avatar: '🎰', contactPlatform: 'discord', contactHandle: 'RedSeven#4499', vipTier: 'Gold Regular', baseProfit: 800, baseMultiplier: 45, baseVolume: 9500, baseVault: 12000 },
-  { id: 'bot-9', username: 'PitBossSlayer', avatar: '🐺', contactPlatform: 'telegram', contactHandle: '@pitboss_slayer', vipTier: 'Silver Grinder', baseProfit: 350, baseMultiplier: 30, baseVolume: 6800, baseVault: 4200 },
-  { id: 'bot-10', username: 'SlotSmasher99', avatar: '⚡', contactPlatform: 'discord', contactHandle: 'SlotSmasher#9912', vipTier: 'Bronze Degen', baseProfit: -450, baseMultiplier: 15, baseVolume: 3200, baseVault: 1500 },
+// ONLY 3 fake players allowed: fakeplayer1, fakeplayer2, fakeplayer3.
+// None of them are placed above 500 balance unless manually adjusted by admin.
+export const INITIAL_FAKE_PLAYERS: FakePlayer[] = [
+  {
+    id: 'fakeplayer1',
+    username: 'fakeplayer1',
+    avatar: '🎲',
+    contactPlatform: 'discord',
+    contactHandle: 'fakeplayer1#0001',
+    vipTier: 'Bronze Degen',
+    balance: 320,
+    baseMultiplier: 12,
+    baseVolume: 650,
+    baseVault: 150,
+  },
+  {
+    id: 'fakeplayer2',
+    username: 'fakeplayer2',
+    avatar: '🦈',
+    contactPlatform: 'telegram',
+    contactHandle: '@fakeplayer2',
+    vipTier: 'Bronze Degen',
+    balance: 450,
+    baseMultiplier: 24,
+    baseVolume: 890,
+    baseVault: 210,
+  },
+  {
+    id: 'fakeplayer3',
+    username: 'fakeplayer3',
+    avatar: '🎰',
+    contactPlatform: 'discord',
+    contactHandle: 'fakeplayer3#0003',
+    vipTier: 'Bronze Degen',
+    balance: 180,
+    baseMultiplier: 8,
+    baseVolume: 380,
+    baseVault: 80,
+  },
 ];
 
+const FAKE_PLAYERS_STORAGE_KEY = 'freebiesonly_fake_players';
+
+export function loadStoredFakePlayers(): FakePlayer[] {
+  try {
+    const raw = localStorage.getItem(FAKE_PLAYERS_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        // Ensure only fakeplayer1, fakeplayer2, fakeplayer3 exist
+        const validIds = new Set(['fakeplayer1', 'fakeplayer2', 'fakeplayer3']);
+        const filtered = parsed.filter(p => validIds.has(p.id));
+        if (filtered.length === 3) return filtered;
+      }
+    }
+  } catch (e) {
+    console.error('Error loading fake players:', e);
+  }
+  return INITIAL_FAKE_PLAYERS;
+}
+
+export function saveStoredFakePlayers(players: FakePlayer[]): void {
+  try {
+    localStorage.setItem(FAKE_PLAYERS_STORAGE_KEY, JSON.stringify(players));
+  } catch (e) {
+    console.error('Error saving fake players:', e);
+  }
+}
+
 /**
- * Top 20 All-Time Chip Peak Records (Hall of Fame)
+ * Top All-Time Chip Peak Records (Hall of Fame)
  */
 export const INITIAL_ALL_TIME_PEAKS: AllTimePeakRecord[] = [
-  { id: 'peak-1', rank: 1, username: 'Satoshi_Rolls', avatar: '👑', contactPlatform: 'telegram', contactHandle: '@satoshi_rolls', vipTier: 'Sovereign Degenerate', peakChips: 458900, formattedScore: '458,900', dateAchieved: '2026-07-14' },
-  { id: 'peak-2', rank: 2, username: 'WhaleKing_NY', avatar: '🦈', contactPlatform: 'discord', contactHandle: 'WhaleKing#0001', vipTier: 'Whale of the Lounge', peakChips: 321450, formattedScore: '321,450', dateAchieved: '2026-08-02' },
-  { id: 'peak-3', rank: 3, username: 'ApexPredator_77', avatar: '🦁', contactPlatform: 'telegram', contactHandle: '@apex_degen77', vipTier: 'Whale of the Lounge', peakChips: 289100, formattedScore: '289,100', dateAchieved: '2026-07-29' },
-  { id: 'peak-4', rank: 4, username: 'DiamondHands_Bro', avatar: '💎', contactPlatform: 'discord', contactHandle: 'DiamondBro#4420', vipTier: 'Diamond High-Roller', peakChips: 215000, formattedScore: '215,000', dateAchieved: '2026-08-11' },
-  { id: 'peak-5', rank: 5, username: 'BlackjackGod', avatar: '🃏', contactPlatform: 'telegram', contactHandle: '@blackjack_god', vipTier: 'Diamond High-Roller', peakChips: 198400, formattedScore: '198,400', dateAchieved: '2026-08-15' },
-  { id: 'peak-6', rank: 6, username: 'KenoLegend_Alex', avatar: '🎲', contactPlatform: 'discord', contactHandle: 'AlexKeno#1337', vipTier: 'Platinum Shark', peakChips: 174200, formattedScore: '174,200', dateAchieved: '2026-08-05' },
-  { id: 'peak-7', rank: 7, username: 'Vegas_Viper', avatar: '🦈', contactPlatform: 'telegram', contactHandle: '@vegasviper_vip', vipTier: 'Whale of the Lounge', peakChips: 156300, formattedScore: '156,300', dateAchieved: '2026-08-19' },
-  { id: 'peak-8', rank: 8, username: 'CrateKingPin', avatar: '🍾', contactPlatform: 'discord', contactHandle: 'KingPin#9021', vipTier: 'Platinum Shark', peakChips: 142800, formattedScore: '142,800', dateAchieved: '2026-07-30' },
-  { id: 'peak-9', rank: 9, username: 'RocketRider_X', avatar: '🚀', contactPlatform: 'telegram', contactHandle: '@rocketrider_x', vipTier: 'Platinum Shark', peakChips: 129500, formattedScore: '129,500', dateAchieved: '2026-08-08' },
-  { id: 'peak-10', rank: 10, username: 'HighRollin_Mia', avatar: '👑', contactPlatform: 'discord', contactHandle: 'MiaStakes#5512', vipTier: 'Platinum Shark', peakChips: 118400, formattedScore: '118,400', dateAchieved: '2026-08-12' },
-  { id: 'peak-11', rank: 11, username: 'CasinoCrusher_01', avatar: '⚡', contactPlatform: 'telegram', contactHandle: '@casinocrusher', vipTier: 'Gold Regular', peakChips: 98700, formattedScore: '98,700', dateAchieved: '2026-08-01' },
-  { id: 'peak-12', rank: 12, username: 'SilkRoadGambler', avatar: '🏴‍☠️', contactPlatform: 'discord', contactHandle: 'SilkGambler#3030', vipTier: 'Gold Regular', peakChips: 88500, formattedScore: '88,500', dateAchieved: '2026-08-14' },
-  { id: 'peak-13', rank: 13, username: 'TwentyOneMaster', avatar: '🎩', contactPlatform: 'telegram', contactHandle: '@twentyone_master', vipTier: 'Gold Regular', peakChips: 79200, formattedScore: '79,200', dateAchieved: '2026-07-22' },
-  { id: 'peak-14', rank: 14, username: 'Degen_Ape_007', avatar: '🦍', contactPlatform: 'discord', contactHandle: 'Ape007#0007', vipTier: 'Gold Regular', peakChips: 74600, formattedScore: '74,600', dateAchieved: '2026-08-17' },
-  { id: 'peak-15', rank: 15, username: 'PitBossBuster', avatar: '🐺', contactPlatform: 'telegram', contactHandle: '@pitbossbuster', vipTier: 'Gold Regular', peakChips: 68300, formattedScore: '68,300', dateAchieved: '2026-08-10' },
-  { id: 'peak-16', rank: 16, username: 'LuckyLucy77', avatar: '🦁', contactPlatform: 'discord', contactHandle: 'LuckyLucy#7777', vipTier: 'Gold Regular', peakChips: 63100, formattedScore: '63,100', dateAchieved: '2026-08-04' },
-  { id: 'peak-17', rank: 17, username: 'CardCounter_Dan', avatar: '🃏', contactPlatform: 'discord', contactHandle: 'CardCounter#8821', vipTier: 'Silver Grinder', peakChips: 58900, formattedScore: '58,900', dateAchieved: '2026-08-18' },
-  { id: 'peak-18', rank: 18, username: 'CryptoWhale_420', avatar: '🚀', contactPlatform: 'telegram', contactHandle: '@cryptowhale420', vipTier: 'Silver Grinder', peakChips: 54200, formattedScore: '54,200', dateAchieved: '2026-08-16' },
-  { id: 'peak-19', rank: 19, username: 'ShadesOfLuck', avatar: '🕶️', contactPlatform: 'telegram', contactHandle: '@shadesofluck', vipTier: 'Silver Grinder', peakChips: 49800, formattedScore: '49,800', dateAchieved: '2026-08-20' },
-  { id: 'peak-20', rank: 20, username: 'GoldenPoopBaron', avatar: '💩', contactPlatform: 'discord', contactHandle: 'PoopBaron#9999', vipTier: 'Silver Grinder', peakChips: 46200, formattedScore: '46,200', dateAchieved: '2026-08-21' },
+  { id: 'peak-1', rank: 1, username: 'fakeplayer2', avatar: '🦈', contactPlatform: 'telegram', contactHandle: '@fakeplayer2', vipTier: 'Bronze Degen', peakChips: 490, formattedScore: '490', dateAchieved: '2026-08-20' },
+  { id: 'peak-2', rank: 2, username: 'fakeplayer1', avatar: '🎲', contactPlatform: 'discord', contactHandle: 'fakeplayer1#0001', vipTier: 'Bronze Degen', peakChips: 420, formattedScore: '420', dateAchieved: '2026-08-19' },
+  { id: 'peak-3', rank: 3, username: 'fakeplayer3', avatar: '🎰', contactPlatform: 'discord', contactHandle: 'fakeplayer3#0003', vipTier: 'Bronze Degen', peakChips: 350, formattedScore: '350', dateAchieved: '2026-08-18' },
 ];
 
 /**
@@ -132,13 +158,13 @@ export const INITIAL_DAILY_WINNERS: DailyWinnerRecord[] = [
     id: 'win-2026-08-22',
     dateEst: getYesterdayEstDateString(),
     formattedDate: formatEstDateFriendly(getYesterdayEstDateString()),
-    username: 'ApexPredator_77',
-    avatar: '🦁',
-    vipTier: 'Whale of the Lounge',
+    username: 'fakeplayer2',
+    avatar: '🦈',
+    vipTier: 'Bronze Degen',
     contactPlatform: 'telegram',
-    contactHandle: '@apex_degen77',
-    winningChips: 48900,
-    formattedScore: '48,900 Chips',
+    contactHandle: '@fakeplayer2',
+    winningChips: 450,
+    formattedScore: '450 Chips',
     payoutStatus: 'Pending',
     payoutNote: 'Awaiting wallet address confirmation on Telegram.',
   },
@@ -146,60 +172,16 @@ export const INITIAL_DAILY_WINNERS: DailyWinnerRecord[] = [
     id: 'win-2026-08-21',
     dateEst: '2026-08-21',
     formattedDate: 'Aug 21, 2026',
-    username: 'LuckyLucy77',
-    avatar: '🦁',
-    vipTier: 'Gold Regular',
+    username: 'fakeplayer1',
+    avatar: '🎲',
+    vipTier: 'Bronze Degen',
     contactPlatform: 'discord',
-    contactHandle: 'LuckyLucy#7777',
-    winningChips: 37400,
-    formattedScore: '37,400 Chips',
-    payoutStatus: 'Pending',
-    payoutNote: 'Claim ticket opened in Discord. Payout in progress.',
-  },
-  {
-    id: 'win-2026-08-20',
-    dateEst: '2026-08-20',
-    formattedDate: 'Aug 20, 2026',
-    username: 'Vegas_Viper',
-    avatar: '🦈',
-    vipTier: 'Whale of the Lounge',
-    contactPlatform: 'telegram',
-    contactHandle: '@vegasviper_vip',
-    winningChips: 34850,
-    formattedScore: '34,850 Chips',
+    contactHandle: 'fakeplayer1#0001',
+    winningChips: 390,
+    formattedScore: '390 Chips',
     payoutStatus: 'Paid',
-    payoutNote: 'Manual payout transferred via Telegram wallet. Tx: #TX-88214',
-    paidAt: Date.now() - 3600000 * 28,
-  },
-  {
-    id: 'win-2026-08-19',
-    dateEst: '2026-08-19',
-    formattedDate: 'Aug 19, 2026',
-    username: 'CardCounter_Dan',
-    avatar: '🃏',
-    vipTier: 'Platinum Shark',
-    contactPlatform: 'discord',
-    contactHandle: 'CardCounter#8821',
-    winningChips: 28400,
-    formattedScore: '28,400 Chips',
-    payoutStatus: 'Paid',
-    payoutNote: 'Claimed via Discord mod ticket. Payout confirmed.',
-    paidAt: Date.now() - 86400000 * 2,
-  },
-  {
-    id: 'win-2026-08-18',
-    dateEst: '2026-08-18',
-    formattedDate: 'Aug 18, 2026',
-    username: 'CryptoWhale_420',
-    avatar: '🚀',
-    vipTier: 'Diamond High-Roller',
-    contactPlatform: 'telegram',
-    contactHandle: '@cryptowhale420',
-    winningChips: 41200,
-    formattedScore: '41,200 Chips',
-    payoutStatus: 'Paid',
-    payoutNote: 'Paid manually by server owner.',
-    paidAt: Date.now() - 86400000 * 3,
+    payoutNote: 'Claim ticket paid out via Discord.',
+    paidAt: Date.now() - 86400000,
   },
 ];
 
@@ -220,17 +202,18 @@ export function getDailyLeaderboard(
   userAccount: UserAccount,
   stats: CasinoStats,
   inventory: InventoryItem[],
-  currentBalance: number
+  currentBalance: number,
+  customFakePlayers?: FakePlayer[]
 ): LeaderboardEntry[] {
   const userVIPTier = getVIPTier(stats.totalWagered);
   const userVaultVal = inventory.reduce((sum, item) => sum + item.item.value, 0);
+  const fakePlayersList = customFakePlayers || loadStoredFakePlayers();
 
   // User Score for Category
   let userScore = 0;
   let userFormattedScore = '0';
 
   if (category === 'profit') {
-    // Current day net chips (Balance + Inventory - 1000 starting bankroll)
     userScore = Math.max(0, currentBalance + userVaultVal);
     userFormattedScore = `${userScore.toLocaleString()} Chips`;
   } else if (category === 'multiplier') {
@@ -258,13 +241,13 @@ export function getDailyLeaderboard(
     isUser: true,
   };
 
-  // Build competitors entries
-  const competitorsEntries: LeaderboardEntry[] = COMPETITORS.map(comp => {
+  // Build fake players entries (only fakeplayer1, fakeplayer2, fakeplayer3)
+  const competitorsEntries: LeaderboardEntry[] = fakePlayersList.map(comp => {
     let score = 0;
     let formattedScore = '';
 
     if (category === 'profit') {
-      score = comp.baseProfit;
+      score = comp.balance;
       formattedScore = `${score.toLocaleString()} Chips`;
     } else if (category === 'multiplier') {
       score = comp.baseMultiplier;
@@ -334,7 +317,6 @@ export function updateAllTimePeaksWithUser(
 
   const combined = [...nonUserPeaks, userCandidate].sort((a, b) => b.peakChips - a.peakChips);
   
-  // Return top 20 sliced
   return combined.slice(0, 20).map((record, index) => ({
     ...record,
     rank: index + 1,

@@ -452,6 +452,7 @@ export default function App() {
         onInspectPlayer={handleInspectPlayer}
         externalMessages={chatMessages}
         onSendMessage={(msg) => setChatMessages(prev => [...prev, msg])}
+        onUpdateBalance={handleUpdateBalance}
       />
 
       {/* Player Profile Inspection & Admin Balance Reset Modal */}
