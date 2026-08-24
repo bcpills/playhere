@@ -44,6 +44,7 @@ interface DailyLeaderboardProps {
   allTimePeaks: AllTimePeakRecord[];
   onOpenAccount: () => void;
   onOpenModeratorLog: () => void;
+  onOpenPayForAdFree?: () => void;
   onInspectPlayer?: (player: PlayerProfileData) => void;
 }
 
@@ -56,6 +57,7 @@ export const DailyLeaderboard: React.FC<DailyLeaderboardProps> = ({
   allTimePeaks,
   onOpenAccount,
   onOpenModeratorLog,
+  onOpenPayForAdFree,
   onInspectPlayer,
 }) => {
   const [activeView, setActiveView] = useState<'daily' | 'all-time'>('daily');
@@ -241,7 +243,11 @@ export const DailyLeaderboard: React.FC<DailyLeaderboardProps> = ({
       )}
 
       {/* AD BANNER SLOT */}
-      <AdBanner placement="leaderboard-top" />
+      <AdBanner 
+        placement="leaderboard-top" 
+        isAdFree={userAccount.isAdFree}
+        onGoAdFree={onOpenPayForAdFree}
+      />
 
       {/* LEADERBOARD VIEW SWITCHER (Daily Tournament vs. Top 20 All-Time) */}
       <div className="flex items-center justify-between gap-3 border-b border-zinc-800 pb-3">

@@ -25,6 +25,7 @@ import { SignupModal } from './components/SignupModal';
 import { ModeratorModal } from './components/ModeratorModal';
 import { CasinoChat } from './components/CasinoChat';
 import { PlayerProfileModal } from './components/PlayerProfileModal';
+import { PayForAdFreeModal } from './components/PayForAdFreeModal';
 import { 
   DEFAULT_USER_ACCOUNT, 
   INITIAL_DAILY_WINNERS, 
@@ -39,22 +40,29 @@ import {
   getYesterdayEstDateString, 
   formatEstDateFriendly 
 } from './utils/estTime';
+import { 
+  getAdminUserDirectory, 
+  updateUserInAdminDirectory, 
+  INITIAL_ADMIN_USERS 
+} from './utils/adminUsers';
+import { AdminManagedUser, AccountStatus } from './types';
 import { sound } from './utils/audio';
 
 const STORAGE_KEYS = {
-  BALANCE: 'freebiesonly_balance',
-  INVENTORY: 'freebiesonly_inventory',
-  STATS: 'freebiesonly_stats',
-  SOUND: 'freebiesonly_sound',
-  ACCOUNT: 'freebiesonly_account',
-  ATM_HISTORY: 'freebiesonly_atm_history',
-  DAILY_WINNERS: 'freebiesonly_daily_winners',
-  ALL_TIME_PEAKS: 'freebiesonly_all_time_peaks',
+  BALANCE: 'chipzone_balance',
+  INVENTORY: 'chipzone_inventory',
+  STATS: 'chipzone_stats',
+  SOUND: 'chipzone_sound',
+  ACCOUNT: 'chipzone_account',
+  ATM_HISTORY: 'chipzone_atm_history',
+  DAILY_WINNERS: 'chipzone_daily_winners',
+  ALL_TIME_PEAKS: 'chipzone_all_time_peaks',
+  ADMIN_USERS: 'chipzone_admin_users',
 };
 
-// Helper to get from new key with fallback to legacy key
-function getStoredItem(key: string, legacyKey: string): string | null {
-  return localStorage.getItem(key) ?? localStorage.getItem(legacyKey);
+// Helper to get from new key with fallback to legacy keys
+function getStoredItem(key: string, legacyKey1: string, legacyKey2?: string): string | null {
+  return localStorage.getItem(key) ?? localStorage.getItem(legacyKey1) ?? (legacyKey2 ? localStorage.getItem(legacyKey2) : null);
 }
 
 const INITIAL_STATS: CasinoStats = {
@@ -74,42 +82,42 @@ const INITIAL_STATS: CasinoStats = {
 export default function App() {
   // State Initialization from LocalStorage or 1000 Default
   const [balance, setBalance] = useState<number>(() => {
-    const saved = getStoredItem(STORAGE_KEYS.BALANCE, 'bullshit_casino_balance');
+    const saved = getStoredItem(STORAGE_KEYS.BALANCE, 'freebiesonly_balance', 'bullshit_casino_balance');
     return saved !== null ? parseInt(saved, 10) : 1000;
   });
 
   const [inventory, setInventory] = useState<InventoryItem[]>(() => {
-    const saved = getStoredItem(STORAGE_KEYS.INVENTORY, 'bullshit_casino_inventory');
+    const saved = getStoredItem(STORAGE_KEYS.INVENTORY, 'freebiesonly_inventory', 'bullshit_casino_inventory');
     return saved ? JSON.parse(saved) : [];
   });
 
   const [stats, setStats] = useState<CasinoStats>(() => {
-    const saved = getStoredItem(STORAGE_KEYS.STATS, 'bullshit_casino_stats');
+    const saved = getStoredItem(STORAGE_KEYS.STATS, 'freebiesonly_stats', 'bullshit_casino_stats');
     return saved ? JSON.parse(saved) : INITIAL_STATS;
   });
 
   const [userAccount, setUserAccount] = useState<UserAccount>(() => {
-    const saved = getStoredItem(STORAGE_KEYS.ACCOUNT, 'bullshit_casino_account');
+    const saved = getStoredItem(STORAGE_KEYS.ACCOUNT, 'freebiesonly_account', 'bullshit_casino_account');
     return saved ? JSON.parse(saved) : DEFAULT_USER_ACCOUNT;
   });
 
   const [atmHistory, setAtmHistory] = useState<number[]>(() => {
-    const saved = getStoredItem(STORAGE_KEYS.ATM_HISTORY, 'bullshit_casino_atm_history');
+    const saved = getStoredItem(STORAGE_KEYS.ATM_HISTORY, 'freebiesonly_atm_history', 'bullshit_casino_atm_history');
     return saved ? JSON.parse(saved) : [];
   });
 
   const [dailyWinners, setDailyWinners] = useState<DailyWinnerRecord[]>(() => {
-    const saved = getStoredItem(STORAGE_KEYS.DAILY_WINNERS, 'bullshit_casino_daily_winners');
+    const saved = getStoredItem(STORAGE_KEYS.DAILY_WINNERS, 'freebiesonly_daily_winners', 'bullshit_casino_daily_winners');
     return saved ? JSON.parse(saved) : INITIAL_DAILY_WINNERS;
   });
 
   const [allTimePeaks, setAllTimePeaks] = useState<AllTimePeakRecord[]>(() => {
-    const saved = getStoredItem(STORAGE_KEYS.ALL_TIME_PEAKS, 'bullshit_casino_all_time_peaks');
+    const saved = getStoredItem(STORAGE_KEYS.ALL_TIME_PEAKS, 'freebiesonly_all_time_peaks', 'bullshit_casino_all_time_peaks');
     return saved ? JSON.parse(saved) : INITIAL_ALL_TIME_PEAKS;
   });
 
   const [soundEnabled, setSoundEnabled] = useState<boolean>(() => {
-    const saved = getStoredItem(STORAGE_KEYS.SOUND, 'bullshit_casino_sound');
+    const saved = getStoredItem(STORAGE_KEYS.SOUND, 'freebiesonly_sound', 'bullshit_casino_sound');
     return saved !== null ? JSON.parse(saved) : true;
   });
 
@@ -120,6 +128,21 @@ export default function App() {
   const [isAccountOpen, setIsAccountOpen] = useState<boolean>(false);
   const [isModeratorOpen, setIsModeratorOpen] = useState<boolean>(false);
   const [isChatOpen, setIsChatOpen] = useState<boolean>(false);
+  const [isPayForAdFreeOpen, setIsPayForAdFreeOpen] = useState<boolean>(false);
+
+  // Admin Managed Users Directory State
+  const [adminUsersList, setAdminUsersList] = useState<AdminManagedUser[]>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.ADMIN_USERS);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved) as AdminManagedUser[];
+        return getAdminUserDirectory(userAccount, balance, stats.totalWagered, userAccount.peakBalanceAllTime || balance, parsed);
+      } catch (e) {
+        console.error('Failed to parse admin users', e);
+      }
+    }
+    return getAdminUserDirectory(userAccount, balance, stats.totalWagered, userAccount.peakBalanceAllTime || balance);
+  });
 
   // Player profile inspection
   const [selectedPlayer, setSelectedPlayer] = useState<PlayerProfileData | null>(null);
@@ -165,6 +188,15 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.ALL_TIME_PEAKS, JSON.stringify(allTimePeaks));
   }, [allTimePeaks]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.ADMIN_USERS, JSON.stringify(adminUsersList));
+  }, [adminUsersList]);
+
+  // Keep admin user directory in sync with current user changes
+  useEffect(() => {
+    setAdminUsersList(prev => getAdminUserDirectory(userAccount, balance, stats.totalWagered, userAccount.peakBalanceAllTime || balance, prev));
+  }, [userAccount, balance, stats.totalWagered]);
 
   // Track Peak Balance and check if it reaches Top 20 All-Time
   useEffect(() => {
@@ -311,6 +343,35 @@ export default function App() {
     setDailyWinners(prev => prev.map(w => w.id === winnerId ? { ...w, ...updates } : w));
   };
 
+  // Admin User Directory Handlers
+  const handleUpdateUserStatus = (userId: string, status: AccountStatus) => {
+    setAdminUsersList(prev => updateUserInAdminDirectory(prev, userId, { accountStatus: status }));
+    if (userId === userAccount.id) {
+      setUserAccount(prev => ({ ...prev, accountStatus: status }));
+    }
+  };
+
+  const handleUpdateUserTier = (userId: string, isAdFree: boolean) => {
+    setAdminUsersList(prev => updateUserInAdminDirectory(prev, userId, { 
+      isAdFree, 
+      accountType: isAdFree ? 'paid' : 'free' 
+    }));
+    if (userId === userAccount.id) {
+      setUserAccount(prev => ({ 
+        ...prev, 
+        isAdFree, 
+        accountType: isAdFree ? 'paid' : 'free' 
+      }));
+    }
+  };
+
+  const handleUpdateUserBalance = (userId: string, newBalance: number) => {
+    setAdminUsersList(prev => updateUserInAdminDirectory(prev, userId, { balance: newBalance }));
+    if (userId === userAccount.id) {
+      setBalance(newBalance);
+    }
+  };
+
   // Inspect Player Profile
   const handleInspectPlayer = (player: PlayerProfileData) => {
     const isMe = player.id === userAccount.id || player.isUser;
@@ -334,6 +395,8 @@ export default function App() {
       setSelectedPlayer(prev => prev ? { ...prev, balance: resetAmount } : null);
     }
 
+    handleUpdateUserBalance(playerId, resetAmount);
+
     // Broadcast system notice to the live chat
     const adminNotice: ChatMessage = {
       id: 'mod-notice-' + Date.now(),
@@ -352,7 +415,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col font-sans selection:bg-amber-500 selection:text-black">
+    <div className="min-h-screen bg-[#090710] bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,40,200,0.16),rgba(255,255,255,0))] text-zinc-100 flex flex-col font-sans selection:bg-purple-600 selection:text-white">
       {/* Sticky Top Header */}
       <Header
         balance={balance}
@@ -366,6 +429,7 @@ export default function App() {
         onOpenAccount={() => setIsAccountOpen(true)}
         onToggleChat={() => setIsChatOpen(prev => !prev)}
         onOpenPendingPayouts={() => setIsModeratorOpen(true)}
+        onOpenPayForAdFree={() => setIsPayForAdFreeOpen(true)}
         inventoryCount={inventory.length}
         soundEnabled={soundEnabled}
         onToggleSound={() => setSoundEnabled(prev => !prev)}
@@ -389,6 +453,7 @@ export default function App() {
             onOpenRules={() => setIsRulesOpen(true)}
             onOpenAccount={() => setIsAccountOpen(true)}
             onOpenModeratorLog={() => setIsModeratorOpen(true)}
+            onOpenPayForAdFree={() => setIsPayForAdFreeOpen(true)}
             onInspectPlayer={handleInspectPlayer}
             onToggleChat={() => setIsChatOpen(prev => !prev)}
           />
@@ -438,6 +503,7 @@ export default function App() {
             allTimePeaks={allTimePeaks}
             onOpenAccount={() => setIsAccountOpen(true)}
             onOpenModeratorLog={() => setIsModeratorOpen(true)}
+            onOpenPayForAdFree={() => setIsPayForAdFreeOpen(true)}
             onInspectPlayer={handleInspectPlayer}
           />
         )}
@@ -483,6 +549,7 @@ export default function App() {
         onSignOut={handleSignOut}
         onOpenStats={() => setIsStatsOpen(true)}
         onOpenRules={() => setIsRulesOpen(true)}
+        onOpenPayForAdFree={() => setIsPayForAdFreeOpen(true)}
       />
 
       {/* ATM of Shame Modal */}
@@ -492,6 +559,31 @@ export default function App() {
         onClaimBailout={handleClaimBailout}
         currentBalance={balance}
         atmHistory={atmHistory}
+        isAdFree={userAccount.isAdFree}
+        userAccount={userAccount}
+      />
+
+      {/* Pay for Ad-Free VIP Modal */}
+      <PayForAdFreeModal
+        isOpen={isPayForAdFreeOpen}
+        onClose={() => setIsPayForAdFreeOpen(false)}
+        isCurrentlyAdFree={!!userAccount.isAdFree}
+        onUpgrade={() => {
+          sound.playProfit();
+          setUserAccount(prev => ({
+            ...prev,
+            isAdFree: true,
+            accountType: 'paid',
+          }));
+        }}
+        onDowngrade={() => {
+          sound.playChip();
+          setUserAccount(prev => ({
+            ...prev,
+            isAdFree: false,
+            accountType: 'free',
+          }));
+        }}
       />
 
       {/* Career Dossier Modal */}
@@ -516,6 +608,11 @@ export default function App() {
           dailyWinners={dailyWinners}
           onUpdateWinner={handleUpdateWinner}
           onInspectPlayer={handleInspectPlayer}
+          usersList={adminUsersList}
+          onUpdateUserStatus={handleUpdateUserStatus}
+          onUpdateUserTier={handleUpdateUserTier}
+          onUpdateUserBalance={handleUpdateUserBalance}
+          allChatMessages={chatMessages}
         />
       )}
     </div>

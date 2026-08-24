@@ -35,6 +35,7 @@ interface LobbyHomeProps {
   onOpenRules: () => void;
   onOpenAccount: () => void;
   onOpenModeratorLog: () => void;
+  onOpenPayForAdFree?: () => void;
   onInspectPlayer?: (player: PlayerProfileData) => void;
   onToggleChat?: () => void;
 }
@@ -52,6 +53,7 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
   onOpenRules,
   onOpenAccount,
   onOpenModeratorLog,
+  onOpenPayForAdFree,
   onInspectPlayer,
   onToggleChat,
 }) => {
@@ -76,8 +78,9 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
   return (
     <div className="w-full max-w-5xl mx-auto space-y-4 sm:space-y-6 pb-6">
       {/* Hero Welcome Banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-zinc-900 via-zinc-950 to-zinc-900 border border-zinc-800 p-4 sm:p-6 shadow-2xl">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-950/30 via-[#0d091a] to-zinc-950 border border-purple-900/40 p-4 sm:p-6 shadow-2xl shadow-purple-950/20">
+        <div className="absolute top-0 right-0 w-72 h-72 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-1/3 w-64 h-64 bg-amber-500/5 rounded-full blur-3xl pointer-events-none" />
         
         <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="flex items-start sm:items-center gap-3.5">
@@ -87,7 +90,7 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
                 sound.playChip();
                 onOpenAccount();
               }}
-              className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-600/30 to-yellow-400/20 border-2 border-amber-400/50 flex items-center justify-center text-3xl shadow-xl shrink-0 cursor-pointer hover:scale-105 transition-transform"
+              className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-purple-600/40 via-amber-600/30 to-yellow-400/30 border-2 border-purple-400/50 flex items-center justify-center text-3xl shadow-xl shadow-purple-950/40 shrink-0 cursor-pointer hover:scale-105 transition-transform"
               title="Click to edit VIP Profile & Payout Handle"
             >
               {userAccount.avatar}
@@ -120,8 +123,8 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
                   </span>
                 )}
               </div>
-              <h2 className="text-base sm:text-xl font-black tracking-wide text-zinc-200 uppercase">
-                FreebiesOnly Lounge
+              <h2 className="text-base sm:text-xl font-black tracking-wide uppercase bg-gradient-to-r from-zinc-100 via-purple-100 to-amber-200 bg-clip-text text-transparent">
+                ChipZone Lounge
               </h2>
               <p className="text-xs text-zinc-400 max-w-xl">
                 1,000 daily starting chips. 12:00 AM EST reset. 5 ATM reloads (100 chips each). No resets.
@@ -422,7 +425,11 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
       </div>
 
       {/* Ad Banner placement */}
-      <AdBanner placement="lobby-strip" />
+      <AdBanner 
+        placement="lobby-strip" 
+        isAdFree={userAccount.isAdFree} 
+        onGoAdFree={onOpenPayForAdFree} 
+      />
 
       {/* Bottom Hub Actions */}
       <div className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-2xl bg-zinc-900/40 border border-zinc-800/60 text-xs">

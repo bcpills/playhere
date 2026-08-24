@@ -41,6 +41,7 @@ interface AccountModalProps {
   onSignOut: () => void;
   onOpenStats: () => void;
   onOpenRules: () => void;
+  onOpenPayForAdFree?: () => void;
 }
 
 export const AccountModal: React.FC<AccountModalProps> = ({
@@ -54,6 +55,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({
   onSignOut,
   onOpenStats,
   onOpenRules,
+  onOpenPayForAdFree,
 }) => {
   const [activeTab, setActiveTab] = useState<'profile' | 'security' | 'session'>('profile');
   const [isEditing, setIsEditing] = useState<boolean>(false);
@@ -557,6 +559,52 @@ export const AccountModal: React.FC<AccountModalProps> = ({
                 <span>Perk: {currentTierInfo.perk}</span>
                 {nextTier && (
                   <span>Wager {remainingWager.toLocaleString()} more for {nextTier.tier}</span>
+                )}
+              </div>
+            </div>
+
+            {/* AD-FREE VIP MEMBERSHIP CARD */}
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-950/40 via-indigo-950/30 to-zinc-900 border border-purple-500/40 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">👑</span>
+                  <div>
+                    <h4 className="text-xs font-black uppercase tracking-wider text-zinc-100 flex items-center gap-1.5">
+                      <span>Ad-Free VIP Status</span>
+                      {account.isAdFree ? (
+                        <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-black">
+                          ACTIVE
+                        </span>
+                      ) : (
+                        <span className="text-[9px] px-1.5 py-0.2 rounded bg-zinc-800 text-zinc-400 border border-zinc-700">
+                          FREE TIER
+                        </span>
+                      )}
+                    </h4>
+                    <p className="text-[11px] text-zinc-400">
+                      {account.isAdFree 
+                        ? '100% ad-free gameplay active. Instant ATM bailouts unlocked.'
+                        : 'Remove all banner ads & skip video ad requirements on 100 free chips.'}
+                    </p>
+                  </div>
+                </div>
+
+                {onOpenPayForAdFree && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      sound.playChip();
+                      onClose();
+                      onOpenPayForAdFree();
+                    }}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      account.isAdFree
+                        ? 'bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700'
+                        : 'bg-gradient-to-r from-purple-600 to-amber-500 text-white font-black shadow-md'
+                    }`}
+                  >
+                    {account.isAdFree ? 'Manage VIP' : 'Upgrade ($4.99)'}
+                  </button>
                 )}
               </div>
             </div>

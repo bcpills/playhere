@@ -260,7 +260,7 @@ export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({
 
         {/* Footer */}
         <div className="mt-4 pt-3 border-t border-zinc-800/80 flex items-center justify-between text-xs text-zinc-500">
-          <span className="text-[10px]">FreebiesOnly Gambler Registry</span>
+          <span className="text-[10px]">ChipZone Gambler Registry</span>
           <button
             onClick={onClose}
             className="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300 font-bold text-xs cursor-pointer"

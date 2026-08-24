@@ -1,6 +1,7 @@
 {
-  "name": "FreebiesOnly",
-  "description": "FreebiesOnly - A high-stakes gaming lounge featuring calibrated 40-ball Keno, Blackjack with 21+3, Perfect Pairs, and Lucky Ladies side bets, animated loot crates, a VIP account system with customizable avatars, and live daily competitive leaderboards.",
+  "name": "ChipZone",
+  "description": "ChipZone - A high-stakes gaming lounge featuring calibrated 40-ball Keno, Blackjack with 21+3, Perfect Pairs, and Lucky Ladies side bets, animated loot crates, a VIP account system with customizable avatars, and live daily competitive leaderboards.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
+

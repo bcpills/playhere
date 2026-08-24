@@ -112,6 +112,9 @@ export type VIPTier =
 
 export type ContactPlatform = 'discord' | 'telegram';
 
+export type AccountStatus = 'active' | 'banned' | 'closed';
+export type AccountType = 'free' | 'paid';
+
 export interface UserAccount {
   id: string;
   username: string;
@@ -133,6 +136,10 @@ export interface UserAccount {
   googleEmail?: string;
   googleName?: string;
   googlePicture?: string;
+  isAdFree?: boolean;
+  accountType?: AccountType;
+  accountStatus?: AccountStatus;
+  bannedReason?: string;
 }
 
 export type LeaderboardCategory = 'profit' | 'multiplier' | 'volume' | 'vault';
@@ -230,4 +237,27 @@ export interface PlayerProfileData {
   isUser?: boolean;
   isAdmin?: boolean;
   email?: string;
+  accountStatus?: AccountStatus;
+  accountType?: AccountType;
+  isAdFree?: boolean;
+}
+
+export interface AdminManagedUser {
+  id: string;
+  username: string;
+  avatar: string;
+  email?: string;
+  contactPlatform: ContactPlatform;
+  contactHandle: string;
+  vipTier: VIPTier;
+  balance: number;
+  peakBalance: number;
+  totalWagered: number;
+  accountStatus: AccountStatus;
+  accountType: AccountType;
+  isAdFree: boolean;
+  createdAt: number;
+  lastActive: string;
+  isCurrentUser?: boolean;
+  chatCount?: number;
 }

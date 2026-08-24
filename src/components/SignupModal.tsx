@@ -180,8 +180,8 @@ export const SignupModal: React.FC<SignupModalProps> = ({
           </div>
         </div>
 
-        <h2 className="text-xl sm:text-2xl font-black uppercase tracking-wider text-zinc-100">
-          FreebiesOnly
+        <h2 className="text-xl sm:text-2xl font-black uppercase tracking-wider bg-gradient-to-r from-zinc-100 via-purple-100 to-amber-200 bg-clip-text text-transparent">
+          ChipZone
         </h2>
         <p className="text-xs sm:text-sm text-zinc-400 mt-1 max-w-md mx-auto mb-5">
           Daily High-Stakes Leaderboards • 12:00 AM EST Balance Reset • Manual Cash Payouts

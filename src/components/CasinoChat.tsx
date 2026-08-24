@@ -53,7 +53,7 @@ const INITIAL_BOT_MESSAGES: ChatMessage[] = [
     vipTier: 'Silver Grinder',
     contactPlatform: 'discord',
     contactHandle: 'fakeplayer2#8821',
-    text: 'Dealer pulled another 5-card 21 on me lmao. Classic FreebiesOnly.',
+    text: 'Dealer pulled another 5-card 21 on me lmao. Classic ChipZone.',
     timestamp: Date.now() - 1000 * 60 * 9,
     balance: 350,
   },

@@ -237,7 +237,7 @@ export const RulesModal: React.FC<RulesModalProps> = ({ isOpen, onClose }) => {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="w-3 h-3 rounded-full bg-yellow-400 animate-pulse" />
-                  <strong className="text-yellow-300">★ Exotic Special ★:</strong> <span>Legendary CS Knives & Golden FreebiesOnly Trophies!</span>
+                  <strong className="text-yellow-300">★ Exotic Special ★:</strong> <span>Legendary CS Knives & Golden ChipZone Trophies!</span>
                 </div>
               </div>
             </div>
