@@ -305,6 +305,57 @@ export const AccountModal: React.FC<AccountModalProps> = ({
               </div>
             </div>
 
+            {/* AD-FREE VIP STATUS & REMOVE ADS ACTION IN PROFILE */}
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-950/40 via-indigo-950/30 to-zinc-900 border border-purple-500/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-md">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-amber-500 p-0.5 shadow-md flex items-center justify-center shrink-0">
+                  <div className="w-full h-full bg-[#0d091a] rounded-[14px] flex items-center justify-center text-lg">
+                    👑
+                  </div>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-xs font-black uppercase tracking-wider text-zinc-100">
+                      Ad-Free VIP Status
+                    </h4>
+                    {account.isAdFree ? (
+                      <span className="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-black uppercase">
+                        Active VIP
+                      </span>
+                    ) : (
+                      <span className="text-[9px] px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400 border border-zinc-700 uppercase font-bold">
+                        Free Member
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-zinc-400 mt-0.5">
+                    {account.isAdFree 
+                      ? '100% ad-free gameplay active. Instant ATM bailouts unlocked.'
+                      : 'Remove all ads & unlock instant ATM bailouts without video ads.'}
+                  </p>
+                </div>
+              </div>
+
+              {onOpenPayForAdFree && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    sound.playChip();
+                    onClose();
+                    onOpenPayForAdFree();
+                  }}
+                  className={`w-full sm:w-auto px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer shrink-0 flex items-center justify-center gap-1.5 shadow-md ${
+                    account.isAdFree
+                      ? 'bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700'
+                      : 'bg-gradient-to-r from-purple-600 via-indigo-600 to-amber-500 hover:from-purple-500 hover:to-amber-400 text-white shadow-purple-600/30'
+                  }`}
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                  <span>{account.isAdFree ? 'VIP Lounge Details' : 'Pay to Remove Ads ($4.99)'}</span>
+                </button>
+              )}
+            </div>
+
             {/* Edit Form */}
             {isEditing && (
               <div className="p-4 rounded-2xl bg-zinc-900 border border-amber-500/40 space-y-3 animate-fade-in">

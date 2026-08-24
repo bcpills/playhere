@@ -143,27 +143,6 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="hidden xs:inline text-[11px]">Chat</span>
             </button>
 
-            {/* PAY FOR AD-FREE / VIP AD-FREE STATUS BUTTON */}
-            {onOpenPayForAdFree && (
-              <button
-                onClick={() => {
-                  sound.playChip();
-                  onOpenPayForAdFree();
-                }}
-                title={userAccount.isAdFree ? 'VIP Ad-Free Member' : 'Pay to Remove All Ads ($4.99)'}
-                className={`shrink-0 flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
-                  userAccount.isAdFree
-                    ? 'bg-gradient-to-r from-purple-900/80 to-amber-950/80 border border-amber-500/50 text-amber-300 shadow-md shadow-purple-950/30'
-                    : 'bg-gradient-to-r from-purple-950/70 via-indigo-950/70 to-zinc-900 hover:from-purple-900 hover:to-indigo-900 border border-purple-500/50 text-purple-200'
-                }`}
-              >
-                <Crown className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                <span className="hidden md:inline text-[11px]">
-                  {userAccount.isAdFree ? 'VIP Ad-Free' : 'Remove Ads'}
-                </span>
-              </button>
-            )}
-
             {/* Account Profile Button */}
             <button
               onClick={() => {
