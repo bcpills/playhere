@@ -581,7 +581,17 @@ export default function App() {
       <PayForAdFreeModal
         isOpen={isPayForAdFreeOpen}
         onClose={() => setIsPayForAdFreeOpen(false)}
+        userAccount={userAccount}
         isCurrentlyAdFree={!!userAccount.isAdFree}
+        onUpgradeToAdFree={() => {
+          sound.playProfit();
+          setUserAccount(prev => ({
+            ...prev,
+            isAdFree: true,
+            accountType: 'paid',
+          }));
+          setBalance(prev => prev + 500);
+        }}
         onUpgrade={() => {
           sound.playProfit();
           setUserAccount(prev => ({
@@ -589,6 +599,7 @@ export default function App() {
             isAdFree: true,
             accountType: 'paid',
           }));
+          setBalance(prev => prev + 500);
         }}
         onDowngrade={() => {
           sound.playChip();

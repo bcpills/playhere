@@ -23,15 +23,21 @@ import { UserAccount } from '../types';
 interface PayForAdFreeModalProps {
   isOpen: boolean;
   onClose: () => void;
-  userAccount: UserAccount;
-  onUpgradeToAdFree: () => void;
+  userAccount?: UserAccount;
+  isCurrentlyAdFree?: boolean;
+  onUpgrade?: () => void;
+  onUpgradeToAdFree?: () => void;
+  onDowngrade?: () => void;
 }
 
 export const PayForAdFreeModal: React.FC<PayForAdFreeModalProps> = ({
   isOpen,
   onClose,
   userAccount,
+  isCurrentlyAdFree,
+  onUpgrade,
   onUpgradeToAdFree,
+  onDowngrade,
 }) => {
   // Checkout flow state: 'overview' | 'checkout' | 'processing' | 'success'
   const [checkoutStep, setCheckoutStep] = useState<'overview' | 'checkout' | 'processing' | 'success'>('overview');
@@ -39,13 +45,20 @@ export const PayForAdFreeModal: React.FC<PayForAdFreeModalProps> = ({
   const [cardNumber, setCardNumber] = useState<string>('•••• •••• •••• 4242');
   const [cardExpiry, setCardExpiry] = useState<string>('12/28');
   const [cardCvc, setCardCvc] = useState<string>('888');
-  const [cardName, setCardName] = useState<string>(userAccount.googleName || userAccount.username || 'Thomas J');
+  const [cardName, setCardName] = useState<string>(userAccount?.googleName || userAccount?.username || 'Thomas J');
   const [couponCode, setCouponCode] = useState<string>('');
   const [couponApplied, setCouponApplied] = useState<boolean>(false);
 
+  // Sync cardName if userAccount updates
+  React.useEffect(() => {
+    if (userAccount) {
+      setCardName(userAccount.googleName || userAccount.username || 'Thomas J');
+    }
+  }, [userAccount]);
+
   if (!isOpen) return null;
 
-  const isAlreadyAdFree = userAccount.isAdFree;
+  const isAlreadyAdFree = isCurrentlyAdFree ?? userAccount?.isAdFree ?? false;
 
   const handleApplyCoupon = () => {
     if (couponCode.trim().toUpperCase() === 'VIP' || couponCode.trim().toUpperCase() === 'CHIPZONE') {
@@ -70,7 +83,12 @@ export const PayForAdFreeModal: React.FC<PayForAdFreeModalProps> = ({
       setCheckoutStep('success');
       sound.playWin(true);
       confetti({ particleCount: 150, spread: 90, origin: { y: 0.55 } });
-      onUpgradeToAdFree();
+      if (onUpgradeToAdFree) {
+        onUpgradeToAdFree();
+      }
+      if (onUpgrade) {
+        onUpgrade();
+      }
 
       setTimeout(() => {
         setCheckoutStep('overview');
