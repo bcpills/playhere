@@ -210,300 +210,328 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
         </div>
       )}
 
-      {/* CASINO FLOOR: ROWS OF GAME BOXES */}
+      {/* CASINO FLOOR: 2x2 GAMES & COLLECTION GRID (EXACT LAYOUT FROM DIAGRAM) */}
       <div className="space-y-3">
         <div className="flex items-center justify-between px-1">
           <div className="flex items-center gap-2">
             <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-zinc-300 flex items-center gap-2">
-              <span>Casino Floor Tables</span>
+              <span>Casino Floor & Vault</span>
             </h3>
             <span className="text-[10px] px-2 py-0.5 rounded-md bg-zinc-900 border border-zinc-800 text-zinc-400 font-mono">
-              3 Games • 1 Arena
+              2 Games • 2 Vault Portals
             </span>
           </div>
           <span className="text-[10px] text-zinc-500 hidden sm:inline font-mono">
-            Select any table box to enter
+            Select any box below to enter
           </span>
         </div>
 
-        {/* GAME ROW BOX 1: BLACKJACK & SIDE BETS */}
-        <div 
-          id="portal-blackjack"
-          onClick={() => {
-            sound.playChip();
-            onNavigate('blackjack');
-          }}
-          className="group relative overflow-hidden rounded-2xl bg-zinc-900/80 hover:bg-zinc-900 border border-zinc-800 hover:border-amber-500/60 p-3.5 sm:p-4 cursor-pointer transition-all duration-200 hover:shadow-xl hover:shadow-amber-500/10"
-        >
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3.5">
-            {/* Left Info & Icon Box */}
-            <div className="flex items-start sm:items-center gap-3.5 flex-1 min-w-0">
-              {/* Emblem Box */}
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 border border-amber-400/50 flex flex-col items-center justify-center text-zinc-950 shadow-md shrink-0 group-hover:scale-105 transition-transform">
-                <Spade className="w-6 h-6" />
-                <span className="text-[8px] font-black uppercase tracking-tighter">Table 1</span>
+        {/* 2x2 GRID MATCHING ATTACHED DIAGRAM */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+          {/* ========================================================================= */}
+          {/* TOP-LEFT: 40-BALL KENO                                                    */}
+          {/* ========================================================================= */}
+          <div 
+            id="portal-keno"
+            onClick={() => {
+              sound.playChip();
+              onNavigate('keno');
+            }}
+            className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-950/30 via-zinc-900/90 to-zinc-950 border-2 border-emerald-500/40 hover:border-emerald-400 p-5 cursor-pointer transition-all duration-200 hover:shadow-2xl hover:shadow-emerald-500/20 flex flex-col justify-between min-h-[260px]"
+          >
+            {/* Top Row: Icon & Mode Tags */}
+            <div>
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-13 h-13 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-700 border border-emerald-300/50 flex items-center justify-center text-zinc-950 shadow-lg shadow-emerald-500/30 group-hover:scale-105 transition-transform">
+                    <Dices className="w-7 h-7" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 block">
+                      Table 1
+                    </span>
+                    <h4 className="text-lg sm:text-xl font-black uppercase text-zinc-100 group-hover:text-emerald-300 transition-colors">
+                      Keno
+                    </h4>
+                  </div>
+                </div>
+
+                <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-500/50 font-mono">
+                  10-Ball Draw
+                </span>
               </div>
 
-              {/* Middle Content */}
-              <div className="space-y-1 min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h4 className="text-sm sm:text-base font-black uppercase text-zinc-100 group-hover:text-amber-300 transition-colors">
-                    Blackjack & Side Bets
-                  </h4>
-                  <span className="text-[10px] font-black uppercase px-2 py-0.2 rounded-md bg-emerald-950/80 text-emerald-300 border border-emerald-500/40">
-                    Pays 3:2
-                  </span>
-                  <span className="text-[10px] font-mono text-zinc-400 hidden xs:inline">
-                    6-Deck Shoe
-                  </span>
-                  <span className="text-[10px] font-black uppercase px-2 py-0.2 rounded-md bg-purple-950/80 text-purple-300 border border-purple-500/40">
-                    1000:1 Max
-                  </span>
-                </div>
+              <p className="text-xs text-zinc-300 leading-relaxed mb-3">
+                Compact 40-number board with 10 drawn balls. Choose between <strong>Safe Grinder</strong>, <strong>Classic Vegas (~95% RTP)</strong>, or <strong>Bullshit Degen (3,000,000x)</strong>.
+              </p>
 
-                <p className="text-xs text-zinc-400 line-clamp-1 sm:line-clamp-none">
-                  Vegas rules blackjack with double downs, splits, plus <strong>21+3</strong> (100:1), <strong>Perfect Pairs</strong> (25:1), and <strong>Lucky Ladies</strong> (1000:1).
-                </p>
-
-                {/* Feature Chips */}
-                <div className="flex flex-wrap gap-1.5 pt-0.5">
-                  <span className="text-[10px] px-2 py-0.2 rounded bg-zinc-950 text-zinc-300 border border-zinc-800">
-                    🃏 21+3 Poker
-                  </span>
-                  <span className="text-[10px] px-2 py-0.2 rounded bg-zinc-950 text-zinc-300 border border-zinc-800">
-                    👥 Pairs Match
-                  </span>
-                  <span className="text-[10px] px-2 py-0.2 rounded bg-zinc-950 text-zinc-300 border border-zinc-800">
-                    👸 Lucky Queens
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Right Action & Stats Box */}
-            <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-zinc-800/80">
-              <span className="text-[11px] font-mono text-zinc-400">
-                {stats.handsPlayedBlackjack} Hands Played
-              </span>
-              <button
-                type="button"
-                className="px-4 py-2 rounded-xl bg-amber-500 group-hover:bg-amber-400 text-zinc-950 font-black text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-md shadow-amber-500/20 group-hover:translate-x-0.5 transition-all cursor-pointer"
-              >
-                <span>Play Table</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* GAME ROW BOX 2: 40-BALL KENO LOUNGE */}
-        <div 
-          id="portal-keno"
-          onClick={() => {
-            sound.playChip();
-            onNavigate('keno');
-          }}
-          className="group relative overflow-hidden rounded-2xl bg-zinc-900/80 hover:bg-zinc-900 border border-zinc-800 hover:border-emerald-500/60 p-3.5 sm:p-4 cursor-pointer transition-all duration-200 hover:shadow-xl hover:shadow-emerald-500/10"
-        >
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3.5">
-            {/* Left Info & Icon Box */}
-            <div className="flex items-start sm:items-center gap-3.5 flex-1 min-w-0">
-              {/* Emblem Box */}
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 border border-emerald-400/50 flex flex-col items-center justify-center text-zinc-950 shadow-md shrink-0 group-hover:scale-105 transition-transform">
-                <Dices className="w-6 h-6" />
-                <span className="text-[8px] font-black uppercase tracking-tighter">Table 2</span>
-              </div>
-
-              {/* Middle Content */}
-              <div className="space-y-1 min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h4 className="text-sm sm:text-base font-black uppercase text-zinc-100 group-hover:text-emerald-300 transition-colors">
-                    40-Ball Keno Lounge
-                  </h4>
-                  <span className="text-[10px] font-black uppercase px-2 py-0.2 rounded-md bg-emerald-950/80 text-emerald-300 border border-emerald-500/40">
-                    10-Ball Draw
-                  </span>
-                  <span className="text-[10px] font-mono text-zinc-400 hidden xs:inline">
-                    3 Modes
-                  </span>
-                  <span className="text-[10px] font-black uppercase px-2 py-0.2 rounded-md bg-amber-950/80 text-amber-300 border border-amber-500/40">
-                    3-Hit Payouts
-                  </span>
-                </div>
-
-                <p className="text-xs text-zinc-400 line-clamp-1 sm:line-clamp-none">
-                  Compact 40-number board with 10 drawn balls. Play in <strong>Safe Grinder</strong>, <strong>Classic Vegas (~95% RTP)</strong>, or <strong>Bullshit Degen (3,000,000x)</strong>.
-                </p>
-
-                {/* Feature Chips */}
-                <div className="flex flex-wrap gap-1.5 pt-0.5">
-                  <span className="text-[10px] px-2 py-0.2 rounded bg-zinc-950 text-emerald-400 border border-zinc-800">
-                    🛡️ Safe
-                  </span>
-                  <span className="text-[10px] px-2 py-0.2 rounded bg-zinc-950 text-amber-400 border border-zinc-800">
-                    ⚖️ Classic (~95% RTP)
-                  </span>
-                  <span className="text-[10px] px-2 py-0.2 rounded bg-zinc-950 text-rose-400 border border-zinc-800">
-                    🔥 Degen (3,000,000x)
-                  </span>
-                </div>
+              {/* Mode Badges */}
+              <div className="flex flex-wrap gap-1.5">
+                <span className="text-[10px] px-2 py-0.5 rounded-md bg-zinc-950 text-emerald-400 border border-zinc-800">
+                  🛡️ Safe
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded-md bg-zinc-950 text-amber-300 border border-zinc-800">
+                  ⚖️ Classic Vegas
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded-md bg-zinc-950 text-rose-400 border border-zinc-800">
+                  🔥 Degen (3,000,000x)
+                </span>
               </div>
             </div>
 
-            {/* Right Action & Stats Box */}
-            <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-zinc-800/80">
-              <span className="text-[11px] font-mono text-zinc-400">
+            {/* Bottom Row: Stats & Action Button */}
+            <div className="mt-4 pt-3.5 border-t border-emerald-950/60 flex items-center justify-between gap-3">
+              <span className="text-xs font-mono text-zinc-400">
                 {stats.roundsPlayedKeno} Rounds Drawn
               </span>
+
               <button
                 type="button"
-                className="px-4 py-2 rounded-xl bg-emerald-600 group-hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-md shadow-emerald-600/20 group-hover:translate-x-0.5 transition-all cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-lg shadow-emerald-500/20 group-hover:translate-x-0.5 transition-all cursor-pointer"
               >
                 <span>Play Keno</span>
-                <ChevronRight className="w-3.5 h-3.5" />
+                <ChevronRight className="w-4 h-4" />
               </button>
             </div>
           </div>
-        </div>
 
-        {/* GAME ROW BOX 3: CS-STYLE LOOT CRATE UNBOXER */}
-        <div 
-          id="portal-unboxer"
-          onClick={() => {
-            sound.playChip();
-            onNavigate('unboxer');
-          }}
-          className="group relative overflow-hidden rounded-2xl bg-zinc-900/80 hover:bg-zinc-900 border border-zinc-800 hover:border-purple-500/60 p-3.5 sm:p-4 cursor-pointer transition-all duration-200 hover:shadow-xl hover:shadow-purple-500/10"
-        >
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3.5">
-            {/* Left Info & Icon Box */}
-            <div className="flex items-start sm:items-center gap-3.5 flex-1 min-w-0">
-              {/* Emblem Box */}
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-700 border border-purple-400/50 flex flex-col items-center justify-center text-zinc-950 shadow-md shrink-0 group-hover:scale-105 transition-transform">
-                <Package className="w-6 h-6" />
-                <span className="text-[8px] font-black uppercase tracking-tighter">Vault 3</span>
+          {/* ========================================================================= */}
+          {/* TOP-RIGHT: BJ (BLACKJACK & SIDE BETS)                                     */}
+          {/* ========================================================================= */}
+          <div 
+            id="portal-blackjack"
+            onClick={() => {
+              sound.playChip();
+              onNavigate('blackjack');
+            }}
+            className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-950/30 via-zinc-900/90 to-zinc-950 border-2 border-amber-500/40 hover:border-amber-400 p-5 cursor-pointer transition-all duration-200 hover:shadow-2xl hover:shadow-amber-500/20 flex flex-col justify-between min-h-[260px]"
+          >
+            {/* Top Row: Icon & Payout Tags */}
+            <div>
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-13 h-13 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-700 border border-amber-300/50 flex items-center justify-center text-zinc-950 shadow-lg shadow-amber-500/30 group-hover:scale-105 transition-transform">
+                    <Spade className="w-7 h-7" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-amber-400 block">
+                      Table 2
+                    </span>
+                    <h4 className="text-lg sm:text-xl font-black uppercase text-zinc-100 group-hover:text-amber-300 transition-colors">
+                      Blackjack (BJ)
+                    </h4>
+                  </div>
+                </div>
+
+                <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-full bg-amber-950/80 text-amber-300 border border-amber-500/50 font-mono">
+                  Pays 3:2
+                </span>
               </div>
 
-              {/* Middle Content */}
-              <div className="space-y-1 min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h4 className="text-sm sm:text-base font-black uppercase text-zinc-100 group-hover:text-purple-300 transition-colors">
-                    Loot Crate Unboxer
-                  </h4>
-                  <span className="text-[10px] font-black uppercase px-2 py-0.2 rounded-md bg-purple-950/80 text-purple-300 border border-purple-500/40">
-                    7 Tier Cases
-                  </span>
-                  <span className="text-[10px] font-mono text-zinc-400 hidden xs:inline">
-                    Spin Wheel
-                  </span>
-                  <span className="text-[10px] font-black uppercase px-2 py-0.2 rounded-md bg-amber-950/80 text-amber-300 border border-amber-500/40">
-                    10 to 5,000 Chips
-                  </span>
-                </div>
+              <p className="text-xs text-zinc-300 leading-relaxed mb-3">
+                Vegas rules 6-deck shoe with splits, double downs, plus <strong>21+3 Poker</strong> (100:1), <strong>Pairs Match</strong> (25:1), and <strong>Lucky Queens</strong> (1000:1).
+              </p>
 
-                <p className="text-xs text-zinc-400 line-clamp-1 sm:line-clamp-none">
-                  Spin the horizontal CS-style roulette wheel across 7 tiers from budget Bum Bags up to Sovereign Reliquaries and Diamond Whale Coffers.
-                </p>
-
-                {/* Feature Chips */}
-                <div className="flex flex-wrap gap-1.5 pt-0.5">
-                  <span className="text-[10px] px-2 py-0.2 rounded bg-zinc-950 text-zinc-300 border border-zinc-800">
-                    📦 Bum Bag (10c)
-                  </span>
-                  <span className="text-[10px] px-2 py-0.2 rounded bg-zinc-950 text-blue-400 border border-zinc-800">
-                    💎 Whale (1,000c)
-                  </span>
-                  <span className="text-[10px] px-2 py-0.2 rounded bg-zinc-950 text-amber-300 border border-zinc-800">
-                    👑 Sovereign (5,000c)
-                  </span>
-                </div>
+              {/* Side Bets Badges */}
+              <div className="flex flex-wrap gap-1.5">
+                <span className="text-[10px] px-2 py-0.5 rounded-md bg-zinc-950 text-amber-300 border border-zinc-800">
+                  🃏 21+3 (100:1)
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded-md bg-zinc-950 text-blue-300 border border-zinc-800">
+                  👥 Pairs Match
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded-md bg-zinc-950 text-purple-300 border border-zinc-800">
+                  👸 1000:1 Queens
+                </span>
               </div>
             </div>
 
-            {/* Right Action & Stats Box */}
-            <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-zinc-800/80">
-              <span className="text-[11px] font-mono text-zinc-400">
-                {stats.cratesOpened} Crates Opened
+            {/* Bottom Row: Stats & Action Button */}
+            <div className="mt-4 pt-3.5 border-t border-amber-950/60 flex items-center justify-between gap-3">
+              <span className="text-xs font-mono text-zinc-400">
+                {stats.handsPlayedBlackjack} Hands Played
               </span>
+
               <button
                 type="button"
-                className="px-4 py-2 rounded-xl bg-purple-600 group-hover:bg-purple-500 text-white font-black text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-md shadow-purple-600/20 group-hover:translate-x-0.5 transition-all cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-lg shadow-amber-500/20 group-hover:translate-x-0.5 transition-all cursor-pointer"
+              >
+                <span>Play BJ</span>
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* ========================================================================= */}
+          {/* BOTTOM-LEFT: LOOT CRATE UNBOXER                                           */}
+          {/* ========================================================================= */}
+          <div 
+            id="portal-unboxer"
+            onClick={() => {
+              sound.playChip();
+              onNavigate('unboxer');
+            }}
+            className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-950/30 via-zinc-900/90 to-zinc-950 border-2 border-purple-500/40 hover:border-purple-400 p-5 cursor-pointer transition-all duration-200 hover:shadow-2xl hover:shadow-purple-500/20 flex flex-col justify-between min-h-[260px]"
+          >
+            {/* Top Row: Icon & Tier Tags */}
+            <div>
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-13 h-13 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-700 border border-purple-300/50 flex items-center justify-center text-zinc-950 shadow-lg shadow-purple-500/30 group-hover:scale-105 transition-transform">
+                    <Package className="w-7 h-7" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-purple-400 block">
+                      Vault 3
+                    </span>
+                    <h4 className="text-lg sm:text-xl font-black uppercase text-zinc-100 group-hover:text-purple-300 transition-colors">
+                      Loot Crate
+                    </h4>
+                  </div>
+                </div>
+
+                <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-full bg-purple-950/80 text-purple-300 border border-purple-500/50 font-mono">
+                  10 Tiers & Battles
+                </span>
+              </div>
+
+              <p className="text-xs text-zinc-300 leading-relaxed mb-3">
+                Solo multi-open up to 10× at once, or join <strong>Crate Battles</strong> (1v1, 2v2, Group Pots) with AI competitors across 10 crate tiers up to the <strong>Cosmic Supernova God Core</strong>.
+              </p>
+
+              {/* Case Badges */}
+              <div className="flex flex-wrap gap-1.5">
+                <span className="text-[10px] px-2 py-0.5 rounded-md bg-zinc-950 text-amber-300 border border-zinc-800">
+                  ⚡ Multi-Open (1x-10x)
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded-md bg-zinc-950 text-purple-300 border border-zinc-800">
+                  ⚔️ 1v1 & 2v2 Battles
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded-md bg-zinc-950 text-emerald-300 border border-zinc-800">
+                  🤝 Shared Pots
+                </span>
+              </div>
+            </div>
+
+            {/* Bottom Row: Stats & Action Button */}
+            <div className="mt-4 pt-3.5 border-t border-purple-950/60 flex items-center justify-between gap-3">
+              <span className="text-xs font-mono text-zinc-400">
+                {stats.cratesOpened} Crates Opened
+              </span>
+
+              <button
+                type="button"
+                className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-black text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-lg shadow-purple-600/20 group-hover:translate-x-0.5 transition-all cursor-pointer"
               >
                 <span>Open Crates</span>
-                <ChevronRight className="w-3.5 h-3.5" />
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* ========================================================================= */}
+          {/* BOTTOM-RIGHT: COLLECTION (TROPHY VAULT & INVENTORY)                       */}
+          {/* ========================================================================= */}
+          <div 
+            id="portal-inventory"
+            onClick={() => {
+              sound.playChip();
+              onNavigate('inventory');
+            }}
+            className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-cyan-950/30 via-zinc-900/90 to-zinc-950 border-2 border-cyan-500/40 hover:border-cyan-400 p-5 cursor-pointer transition-all duration-200 hover:shadow-2xl hover:shadow-cyan-500/20 flex flex-col justify-between min-h-[260px]"
+          >
+            {/* Top Row: Icon & Vault Worth */}
+            <div>
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-13 h-13 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-700 border border-cyan-300/50 flex items-center justify-center text-zinc-950 shadow-lg shadow-cyan-500/30 group-hover:scale-105 transition-transform">
+                    <Trophy className="w-7 h-7" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-cyan-400 block">
+                      Vault 4
+                    </span>
+                    <h4 className="text-lg sm:text-xl font-black uppercase text-zinc-100 group-hover:text-cyan-300 transition-colors">
+                      Collection
+                    </h4>
+                  </div>
+                </div>
+
+                <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-full bg-cyan-950/80 text-cyan-300 border border-cyan-500/50 font-mono">
+                  {inventory.length} Items
+                </span>
+              </div>
+
+              <p className="text-xs text-zinc-300 leading-relaxed mb-3">
+                Your personal safe and trophy museum. Inspect unboxed relics, weapons, classified items, and sell any item back for instant chips anytime.
+              </p>
+
+              {/* Value Badges */}
+              <div className="flex flex-wrap gap-1.5">
+                <span className="text-[10px] px-2 py-0.5 rounded-md bg-zinc-950 text-cyan-300 border border-zinc-800">
+                  💎 Instant Resale
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded-md bg-zinc-950 text-amber-300 border border-zinc-800">
+                  🏆 Adds to Net Worth
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded-md bg-zinc-950 text-purple-300 border border-zinc-800">
+                  ⭐ Rarity Tiers
+                </span>
+              </div>
+            </div>
+
+            {/* Bottom Row: Stats & Action Button */}
+            <div className="mt-4 pt-3.5 border-t border-cyan-950/60 flex items-center justify-between gap-3">
+              <span className="text-xs font-mono text-cyan-300 font-bold">
+                {inventory.reduce((sum, item) => sum + item.item.value, 0).toLocaleString()}c Total Worth
+              </span>
+
+              <button
+                type="button"
+                className="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-black text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-lg shadow-cyan-600/20 group-hover:translate-x-0.5 transition-all cursor-pointer"
+              >
+                <span>View Collection</span>
+                <ChevronRight className="w-4 h-4" />
               </button>
             </div>
           </div>
         </div>
 
-        {/* GAME ROW BOX 4: DAILY TOURNAMENT & HALL OF FAME */}
+        {/* TOURNAMENT ARENA & TOP 20 HALL OF FAME QUICK BAR */}
         <div 
           id="portal-leaderboard"
           onClick={() => {
             sound.playChip();
             onNavigate('leaderboard');
           }}
-          className="group relative overflow-hidden rounded-2xl bg-zinc-900/80 hover:bg-zinc-900 border border-zinc-800 hover:border-yellow-500/60 p-3.5 sm:p-4 cursor-pointer transition-all duration-200 hover:shadow-xl hover:shadow-yellow-500/10"
+          className="group relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-950/40 via-zinc-900 to-zinc-950 border border-amber-500/40 hover:border-amber-400 p-3.5 sm:p-4 cursor-pointer transition-all duration-200 hover:shadow-xl hover:shadow-amber-500/10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3"
         >
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3.5">
-            {/* Left Info & Icon Box */}
-            <div className="flex items-start sm:items-center gap-3.5 flex-1 min-w-0">
-              {/* Emblem Box */}
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-400 to-yellow-600 border border-yellow-300/50 flex flex-col items-center justify-center text-zinc-950 shadow-md shrink-0 group-hover:scale-105 transition-transform">
-                <Crown className="w-6 h-6" />
-                <span className="text-[8px] font-black uppercase tracking-tighter">Arena 4</span>
-              </div>
-
-              {/* Middle Content */}
-              <div className="space-y-1 min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h4 className="text-sm sm:text-base font-black uppercase text-zinc-100 group-hover:text-yellow-300 transition-colors">
-                    Tournament & Top 20 Hall of Fame
-                  </h4>
-                  <span className="text-[10px] font-black uppercase px-2 py-0.2 rounded-md bg-amber-950/80 text-amber-300 border border-amber-500/40">
-                    12:00 AM EST Reset
-                  </span>
-                  <span className="text-[10px] font-mono text-zinc-400 hidden xs:inline">
-                    Daily Cycle
-                  </span>
-                  <span className="text-[10px] font-black uppercase px-2 py-0.2 rounded-md bg-emerald-950 text-emerald-300 border border-emerald-500/40">
-                    Manual Payouts
-                  </span>
-                </div>
-
-                <p className="text-xs text-zinc-400 line-clamp-1 sm:line-clamp-none">
-                  Compete daily for the crown and secure your place in the <strong>All-Time Top 20 Hall of Fame</strong>. Winners logged directly for casino moderators.
-                </p>
-
-                {/* Feature Chips */}
-                <div className="flex flex-wrap gap-1.5 pt-0.5">
-                  <span className="text-[10px] px-2 py-0.2 rounded bg-zinc-950 text-emerald-400 border border-zinc-800">
-                    🏆 Daily Crown Contest
-                  </span>
-                  <span className="text-[10px] px-2 py-0.2 rounded bg-zinc-950 text-amber-400 border border-zinc-800">
-                    ⭐ Top 20 Peaks
-                  </span>
-                  <span className="text-[10px] px-2 py-0.2 rounded bg-zinc-950 text-purple-400 border border-zinc-800">
-                    🛡️ Moderator Portal
-                  </span>
-                </div>
-              </div>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-yellow-600 flex items-center justify-center text-zinc-950 shadow-md shrink-0">
+              <Crown className="w-5 h-5" />
             </div>
-
-            {/* Right Action & Stats Box */}
-            <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-zinc-800/80">
-              <span className="text-[11px] font-mono text-zinc-400">
-                Daily 1,000 Chip Cycle
-              </span>
-              <button
-                type="button"
-                className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 group-hover:from-amber-400 group-hover:to-yellow-300 text-zinc-950 font-black text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-md shadow-yellow-500/20 group-hover:translate-x-0.5 transition-all cursor-pointer"
-              >
-                <span>Leaderboard</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </button>
+            <div>
+              <div className="flex items-center gap-2">
+                <h4 className="text-xs sm:text-sm font-black uppercase text-zinc-100 group-hover:text-amber-300 transition-colors">
+                  Daily Tournament & Top 20 Hall of Fame
+                </h4>
+                <span className="text-[9px] font-black uppercase px-2 py-0.2 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                  12:00 AM EST Crown
+                </span>
+              </div>
+              <p className="text-[11px] text-zinc-400">
+                Compete daily for the crown and inspect all players' placement histories, current standing, and highest finishes.
+              </p>
             </div>
           </div>
+
+          <button
+            type="button"
+            className="px-3.5 py-1.5 rounded-xl bg-amber-500 group-hover:bg-amber-400 text-zinc-950 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1 shadow-md shadow-amber-500/20 shrink-0 cursor-pointer"
+          >
+            <span>View Leaderboard</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
 

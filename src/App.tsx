@@ -32,6 +32,7 @@ import {
   INITIAL_ALL_TIME_PEAKS,
   updateAllTimePeaksWithUser,
   getDailyLeaderboard,
+  getPlayerPlacementData,
   isUserAdmin,
   ADMIN_EMAIL
 } from './utils/leaderboard';
@@ -375,10 +376,22 @@ export default function App() {
   // Inspect Player Profile
   const handleInspectPlayer = (player: PlayerProfileData) => {
     const isMe = player.id === userAccount.id || player.isUser;
+    const currentLeaderboard = getDailyLeaderboard('profit', userAccount, stats, inventory, balance);
+    const placementData = getPlayerPlacementData(
+      player.id, 
+      player.username, 
+      currentLeaderboard, 
+      dailyWinners, 
+      allTimePeaks
+    );
+
     setSelectedPlayer({
       ...player,
       balance: isMe ? balance : player.balance,
       isUser: isMe,
+      currentPlacement: placementData.currentPlacement,
+      highestEverPlacement: placementData.highestEverPlacement,
+      placementHistory: placementData.placementHistory,
     });
     setIsProfileModalOpen(true);
   };
@@ -478,6 +491,7 @@ export default function App() {
         {currentTab === 'unboxer' && (
           <UnboxerGame
             balance={balance}
+            userAccount={userAccount}
             onUpdateBalance={handleUpdateBalance}
             onAddToInventory={handleAddToInventory}
             onUpdateStats={setStats}

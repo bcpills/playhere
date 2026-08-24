@@ -8,7 +8,8 @@ import {
   DailyWinnerRecord, 
   AllTimePeakRecord,
   ContactPlatform,
-  FakePlayer
+  FakePlayer,
+  PlayerPlacementRecord
 } from '../types';
 import { 
   getCurrentEstDateString, 
@@ -321,4 +322,216 @@ export function updateAllTimePeaksWithUser(
     ...record,
     rank: index + 1,
   }));
+}
+
+/**
+ * Returns pre-seeded placement histories for known competitors, ensuring realistic competitive timelines
+ */
+export const KNOWN_COMPETITOR_HISTORIES: Record<string, PlayerPlacementRecord[]> = {
+  fakeplayer2: [
+    {
+      id: 'pl-fp2-1',
+      dateEst: getYesterdayEstDateString(),
+      formattedDate: formatEstDateFriendly(getYesterdayEstDateString()),
+      rank: 1,
+      category: 'Daily Tournament Winner',
+      chips: 450,
+      badge: '🏆 Daily Champion',
+      payoutStatus: 'Pending',
+    },
+    {
+      id: 'pl-fp2-2',
+      dateEst: '2026-08-20',
+      formattedDate: 'Aug 20, 2026',
+      rank: 1,
+      category: 'All-Time Peak Height',
+      chips: 490,
+      badge: '⭐ Peak Height #1',
+    },
+    {
+      id: 'pl-fp2-3',
+      dateEst: '2026-08-18',
+      formattedDate: 'Aug 18, 2026',
+      rank: 2,
+      category: 'Daily Tournament',
+      chips: 320,
+      badge: '🥈 Runner-Up',
+      payoutStatus: 'None',
+    },
+    {
+      id: 'pl-fp2-4',
+      dateEst: '2026-08-15',
+      formattedDate: 'Aug 15, 2026',
+      rank: 3,
+      category: 'Daily Tournament',
+      chips: 280,
+      badge: '🥉 Podium 3rd',
+      payoutStatus: 'None',
+    },
+  ],
+  fakeplayer1: [
+    {
+      id: 'pl-fp1-1',
+      dateEst: '2026-08-21',
+      formattedDate: 'Aug 21, 2026',
+      rank: 1,
+      category: 'Daily Tournament Winner',
+      chips: 390,
+      badge: '🏆 Daily Champion',
+      payoutStatus: 'Paid',
+    },
+    {
+      id: 'pl-fp1-2',
+      dateEst: '2026-08-19',
+      formattedDate: 'Aug 19, 2026',
+      rank: 2,
+      category: 'All-Time Peak Height',
+      chips: 420,
+      badge: '⭐ Peak Height #2',
+    },
+    {
+      id: 'pl-fp1-3',
+      dateEst: '2026-08-17',
+      formattedDate: 'Aug 17, 2026',
+      rank: 2,
+      category: 'Daily Tournament',
+      chips: 290,
+      badge: '🥈 Runner-Up',
+      payoutStatus: 'None',
+    },
+  ],
+  fakeplayer3: [
+    {
+      id: 'pl-fp3-1',
+      dateEst: '2026-08-21',
+      formattedDate: 'Aug 21, 2026',
+      rank: 3,
+      category: 'Daily Tournament',
+      chips: 240,
+      badge: '🥉 Podium 3rd',
+      payoutStatus: 'None',
+    },
+    {
+      id: 'pl-fp3-2',
+      dateEst: '2026-08-18',
+      formattedDate: 'Aug 18, 2026',
+      rank: 3,
+      category: 'All-Time Peak Height',
+      chips: 350,
+      badge: '⭐ Peak Height #3',
+    },
+    {
+      id: 'pl-fp3-3',
+      dateEst: '2026-08-16',
+      formattedDate: 'Aug 16, 2026',
+      rank: 4,
+      category: 'Daily Tournament',
+      chips: 180,
+      badge: '🎖️ Top 4',
+      payoutStatus: 'None',
+    },
+  ],
+};
+
+/**
+ * Calculates current placement, all-time highest placement, and placement history for any player
+ */
+export function getPlayerPlacementData(
+  playerId: string,
+  username: string,
+  currentLeaderboard: LeaderboardEntry[],
+  dailyWinners: DailyWinnerRecord[],
+  allTimePeaks: AllTimePeakRecord[],
+  customSavedHistory: PlayerPlacementRecord[] = []
+): {
+  currentPlacement: number;
+  highestEverPlacement: number;
+  placementHistory: PlayerPlacementRecord[];
+} {
+  const normUser = (username || '').toLowerCase().trim();
+  
+  // 1. Calculate Current Placement (from active daily profit leaderboard)
+  let currentRank = 4;
+  const currentEntry = currentLeaderboard.find(
+    e => e.id === playerId || (e.username && e.username.toLowerCase() === normUser)
+  );
+  if (currentEntry) {
+    currentRank = currentEntry.rank;
+  }
+
+  // 2. Gather history records
+  let history: PlayerPlacementRecord[] = [];
+
+  // Add competitor seeded history if exists
+  if (KNOWN_COMPETITOR_HISTORIES[playerId] || KNOWN_COMPETITOR_HISTORIES[normUser]) {
+    history = [...(KNOWN_COMPETITOR_HISTORIES[playerId] || KNOWN_COMPETITOR_HISTORIES[normUser])];
+  } else if (customSavedHistory.length > 0) {
+    history = [...customSavedHistory];
+  }
+
+  // Add recorded daily wins if not already included
+  dailyWinners.forEach(win => {
+    const isThisPlayer = win.id === playerId || win.username.toLowerCase() === normUser || (currentEntry?.isUser && win.isUser);
+    if (isThisPlayer) {
+      const alreadyHas = history.some(h => h.dateEst === win.dateEst && h.rank === 1);
+      if (!alreadyHas) {
+        history.unshift({
+          id: `win-${win.id}`,
+          dateEst: win.dateEst,
+          formattedDate: win.formattedDate,
+          rank: 1,
+          category: 'Daily Tournament Winner',
+          chips: win.winningChips,
+          badge: '🏆 Daily Champion',
+          payoutStatus: win.payoutStatus,
+        });
+      }
+    }
+  });
+
+  // Add current peak height record from allTimePeaks
+  allTimePeaks.forEach(peak => {
+    const isThisPlayer = peak.id === playerId || peak.username.toLowerCase() === normUser || (currentEntry?.isUser && peak.isUser);
+    if (isThisPlayer) {
+      const alreadyHas = history.some(h => h.category === 'All-Time Peak Height' && h.rank === peak.rank);
+      if (!alreadyHas) {
+        history.push({
+          id: `peak-${peak.id}`,
+          dateEst: peak.dateAchieved || getCurrentEstDateString(),
+          formattedDate: peak.dateAchieved ? formatEstDateFriendly(peak.dateAchieved) : 'Today',
+          rank: peak.rank,
+          category: 'All-Time Peak Height',
+          chips: peak.peakChips,
+          badge: `⭐ Peak Rank #${peak.rank}`,
+        });
+      }
+    }
+  });
+
+  // If user/player has no historical logs yet, initialize with current active tournament
+  if (history.length === 0) {
+    history.push({
+      id: `live-current-${Date.now()}`,
+      dateEst: getCurrentEstDateString(),
+      formattedDate: `${formatEstDateFriendly(getCurrentEstDateString())} (Live)`,
+      rank: currentRank,
+      category: 'Daily Tournament (Active)',
+      chips: currentEntry ? currentEntry.score : 1000,
+      badge: currentRank === 1 ? '👑 Current #1 Seed' : `Rank #${currentRank}`,
+      payoutStatus: 'Pending',
+    });
+  }
+
+  // Sort history chronologically descending or rank priority
+  history.sort((a, b) => (b.dateEst || '').localeCompare(a.dateEst || ''));
+
+  // 3. Determine Highest Ever Placement (1 is best, then 2, then 3...)
+  const allRanks = [currentRank, ...history.map(h => h.rank)].filter(r => typeof r === 'number' && r > 0);
+  const highestEverPlacement = allRanks.length > 0 ? Math.min(...allRanks) : currentRank;
+
+  return {
+    currentPlacement: currentRank,
+    highestEverPlacement,
+    placementHistory: history,
+  };
 }

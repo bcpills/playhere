@@ -16,7 +16,12 @@ import {
   Award,
   Sparkles,
   Flame,
-  UserCheck
+  UserCheck,
+  Medal,
+  Crown,
+  History,
+  Calendar,
+  TrendingUp
 } from 'lucide-react';
 
 interface PlayerProfileModalProps {
@@ -44,6 +49,10 @@ export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({
 
   const isAdmin = isUserAdmin(currentUserAccount);
   const tierInfo = getVIPTierInfo(player.vipTier);
+
+  const currentRank = player.currentPlacement || 1;
+  const highestRank = player.highestEverPlacement || 1;
+  const placementHistory = player.placementHistory || [];
 
   const handleCopy = (text: string) => {
     sound.playChip();
@@ -131,8 +140,55 @@ export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({
           </div>
         </div>
 
-        {/* Player Stats Bento Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 my-4 text-xs">
+        {/* ========================================================================= */}
+        {/* PLACEMENT HIGHLIGHTS (CURRENT & HIGHEST EVER PLACEMENT)                   */}
+        {/* ========================================================================= */}
+        <div className="grid grid-cols-2 gap-2.5 mb-3.5">
+          {/* Current Placement Box */}
+          <div className="p-3 rounded-2xl bg-gradient-to-br from-amber-950/40 via-zinc-900 to-zinc-950 border border-amber-500/40 relative overflow-hidden">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black uppercase text-amber-300 tracking-wider flex items-center gap-1">
+                <TrendingUp className="w-3 h-3 text-amber-400" />
+                <span>Current Placement</span>
+              </span>
+              <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-400/20 text-amber-300 font-mono">
+                Live Daily
+              </span>
+            </div>
+            <div className="mt-1 flex items-baseline gap-1.5">
+              <span className="text-2xl sm:text-3xl font-black font-mono text-amber-300">
+                #{currentRank}
+              </span>
+              <span className="text-xs text-zinc-400">
+                {currentRank === 1 ? '🥇 1st (Leading)' : currentRank === 2 ? '🥈 2nd Place' : currentRank === 3 ? '🥉 3rd Place' : 'Contender'}
+              </span>
+            </div>
+          </div>
+
+          {/* Highest Ever Placement Box */}
+          <div className="p-3 rounded-2xl bg-gradient-to-br from-purple-950/40 via-zinc-900 to-zinc-950 border border-purple-500/40 relative overflow-hidden">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black uppercase text-purple-300 tracking-wider flex items-center gap-1">
+                <Crown className="w-3 h-3 text-purple-400" />
+                <span>Highest Placement</span>
+              </span>
+              <span className="text-[9px] px-1.5 py-0.2 rounded bg-purple-400/20 text-purple-300 font-mono">
+                All-Time Peak
+              </span>
+            </div>
+            <div className="mt-1 flex items-baseline gap-1.5">
+              <span className="text-2xl sm:text-3xl font-black font-mono text-yellow-300">
+                #{highestRank}
+              </span>
+              <span className="text-xs text-zinc-400">
+                {highestRank === 1 ? '👑 Champion Finish' : highestRank === 2 ? '🥈 Peak Runner-Up' : highestRank === 3 ? '🥉 Peak Podium' : 'Peak Rank'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Player Bankroll & Stats Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mb-4 text-xs">
           <div className="p-3 rounded-2xl bg-zinc-900/80 border border-zinc-800">
             <span className="text-[10px] uppercase font-bold text-zinc-500 block">Current Balance</span>
             <span className="text-base font-black font-mono text-amber-300 flex items-center gap-1">
@@ -154,6 +210,82 @@ export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({
             <span className="text-base font-black font-mono text-purple-300">
               #{player.luckyNumber || 7}
             </span>
+          </div>
+        </div>
+
+        {/* ========================================================================= */}
+        {/* TOURNAMENT PLACEMENT HISTORY LOG                                          */}
+        {/* ========================================================================= */}
+        <div className="mb-4 p-3.5 rounded-2xl bg-zinc-900/90 border border-zinc-800 space-y-2.5">
+          <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
+            <div className="flex items-center gap-2">
+              <History className="w-4 h-4 text-amber-400" />
+              <h3 className="text-xs font-black uppercase tracking-wider text-zinc-200">
+                Placement History Log
+              </h3>
+            </div>
+            <span className="text-[10px] font-mono text-zinc-400">
+              {placementHistory.length} Recorded Finishes
+            </span>
+          </div>
+
+          <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+            {placementHistory.length > 0 ? (
+              placementHistory.map((item, idx) => (
+                <div 
+                  key={item.id || idx}
+                  className="flex items-center justify-between p-2 rounded-xl bg-zinc-950/80 border border-zinc-800/80 text-xs"
+                >
+                  <div className="flex items-center gap-2.5">
+                    {/* Rank Badge Icon */}
+                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-black font-mono text-xs ${
+                      item.rank === 1
+                        ? 'bg-amber-400 text-zinc-950 shadow-md shadow-amber-400/20'
+                        : item.rank === 2
+                        ? 'bg-zinc-300 text-zinc-950'
+                        : item.rank === 3
+                        ? 'bg-amber-700 text-amber-100'
+                        : 'bg-zinc-800 text-zinc-300'
+                    }`}>
+                      #{item.rank}
+                    </div>
+
+                    <div className="space-y-0.5">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-bold text-zinc-200">
+                          {item.badge || `Rank #${item.rank}`}
+                        </span>
+                        {item.payoutStatus && (
+                          <span className={`text-[9px] px-1.5 py-0.2 rounded font-bold uppercase ${
+                            item.payoutStatus === 'Paid'
+                              ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/30'
+                              : item.payoutStatus === 'Pending'
+                              ? 'bg-amber-950 text-amber-400 border border-amber-500/30'
+                              : 'bg-zinc-800 text-zinc-400'
+                          }`}>
+                            {item.payoutStatus}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[10px] text-zinc-500 flex items-center gap-1 font-mono">
+                        <Calendar className="w-2.5 h-2.5" />
+                        <span>{item.formattedDate || item.dateEst}</span>
+                        <span>•</span>
+                        <span>{item.category}</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  <span className="font-mono font-black text-amber-300 text-xs">
+                    {item.chips.toLocaleString()} <span className="text-[10px] font-normal text-amber-500">Chips</span>
+                  </span>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-4 text-xs text-zinc-500">
+                No archived tournament placements yet.
+              </div>
+            )}
           </div>
         </div>
 
@@ -260,7 +392,7 @@ export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({
 
         {/* Footer */}
         <div className="mt-4 pt-3 border-t border-zinc-800/80 flex items-center justify-between text-xs text-zinc-500">
-          <span className="text-[10px]">ChipZone Gambler Registry</span>
+          <span className="text-[10px]">ChipZone Placement & Dossier Registry</span>
           <button
             onClick={onClose}
             className="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300 font-bold text-xs cursor-pointer"

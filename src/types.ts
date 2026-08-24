@@ -80,6 +80,36 @@ export interface LootCrate {
   items: LootItem[];
 }
 
+export type BattleMode = '1v1' | '2v2' | 'group-ffa' | 'group-split';
+
+export interface BattleSeat {
+  id: string;
+  name: string;
+  avatar: string;
+  isAI: boolean;
+  isUser: boolean;
+  team?: 1 | 2;
+  ready: boolean;
+  currentTotalValue: number;
+  unboxedItems: LootItem[];
+}
+
+export interface CrateBattle {
+  id: string;
+  title: string;
+  mode: BattleMode;
+  maxPlayers: number;
+  crates: LootCrate[]; // Ordered from least expensive to most expensive
+  seats: (BattleSeat | null)[];
+  status: 'waiting' | 'in-progress' | 'completed';
+  currentRound: number; // 0 to crates.length - 1
+  createdAt: number;
+  createdBy: string;
+  winnerTeam?: 1 | 2;
+  winnerSeatIndex?: number;
+  sharedPotPerPlayer?: number;
+}
+
 export interface InventoryItem {
   instanceId: string;
   item: LootItem;
@@ -140,6 +170,20 @@ export interface UserAccount {
   accountType?: AccountType;
   accountStatus?: AccountStatus;
   bannedReason?: string;
+  currentPlacement?: number;
+  highestEverPlacement?: number;
+}
+
+export interface PlayerPlacementRecord {
+  id: string;
+  dateEst: string; // YYYY-MM-DD
+  formattedDate: string;
+  rank: number; // 1, 2, 3, etc.
+  category: string; // 'Daily Race' | 'Peak All-Time' | 'Tournament Winner'
+  chips: number;
+  formattedScore?: string;
+  badge?: string; // '🏆 Daily Champion' | '🥈 Runner-Up' | '🥉 Bronze' | '⭐ Top 5'
+  payoutStatus?: 'Paid' | 'Pending' | 'Processing' | 'None';
 }
 
 export type LeaderboardCategory = 'profit' | 'multiplier' | 'volume' | 'vault';
@@ -240,6 +284,9 @@ export interface PlayerProfileData {
   accountStatus?: AccountStatus;
   accountType?: AccountType;
   isAdFree?: boolean;
+  currentPlacement?: number;
+  highestEverPlacement?: number;
+  placementHistory?: PlayerPlacementRecord[];
 }
 
 export interface AdminManagedUser {

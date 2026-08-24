@@ -135,6 +135,28 @@ const OVERLORD_ITEMS: LootItem[] = [
   { id: 'ov-5', name: '★ StatTrak™ AK-47 | Case Hardened (Scar #661) ★', description: 'Tier 1 Blue Gem legendary specimen.', rarity: 'exotic', value: 160000, icon: '💎', color: '#eab308', bgGradient: 'from-blue-950 via-cyan-950 to-yellow-950', dropWeight: 0.05, lore: 'Worth more than an actual high-limit casino license.' },
 ];
 
+// Crate 2.5: Neo-Tokyo Cyberpunk Case ($100)
+const CYBERPUNK_ITEMS: LootItem[] = [
+  { id: 'cp-g1', name: 'Burnt Cyberware Fuse', description: 'Overheated during an unauthorized casino neural hack.', rarity: 'common', value: 4, icon: '🔌', color: '#9ca3af', bgGradient: 'from-zinc-800 to-zinc-900', dropWeight: 44, lore: 'Smells of ozone and silicon.' },
+  { id: 'cp-g2', name: 'Glitchy 16MB RAM Stick', description: 'Recovered from an arcade slot motherboard.', rarity: 'common', value: 9, icon: '💾', color: '#9ca3af', bgGradient: 'from-zinc-800 to-zinc-900', dropWeight: 34, lore: 'Corrupted memories of winning hands.' },
+  { id: 'cp-1', name: 'Holographic Neon Visor', description: 'HUD displays live roulette spin velocity in real time.', rarity: 'uncommon', value: 25, icon: '🥽', color: '#3b82f6', bgGradient: 'from-cyan-950 to-zinc-950', dropWeight: 14, lore: 'Projecting neon stats since 2077.' },
+  { id: 'cp-2', name: 'Overclocked Neural Deck', description: 'Injects pure adrenaline directly into hard 16 hit decisions.', rarity: 'rare', value: 95, icon: '📟', color: '#a855f7', bgGradient: 'from-purple-950 to-zinc-950', dropWeight: 5, lore: 'Zero ping card counting.' },
+  { id: 'cp-3', name: 'Thermal Camo Smart-Pistol', description: 'Auto-locks onto the casino jackpot button.', rarity: 'classified', value: 380, icon: '🔫', color: '#ec4899', bgGradient: 'from-pink-950 to-zinc-950', dropWeight: 2, lore: 'Homing rounds with neon tracer fire.' },
+  { id: 'cp-4', name: 'Cyberpunk Hoverbike Keyfob', description: 'Twin-turbine neon speedster parked in the VIP bay.', rarity: 'covert', value: 980, icon: '🏍️', color: '#ef4444', bgGradient: 'from-red-950 to-zinc-950', dropWeight: 0.8, lore: 'Accelerates from 0 to 200 mph in 1.8 seconds.' },
+  { id: 'cp-5', name: '★ Neo-Tokyo Katana | Damascus Matrix ★', description: 'Forged from folded nanotech steel with radioactive cyan glow.', rarity: 'exotic', value: 4200, icon: '🗡️', color: '#eab308', bgGradient: 'from-cyan-950 via-purple-950 to-yellow-950', dropWeight: 0.1, lore: 'Slices through house edge cleanly.' },
+];
+
+// Crate 4.5: Underworld Mafia Syndicate Safe ($800)
+const SYNDICATE_ITEMS: LootItem[] = [
+  { id: 'syn-g1', name: 'Counterfeit Havana Cigar', description: 'Filled with shredded newspapers and dried oregano.', rarity: 'common', value: 20, icon: '🚬', color: '#9ca3af', bgGradient: 'from-zinc-800 to-zinc-950', dropWeight: 45, lore: 'Smokes worse than a busted split.' },
+  { id: 'syn-g2', name: 'Spent Brass .45 Shell', description: 'Ejected after a poker game dispute back in 1932.', rarity: 'common', value: 50, icon: '🪙', color: '#9ca3af', bgGradient: 'from-zinc-800 to-zinc-950', dropWeight: 33, lore: 'Vintage speakeasy relic.' },
+  { id: 'syn-1', name: 'Italian Silk Fedora', description: 'Worn by the Don himself when overseeing the counting room.', rarity: 'uncommon', value: 180, icon: '🎩', color: '#3b82f6', bgGradient: 'from-blue-950 to-zinc-950', dropWeight: 14, lore: 'Tip it with respect.' },
+  { id: 'syn-2', name: 'Solid Gold Mafia Signet Ring', description: '24K gold with an onyx skull crest for sealing private deals.', rarity: 'rare', value: 750, icon: '💍', color: '#a855f7', bgGradient: 'from-purple-950 to-zinc-950', dropWeight: 5, lore: 'Kiss the ring before doubling down.' },
+  { id: 'syn-3', name: 'Gold-Plated Chicago Typewriter', description: 'Vintage drum-fed Tommy Gun with custom floral engravings.', rarity: 'classified', value: 2600, icon: '🎷', color: '#ec4899', bgGradient: 'from-pink-950 to-zinc-950', dropWeight: 2, lore: 'Plays the music of total table dominance.' },
+  { id: 'syn-4', name: 'Armored Syndicate Maybach V12', description: 'Bulletproof presidential cruiser with built-in champagne cellar.', rarity: 'covert', value: 6800, icon: '🚗', color: '#ef4444', bgGradient: 'from-red-950 to-zinc-950', dropWeight: 0.8, lore: 'Silent V12 getaway engine.' },
+  { id: 'syn-5', name: '★ Italian Stiletto | Black Pearl Galaxy ★', description: 'Ultra-rare mirror finish Damascus steel with pearl inlays.', rarity: 'exotic', value: 21000, icon: '🗡️', color: '#eab308', bgGradient: 'from-zinc-950 via-purple-950 to-yellow-950', dropWeight: 0.1, lore: 'Opens with a lethal mechanical snap.' },
+];
+
 // Crate 7: Sovereign Bullshit Reliquary ($15,000)
 const SOVEREIGN_ITEMS: LootItem[] = [
   { id: 'sov-g1', name: 'Gold-Plated Plastic Spork', description: 'Stolen from the ultra-VIP buffet cart. Worth less than $1.', rarity: 'common', value: 150, icon: '🍴', color: '#9ca3af', bgGradient: 'from-zinc-800 to-zinc-950', dropWeight: 48, lore: 'The absolute pinnacle of high-stakes trolling.' },
@@ -144,6 +166,17 @@ const SOVEREIGN_ITEMS: LootItem[] = [
   { id: 'sov-3', name: '★ AWP | Gungnir (Souvenir Factory New) ★', description: 'The spear of Odin forged into a celestial precision instrument.', rarity: 'exotic', value: 110000, icon: '🐉', color: '#eab308', bgGradient: 'from-sky-950 via-indigo-950 to-yellow-950', dropWeight: 0.8, lore: 'Never misses the jackpot target.' },
   { id: 'sov-4', name: 'Imperial Crown of the Sovereign Casino Monarch', description: 'Embossed with 1,000 rubies, sapphires, and uncut Vegas emeralds.', rarity: 'exotic', value: 250000, icon: '👑', color: '#eab308', bgGradient: 'from-purple-950 via-rose-950 to-yellow-950', dropWeight: 0.2, lore: 'Wear it while demanding unlimited ATM bailouts.' },
   { id: 'sov-5', name: '★ The 1-of-1 Infinity Bullshit Poop Scepter ★', description: 'Mythological supreme artifact of infinite degens. Grants ultimate flex supremacy.', rarity: 'exotic', value: 650000, icon: '💩', color: '#eab308', bgGradient: 'from-yellow-950 via-amber-950 to-purple-950', dropWeight: 0.03, lore: 'The rarest virtual asset ever minted in human civilization.' },
+];
+
+// Crate 8: Cosmic Supernova God Core ($30,000)
+const COSMIC_SUPERNOVA_ITEMS: LootItem[] = [
+  { id: 'cs-g1', name: 'Irradiated Space Debris', description: 'Chipped off an asteroid entering Earth orbit at Mach 25.', rarity: 'common', value: 450, icon: '☄️', color: '#9ca3af', bgGradient: 'from-zinc-800 to-zinc-950', dropWeight: 46, lore: 'Cold, radioactive cosmic basalt.' },
+  { id: 'cs-g2', name: 'Extinguished Pulsar Ash', description: 'Remnants of a collapsed neutron star. Dense and worthless.', rarity: 'common', value: 1100, icon: '🌌', color: '#9ca3af', bgGradient: 'from-zinc-800 to-zinc-950', dropWeight: 32, lore: 'Weighs 10,000 tons per teaspoon.' },
+  { id: 'cs-1', name: 'Antimatter Containment Core', description: 'Suspends 50 milligrams of pure antimatter in magnetic vacuum.', rarity: 'classified', value: 14000, icon: '🔮', color: '#ec4899', bgGradient: 'from-purple-950 to-zinc-950', dropWeight: 14, lore: 'Handle with utmost care.' },
+  { id: 'cs-2', name: 'Starlight Celestial Warp Reactor', description: 'Faster-than-light hyperdrive engine harvested from a Dyson sphere.', rarity: 'covert', value: 48000, icon: '⚛️', color: '#ef4444', bgGradient: 'from-red-950 to-zinc-950', dropWeight: 4, lore: 'Bends space-time around your chip stack.' },
+  { id: 'cs-3', name: '★ Gravity Scepter of the Event Horizon ★', description: 'Pulls black hole singularities into physical existence.', rarity: 'mythic', value: 180000, icon: '🪐', color: '#f59e0b', bgGradient: 'from-amber-950 via-purple-950 to-zinc-950', dropWeight: 1.2, lore: 'No light or bad beats can escape its pull.' },
+  { id: 'cs-4', name: '★ Karambit | Cosmic Nebula Supernova ★', description: 'Infused with stellar dust from the birth of the Andromeda galaxy.', rarity: 'exotic', value: 480000, icon: '🗡️', color: '#eab308', bgGradient: 'from-indigo-950 via-purple-950 to-yellow-950', dropWeight: 0.3, lore: 'Shimmers across the infrared and ultraviolet spectrum.' },
+  { id: 'cs-5', name: '★ The Omniversal 1-of-1 Infinite God Core ★', description: 'The primordial seed of all existence in the multiverse.', rarity: 'exotic', value: 1500000, icon: '🌟', color: '#eab308', bgGradient: 'from-yellow-900 via-amber-700 to-violet-950', dropWeight: 0.05, lore: 'Supreme absolute power over reality itself.' },
 ];
 
 export const LOOT_CRATES: LootCrate[] = [
@@ -168,6 +201,16 @@ export const LOOT_CRATES: LootCrate[] = [
     items: STREET_HUSTLER_ITEMS,
   },
   {
+    id: 'cyberpunk-case',
+    name: 'Neo-Tokyo Cyberpunk Case',
+    tagline: 'Neural decks, holographic visors, and Damascus Matrix katanas.',
+    cost: 100,
+    icon: '⚡',
+    accentColor: '#06b6d4',
+    glowColor: 'rgba(6, 182, 212, 0.4)',
+    items: CYBERPUNK_ITEMS,
+  },
+  {
     id: 'high-roller',
     name: 'High Roller Vault',
     tagline: 'Penthouse comps, luxury watches, and Macau tournament trophies.',
@@ -188,13 +231,23 @@ export const LOOT_CRATES: LootCrate[] = [
     items: MYTHIC_ITEMS,
   },
   {
+    id: 'syndicate-safe',
+    name: 'Underworld Mafia Syndicate Safe',
+    tagline: 'Solid gold signet rings, gold Tommy guns, and Maybach keys.',
+    cost: 800,
+    icon: '💼',
+    accentColor: '#ec4899',
+    glowColor: 'rgba(236, 72, 153, 0.4)',
+    items: SYNDICATE_ITEMS,
+  },
+  {
     id: 'diamond-whale',
     name: 'Diamond Whale Coffer',
     tagline: 'Private jet charters, Patek Philippe celestial watches, and Emerald Doppler blades.',
     cost: 1500,
     icon: '🐋',
-    accentColor: '#06b6d4',
-    glowColor: 'rgba(6, 182, 212, 0.4)',
+    accentColor: '#38bdf8',
+    glowColor: 'rgba(56, 189, 248, 0.4)',
     items: DIAMOND_WHALE_ITEMS,
   },
   {
@@ -212,10 +265,20 @@ export const LOOT_CRATES: LootCrate[] = [
     name: 'Sovereign ChipZone Reliquary',
     tagline: 'The absolute apex of digital opulence. Odin Gungnir, Sovereign Crown & The Infinity Poop Scepter.',
     cost: 15000,
-    icon: '⚡',
+    icon: '👑',
     accentColor: '#eab308',
     glowColor: 'rgba(234, 179, 8, 0.6)',
     items: SOVEREIGN_ITEMS,
+  },
+  {
+    id: 'cosmic-supernova',
+    name: 'Cosmic Supernova God Core',
+    tagline: 'Antimatter engines, event horizon gravity scepters, and the Omniversal 1-of-1 God Core.',
+    cost: 30000,
+    icon: '🌌',
+    accentColor: '#c084fc',
+    glowColor: 'rgba(192, 132, 252, 0.6)',
+    items: COSMIC_SUPERNOVA_ITEMS,
   },
 ];
 
@@ -255,3 +318,30 @@ export function generateReelItems(
   }
   return items;
 }
+
+export const AI_BATTLE_BOTS = [
+  { name: 'DegenDan', avatar: '🎩', tagline: 'All in or nothing' },
+  { name: 'WhaleVince', avatar: '🐋', tagline: 'Unboxing 15k reliquaries' },
+  { name: 'CryptoKing', avatar: '👑', tagline: 'Diamond hands only' },
+  { name: 'LuckyLucy', avatar: '🍀', tagline: 'Naturally born lucky' },
+  { name: 'VegasVic', avatar: '🎲', tagline: 'Vegas strip veteran' },
+  { name: 'MatrixNeo', avatar: '⚡', tagline: 'Hacking the odds' },
+  { name: 'BaccaratBob', avatar: '🃏', tagline: 'Double down master' },
+  { name: 'DiamondDonna', avatar: '💎', tagline: 'Only here for the Karambits' },
+  { name: 'CyberSamurai', avatar: '🗡️', tagline: 'Looking for Damascus Matrix' },
+  { name: 'OverlordOzzy', avatar: '🔥', tagline: 'Owns 1% casino equity' },
+];
+
+export function getRandomAIBot(excludeNames: string[] = []) {
+  const available = AI_BATTLE_BOTS.filter(b => !excludeNames.includes(b.name));
+  const pool = available.length > 0 ? available : AI_BATTLE_BOTS;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+/**
+ * Sorts crates in order of least expensive to most expensive
+ */
+export function sortCratesByCost(crates: LootCrate[]): LootCrate[] {
+  return [...crates].sort((a, b) => a.cost - b.cost);
+}
+
