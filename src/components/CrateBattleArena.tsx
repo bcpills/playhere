@@ -87,108 +87,16 @@ export const CrateBattleArena: React.FC<CrateBattleArenaProps> = ({
   const [seatReels, setSeatReels] = useState<Record<number, ActiveReelState>>({});
   const [roundWinningItems, setRoundWinningItems] = useState<Record<number, LootItem>>({});
   const [claimedStatus, setClaimedStatus] = useState<'cashed' | 'vaulted' | null>(null);
+  const [isReelSpinning, setIsReelSpinning] = useState<boolean>(false);
+  const [spinNonce, setSpinNonce] = useState<number>(0);
   
   const tickAudioRef = useRef<number | null>(null);
+  const roundAnimTimerRef = useRef<number | null>(null);
+  const roundFinishTimerRef = useRef<number | null>(null);
+  const nextRoundTimerRef = useRef<number | null>(null);
 
-  // Premade / Seeded Battles in Lobby
-  const [availableBattles, setAvailableBattles] = useState<CrateBattle[]>([
-    {
-      id: 'battle-pre-1',
-      title: '⚡ Fast 1v1 Street Hustler Duel',
-      mode: '1v1',
-      maxPlayers: 2,
-      crates: [LOOT_CRATES[0], LOOT_CRATES[1]], // 10c, 50c
-      seats: [
-        {
-          id: 'bot-1',
-          name: 'DegenDan',
-          avatar: '🎩',
-          isAI: true,
-          isUser: false,
-          ready: true,
-          currentTotalValue: 0,
-          unboxedItems: [],
-        },
-        null,
-      ],
-      status: 'waiting',
-      currentRound: 0,
-      createdAt: Date.now() - 30000,
-      createdBy: 'DegenDan',
-    },
-    {
-      id: 'battle-pre-2',
-      title: '💎 2v2 High-Roller Team Showdown',
-      mode: '2v2',
-      maxPlayers: 4,
-      crates: [LOOT_CRATES[1], LOOT_CRATES[2], LOOT_CRATES[3]], // 50c, 100c, 200c
-      seats: [
-        {
-          id: 'bot-2',
-          name: 'WhaleVince',
-          avatar: '🐋',
-          isAI: true,
-          isUser: false,
-          team: 1,
-          ready: true,
-          currentTotalValue: 0,
-          unboxedItems: [],
-        },
-        null,
-        {
-          id: 'bot-3',
-          name: 'CryptoKing',
-          avatar: '👑',
-          isAI: true,
-          isUser: false,
-          team: 2,
-          ready: true,
-          currentTotalValue: 0,
-          unboxedItems: [],
-        },
-        null,
-      ],
-      status: 'waiting',
-      currentRound: 0,
-      createdAt: Date.now() - 60000,
-      createdBy: 'WhaleVince',
-    },
-    {
-      id: 'battle-pre-3',
-      title: '🤝 4-Player Shared Pot Co-op Lounge',
-      mode: 'group-split',
-      maxPlayers: 4,
-      crates: [LOOT_CRATES[0], LOOT_CRATES[1], LOOT_CRATES[2]],
-      seats: [
-        {
-          id: 'bot-4',
-          name: 'LuckyLucy',
-          avatar: '🍀',
-          isAI: true,
-          isUser: false,
-          ready: true,
-          currentTotalValue: 0,
-          unboxedItems: [],
-        },
-        {
-          id: 'bot-5',
-          name: 'VegasVic',
-          avatar: '🎲',
-          isAI: true,
-          isUser: false,
-          ready: true,
-          currentTotalValue: 0,
-          unboxedItems: [],
-        },
-        null,
-        null,
-      ],
-      status: 'waiting',
-      currentRound: 0,
-      createdAt: Date.now() - 90000,
-      createdBy: 'LuckyLucy',
-    },
-  ]);
+  // User-created Battles in Lobby (No auto-generated/seeded bot rooms)
+  const [availableBattles, setAvailableBattles] = useState<CrateBattle[]>([]);
 
   // Expand playlist into flat array of crates sorted by cost ascending
   const getFlatSortedCrates = (playlist: { crate: LootCrate; count: number }[]): LootCrate[] => {
@@ -415,6 +323,15 @@ export const CrateBattleArena: React.FC<CrateBattleArenaProps> = ({
     const currentCrate = battle.crates[roundIdx];
     if (!currentCrate) return;
 
+    if (tickAudioRef.current) clearTimeout(tickAudioRef.current);
+    if (roundAnimTimerRef.current) clearTimeout(roundAnimTimerRef.current);
+    if (roundFinishTimerRef.current) clearTimeout(roundFinishTimerRef.current);
+    if (nextRoundTimerRef.current) clearTimeout(nextRoundTimerRef.current);
+
+    // Reset spinning state immediately so DOM resets to index 0
+    setIsReelSpinning(false);
+    setCurrentRoundIndex(roundIdx);
+    setSpinNonce(prev => prev + 1);
     setBattlePhase('spinning');
 
     const WIN_INDEX = 40;
@@ -445,24 +362,32 @@ export const CrateBattleArena: React.FC<CrateBattleArenaProps> = ({
     setSeatReels(newReelStates);
 
     // Play ticking sound effect
-    let tickCount = 0;
-    const tickIntervals = [40, 50, 60, 80, 110, 150, 220, 320, 450];
-    let intervalIndex = 0;
-
     const playTicks = () => {
-      sound.playCrateTick(Math.random() * 150);
-      tickCount++;
-      if (tickCount < 30) {
-        if (tickCount % 4 === 0 && intervalIndex < tickIntervals.length - 1) {
-          intervalIndex++;
-        }
-        tickAudioRef.current = window.setTimeout(playTicks, tickIntervals[intervalIndex]);
-      }
-    };
-    playTicks();
+      let tickCount = 0;
+      const tickIntervals = [35, 45, 60, 80, 110, 150, 220, 320, 450];
+      let intervalIndex = 0;
 
-    // End of spin deceleration (~5.5 seconds)
-    setTimeout(() => {
+      const tick = () => {
+        sound.playCrateTick(Math.random() * 150);
+        tickCount++;
+        if (tickCount < 30) {
+          if (tickCount % 4 === 0 && intervalIndex < tickIntervals.length - 1) {
+            intervalIndex++;
+          }
+          tickAudioRef.current = window.setTimeout(tick, tickIntervals[intervalIndex]);
+        }
+      };
+      tick();
+    };
+
+    // Trigger high-speed deceleration animation on next tick
+    roundAnimTimerRef.current = window.setTimeout(() => {
+      setIsReelSpinning(true);
+      playTicks();
+    }, 60);
+
+    // End of spin deceleration (~5.4 seconds)
+    roundFinishTimerRef.current = window.setTimeout(() => {
       // Mark all reels as revealed
       setSeatReels(prev => {
         const updated: Record<number, ActiveReelState> = {};
@@ -502,17 +427,16 @@ export const CrateBattleArena: React.FC<CrateBattleArenaProps> = ({
 
       // If more rounds remaining, automatically trigger next round after pause
       if (roundIdx + 1 < battle.crates.length) {
-        setTimeout(() => {
-          setCurrentRoundIndex(roundIdx + 1);
+        nextRoundTimerRef.current = window.setTimeout(() => {
           executeRound(roundIdx + 1, updatedBattle);
-        }, 3200);
+        }, 3000);
       } else {
         // Battle Completed! Final resolution
-        setTimeout(() => {
+        nextRoundTimerRef.current = window.setTimeout(() => {
           resolveFinalBattle(updatedBattle);
         }, 2200);
       }
-    }, 5500);
+    }, 5400);
   };
 
   // Resolve final battle winners and rewards
@@ -656,6 +580,9 @@ export const CrateBattleArena: React.FC<CrateBattleArenaProps> = ({
   useEffect(() => {
     return () => {
       if (tickAudioRef.current) clearTimeout(tickAudioRef.current);
+      if (roundAnimTimerRef.current) clearTimeout(roundAnimTimerRef.current);
+      if (roundFinishTimerRef.current) clearTimeout(roundFinishTimerRef.current);
+      if (nextRoundTimerRef.current) clearTimeout(nextRoundTimerRef.current);
     };
   }, []);
 
@@ -727,117 +654,143 @@ export const CrateBattleArena: React.FC<CrateBattleArenaProps> = ({
           <div className="flex items-center justify-between px-1">
             <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-zinc-300 flex items-center gap-2">
               <Users className="w-4 h-4 text-amber-400" />
-              <span>Joinable Open Battles ({availableBattles.length})</span>
+              <span>User-Created Battles ({availableBattles.length})</span>
             </h3>
             <span className="text-xs text-zinc-500 font-mono">
-              Click any open seat to join instantly
+              Only user-hosted arenas active
             </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {availableBattles.map((battle) => {
-              const totalCost = battle.crates.reduce((sum, c) => sum + c.cost, 0);
-              const filledSeatsCount = battle.seats.filter(Boolean).length;
-              const canAfford = balance >= totalCost;
+          {availableBattles.length === 0 ? (
+            <div className="p-8 sm:p-12 rounded-3xl bg-zinc-950/80 border-2 border-dashed border-zinc-800 text-center space-y-4">
+              <div className="w-16 h-16 rounded-2xl bg-purple-950/60 border border-purple-500/30 flex items-center justify-center text-3xl mx-auto shadow-lg shadow-purple-500/10">
+                ⚔️
+              </div>
+              <div className="max-w-md mx-auto space-y-1.5">
+                <h4 className="text-base font-black uppercase text-zinc-100">
+                  No Active User Battles Right Now
+                </h4>
+                <p className="text-xs text-zinc-400">
+                  Create your own custom arena! Configure your crate playlist (ordered least to most expensive), select 1v1, 2v2, or Group mode, and add AI or friends to any seat.
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  sound.playChip();
+                  setViewState('create');
+                }}
+                className="px-6 py-3 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-black text-xs uppercase tracking-wider shadow-lg shadow-purple-600/30 inline-flex items-center gap-2 transition-all transform hover:scale-105 cursor-pointer"
+              >
+                <PlusCircle className="w-4 h-4 text-yellow-300" />
+                <span>Create Battle Arena Now</span>
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {availableBattles.map((battle) => {
+                const totalCost = battle.crates.reduce((sum, c) => sum + c.cost, 0);
+                const filledSeatsCount = battle.seats.filter(Boolean).length;
+                const canAfford = balance >= totalCost;
 
-              return (
-                <div
-                  key={battle.id}
-                  className="rounded-3xl bg-zinc-950 border-2 border-zinc-800 hover:border-purple-500/60 p-4.5 flex flex-col justify-between transition-all hover:shadow-xl hover:shadow-purple-500/10 group"
-                >
-                  <div>
-                    {/* Header */}
-                    <div className="flex items-center justify-between mb-2.5">
-                      <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-purple-950 text-purple-300 border border-purple-500/40">
-                        {battle.mode === '1v1' ? '1v1 Duel' : battle.mode === '2v2' ? '2v2 Squad' : battle.mode === 'group-ffa' ? 'FFA Versus' : 'Shared Pot Co-op'}
-                      </span>
-                      <span className="text-xs font-mono font-black text-amber-300">
-                        {totalCost.toLocaleString()}c / seat
-                      </span>
-                    </div>
-
-                    <h4 className="text-sm font-black text-zinc-100 group-hover:text-amber-300 transition-colors line-clamp-1">
-                      {battle.title}
-                    </h4>
-
-                    {/* Crates sequence preview */}
-                    <div className="mt-3 p-2.5 rounded-2xl bg-zinc-900/90 border border-zinc-800">
-                      <div className="text-[10px] uppercase font-bold text-zinc-400 mb-1.5 flex items-center justify-between">
-                        <span>{battle.crates.length} Crates (Least to Most Cost)</span>
-                        <span className="text-purple-400">Sequence →</span>
+                return (
+                  <div
+                    key={battle.id}
+                    className="rounded-3xl bg-zinc-950 border-2 border-zinc-800 hover:border-purple-500/60 p-4.5 flex flex-col justify-between transition-all hover:shadow-xl hover:shadow-purple-500/10 group"
+                  >
+                    <div>
+                      {/* Header */}
+                      <div className="flex items-center justify-between mb-2.5">
+                        <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-purple-950 text-purple-300 border border-purple-500/40">
+                          {battle.mode === '1v1' ? '1v1 Duel' : battle.mode === '2v2' ? '2v2 Squad' : battle.mode === 'group-ffa' ? 'FFA Versus' : 'Shared Pot Co-op'}
+                        </span>
+                        <span className="text-xs font-mono font-black text-amber-300">
+                          {totalCost.toLocaleString()}c / seat
+                        </span>
                       </div>
-                      <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-                        {battle.crates.map((crate, cIdx) => (
-                          <div
-                            key={`${crate.id}-${cIdx}`}
-                            className="flex items-center gap-1 px-2 py-1 rounded-lg bg-zinc-950 border border-zinc-800 shrink-0 text-xs"
-                            title={`${crate.name} (${crate.cost}c)`}
-                          >
-                            <span>{crate.icon}</span>
-                            <span className="text-[10px] font-mono text-zinc-300">{crate.cost}c</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
 
-                    {/* Seats preview */}
-                    <div className="mt-3 grid grid-cols-2 gap-2">
-                      {battle.seats.map((seat, sIdx) => {
-                        if (seat) {
-                          return (
+                      <h4 className="text-sm font-black text-zinc-100 group-hover:text-amber-300 transition-colors line-clamp-1">
+                        {battle.title}
+                      </h4>
+
+                      {/* Crates sequence preview */}
+                      <div className="mt-3 p-2.5 rounded-2xl bg-zinc-900/90 border border-zinc-800">
+                        <div className="text-[10px] uppercase font-bold text-zinc-400 mb-1.5 flex items-center justify-between">
+                          <span>{battle.crates.length} Crates (Least to Most Cost)</span>
+                          <span className="text-purple-400">Sequence →</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+                          {battle.crates.map((crate, cIdx) => (
                             <div
-                              key={`seat-${sIdx}`}
-                              className="p-2 rounded-xl bg-zinc-900 border border-emerald-500/40 flex items-center gap-2 text-xs"
+                              key={`${crate.id}-${cIdx}`}
+                              className="flex items-center gap-1 px-2 py-1 rounded-lg bg-zinc-950 border border-zinc-800 shrink-0 text-xs"
+                              title={`${crate.name} (${crate.cost}c)`}
                             >
-                              <span className="text-base">{seat.avatar}</span>
-                              <div className="truncate">
-                                <div className="font-bold text-zinc-200 truncate">{seat.name}</div>
-                                <div className="text-[9px] text-emerald-400 font-mono">Ready</div>
-                              </div>
+                              <span>{crate.icon}</span>
+                              <span className="text-[10px] font-mono text-zinc-300">{crate.cost}c</span>
                             </div>
-                          );
-                        }
+                          ))}
+                        </div>
+                      </div>
 
-                        return (
-                          <button
-                            key={`seat-${sIdx}`}
-                            disabled={!canAfford}
-                            onClick={() => handleJoinBattle(battle, sIdx)}
-                            className="p-2 rounded-xl bg-zinc-900/60 hover:bg-purple-950/60 border border-dashed border-zinc-700 hover:border-purple-400 flex items-center justify-center gap-1.5 text-xs text-zinc-400 hover:text-purple-300 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                          >
-                            <UserPlus className="w-3.5 h-3.5" />
-                            <span className="font-bold">Join Seat {sIdx + 1}</span>
-                          </button>
-                        );
-                      })}
+                      {/* Seats preview */}
+                      <div className="mt-3 grid grid-cols-2 gap-2">
+                        {battle.seats.map((seat, sIdx) => {
+                          if (seat) {
+                            return (
+                              <div
+                                key={`seat-${sIdx}`}
+                                className="p-2 rounded-xl bg-zinc-900 border border-emerald-500/40 flex items-center gap-2 text-xs"
+                              >
+                                <span className="text-base">{seat.avatar}</span>
+                                <div className="truncate">
+                                  <div className="font-bold text-zinc-200 truncate">{seat.name}</div>
+                                  <div className="text-[9px] text-emerald-400 font-mono">Ready</div>
+                                </div>
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <button
+                              key={`seat-${sIdx}`}
+                              disabled={!canAfford}
+                              onClick={() => handleJoinBattle(battle, sIdx)}
+                              className="p-2 rounded-xl bg-zinc-900/60 hover:bg-purple-950/60 border border-dashed border-zinc-700 hover:border-purple-400 flex items-center justify-center gap-1.5 text-xs text-zinc-400 hover:text-purple-300 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                              <UserPlus className="w-3.5 h-3.5" />
+                              <span className="font-bold">Join Seat {sIdx + 1}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="mt-4 pt-3 border-t border-zinc-800/80 flex items-center justify-between text-xs">
+                      <span className="text-zinc-500 font-mono">
+                        {filledSeatsCount}/{battle.maxPlayers} Players Ready
+                      </span>
+
+                      <button
+                        onClick={() => {
+                          const firstEmpty = battle.seats.findIndex(s => s === null);
+                          if (firstEmpty !== -1) {
+                            handleJoinBattle(battle, firstEmpty);
+                          } else {
+                            setActiveBattle(battle);
+                            setViewState('battle');
+                          }
+                        }}
+                        className="px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center gap-1 transition-all"
+                      >
+                        <span>Enter Arena</span>
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </div>
-
-                  <div className="mt-4 pt-3 border-t border-zinc-800/80 flex items-center justify-between text-xs">
-                    <span className="text-zinc-500 font-mono">
-                      {filledSeatsCount}/{battle.maxPlayers} Players Ready
-                    </span>
-
-                    <button
-                      onClick={() => {
-                        const firstEmpty = battle.seats.findIndex(s => s === null);
-                        if (firstEmpty !== -1) {
-                          handleJoinBattle(battle, firstEmpty);
-                        } else {
-                          setActiveBattle(battle);
-                          setViewState('battle');
-                        }
-                      }}
-                      className="px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center gap-1 transition-all"
-                    >
-                      <span>Enter Arena</span>
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
@@ -1257,17 +1210,18 @@ export const CrateBattleArena: React.FC<CrateBattleArenaProps> = ({
                       </div>
                     ) : (
                       <div
+                        key={`reel-strip-seat-${seatIdx}-round-${currentRoundIndex}-spin-${spinNonce}`}
                         className="flex items-center gap-2 will-change-transform px-4"
                         style={{
-                          transform: `translateX(${reelState?.translateX || 0}px)`,
-                          transition: battlePhase === 'spinning' ? 'transform 5.2s cubic-bezier(0.12, 0.98, 0.22, 1)' : 'none',
+                          transform: isReelSpinning ? `translateX(${reelState?.translateX || 0}px)` : 'translateX(0px)',
+                          transition: isReelSpinning ? `transform ${5.0 + seatIdx * 0.08}s cubic-bezier(0.12, 0.98, 0.22, 1)` : 'none',
                         }}
                       >
                         {reelState?.items.map((item, idx) => {
                           const rarity = RARITY_CONFIG[item.rarity];
                           return (
                             <div
-                              key={`${item.id}-${idx}`}
+                              key={`round-${currentRoundIndex}-${item.id}-${idx}`}
                               style={{ width: '130px' }}
                               className={`flex-shrink-0 h-30 rounded-xl border p-2 flex flex-col justify-between items-center text-center bg-gradient-to-b ${rarity.bg} ${rarity.border}`}
                             >
