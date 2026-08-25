@@ -75,7 +75,7 @@ export const ModeratorModal: React.FC<ModeratorModalProps> = ({
 
   // Users & Moderation state
   const [userSearchQuery, setUserSearchQuery] = useState<string>('');
-  const [filterUserStatus, setFilterUserStatus] = useState<'all' | 'active' | 'banned' | 'closed'>('all');
+  const [filterUserStatus, setFilterUserStatus] = useState<'all' | 'active' | 'moderator' | 'banned' | 'closed'>('all');
   const [filterUserTier, setFilterUserTier] = useState<'all' | 'paid' | 'free'>('all');
   const [selectedUserForChat, setSelectedUserForChat] = useState<AdminManagedUser | null>(null);
   const [editingBalanceUserId, setEditingBalanceUserId] = useState<string | null>(null);
@@ -182,14 +182,14 @@ export const ModeratorModal: React.FC<ModeratorModalProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-base sm:text-lg font-black uppercase tracking-wider text-zinc-100">
-                  Administrator Portal
+                  Admin & Moderator Portal
                 </h2>
                 <span className="text-[10px] px-2 py-0.5 rounded-full font-black uppercase bg-purple-500/20 text-purple-300 border border-purple-500/40">
-                  THOMAS JOE ONLY
+                  ADMIN & MOD ACCESS
                 </span>
               </div>
               <p className="text-xs text-zinc-400">
-                Manage accounts, search player chat logs, toggle paid vs free, adjust balances, and distribute tournament prizes.
+                Manage accounts, grant moderator roles, search player chat logs, toggle paid vs free, adjust balances, and distribute tournament prizes.
               </p>
             </div>
           </div>
@@ -285,7 +285,7 @@ export const ModeratorModal: React.FC<ModeratorModalProps> = ({
               <div className="flex items-center gap-2 flex-wrap">
                 <div className="flex items-center gap-1 bg-zinc-950 p-1 rounded-xl border border-zinc-800 text-xs">
                   <span className="text-[10px] text-zinc-500 font-bold px-1.5 uppercase">Status:</span>
-                  {(['all', 'active', 'banned', 'closed'] as const).map((status) => (
+                  {(['all', 'active', 'moderator', 'banned', 'closed'] as const).map((status) => (
                     <button
                       key={status}
                       onClick={() => {
@@ -296,6 +296,8 @@ export const ModeratorModal: React.FC<ModeratorModalProps> = ({
                         filterUserStatus === status
                           ? status === 'active'
                             ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                            : status === 'moderator'
+                            ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40'
                             : status === 'banned'
                             ? 'bg-red-500/20 text-red-300 border border-red-500/40'
                             : status === 'closed'
@@ -304,7 +306,7 @@ export const ModeratorModal: React.FC<ModeratorModalProps> = ({
                           : 'text-zinc-400 hover:text-zinc-200'
                       }`}
                     >
-                      {status}
+                      {status === 'moderator' ? '🛡️ Moderator' : status}
                     </button>
                   ))}
                 </div>
@@ -389,11 +391,13 @@ export const ModeratorModal: React.FC<ModeratorModalProps> = ({
                               <span className={`text-[10px] font-black uppercase px-2 py-0.2 rounded-md ${
                                 user.accountStatus === 'active'
                                   ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                                  : user.accountStatus === 'moderator'
+                                  ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 flex items-center gap-1'
                                   : user.accountStatus === 'banned'
                                   ? 'bg-red-500/20 text-red-300 border border-red-500/40'
                                   : 'bg-zinc-800 text-zinc-400 border border-zinc-700'
                               }`}>
-                                {user.accountStatus}
+                                {user.accountStatus === 'moderator' ? '🛡️ MODERATOR' : user.accountStatus}
                               </span>
 
                               {/* Paid vs Free Tier Badge */}
@@ -478,6 +482,7 @@ export const ModeratorModal: React.FC<ModeratorModalProps> = ({
                                 className="px-2.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-xs font-bold text-zinc-200 focus:outline-none cursor-pointer"
                               >
                                 <option value="active">Active</option>
+                                <option value="moderator">🛡️ Moderator</option>
                                 <option value="banned">Banned</option>
                                 <option value="closed">Closed</option>
                               </select>

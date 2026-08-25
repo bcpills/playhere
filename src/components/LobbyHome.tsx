@@ -26,7 +26,6 @@ interface LobbyHomeProps {
   balance: number;
   netProfit: number;
   stats: CasinoStats;
-  inventory: InventoryItem[];
   userAccount: UserAccount;
   dailyWinners: DailyWinnerRecord[];
   onNavigate: (tab: GameTab) => void;
@@ -44,7 +43,6 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
   balance,
   netProfit,
   stats,
-  inventory,
   userAccount,
   dailyWinners,
   onNavigate,
@@ -226,10 +224,10 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
           </span>
         </div>
 
-        {/* 2x2 GRID MATCHING ATTACHED DIAGRAM */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+        {/* CASINO FLOOR GAMES GRID */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
           {/* ========================================================================= */}
-          {/* TOP-LEFT: 40-BALL KENO                                                    */}
+          {/* GAME 1: 40-BALL KENO                                                      */}
           {/* ========================================================================= */}
           <div 
             id="portal-keno"
@@ -296,7 +294,7 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
           </div>
 
           {/* ========================================================================= */}
-          {/* TOP-RIGHT: BJ (BLACKJACK & SIDE BETS)                                     */}
+          {/* GAME 2: BJ (BLACKJACK & SIDE BETS)                                        */}
           {/* ========================================================================= */}
           <div 
             id="portal-blackjack"
@@ -363,7 +361,7 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
           </div>
 
           {/* ========================================================================= */}
-          {/* BOTTOM-LEFT: LOOT CRATE UNBOXER                                           */}
+          {/* GAME 3: LOOT CRATE UNBOXER & CRATE BATTLES                                */}
           {/* ========================================================================= */}
           <div 
             id="portal-unboxer"
@@ -382,10 +380,10 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
                   </div>
                   <div>
                     <span className="text-[10px] font-black uppercase tracking-widest text-purple-400 block">
-                      Vault 3
+                      Table 3
                     </span>
                     <h4 className="text-lg sm:text-xl font-black uppercase text-zinc-100 group-hover:text-purple-300 transition-colors">
-                      Loot Crate
+                      Loot Crates
                     </h4>
                   </div>
                 </div>
@@ -396,7 +394,7 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
               </div>
 
               <p className="text-xs text-zinc-300 leading-relaxed mb-3">
-                Solo multi-open up to 10× at once, or join <strong>Crate Battles</strong> (1v1, 2v2, Group Pots) with AI competitors across 10 crate tiers up to the <strong>Cosmic Supernova God Core</strong>.
+                Solo multi-open up to 10× at once, or join <strong>Crate Battles</strong> (1v1, 2v2, Group Pots) with AI competitors across 10 crate tiers with instant auto-credited payouts.
               </p>
 
               {/* Case Badges */}
@@ -408,7 +406,7 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
                   ⚔️ 1v1 & 2v2 Battles
                 </span>
                 <span className="text-[10px] px-2 py-0.5 rounded-md bg-zinc-950 text-emerald-300 border border-zinc-800">
-                  🤝 Shared Pots
+                  💰 Auto Chip Payouts
                 </span>
               </div>
             </div>
@@ -424,73 +422,6 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
                 className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-black text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-lg shadow-purple-600/20 group-hover:translate-x-0.5 transition-all cursor-pointer"
               >
                 <span>Open Crates</span>
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-
-          {/* ========================================================================= */}
-          {/* BOTTOM-RIGHT: COLLECTION (TROPHY VAULT & INVENTORY)                       */}
-          {/* ========================================================================= */}
-          <div 
-            id="portal-inventory"
-            onClick={() => {
-              sound.playChip();
-              onNavigate('inventory');
-            }}
-            className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-cyan-950/30 via-zinc-900/90 to-zinc-950 border-2 border-cyan-500/40 hover:border-cyan-400 p-5 cursor-pointer transition-all duration-200 hover:shadow-2xl hover:shadow-cyan-500/20 flex flex-col justify-between min-h-[260px]"
-          >
-            {/* Top Row: Icon & Vault Worth */}
-            <div>
-              <div className="flex items-center justify-between gap-2 mb-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-13 h-13 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-700 border border-cyan-300/50 flex items-center justify-center text-zinc-950 shadow-lg shadow-cyan-500/30 group-hover:scale-105 transition-transform">
-                    <Trophy className="w-7 h-7" />
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-cyan-400 block">
-                      Vault 4
-                    </span>
-                    <h4 className="text-lg sm:text-xl font-black uppercase text-zinc-100 group-hover:text-cyan-300 transition-colors">
-                      Collection
-                    </h4>
-                  </div>
-                </div>
-
-                <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-full bg-cyan-950/80 text-cyan-300 border border-cyan-500/50 font-mono">
-                  {inventory.length} Items
-                </span>
-              </div>
-
-              <p className="text-xs text-zinc-300 leading-relaxed mb-3">
-                Your personal safe and trophy museum. Inspect unboxed relics, weapons, classified items, and sell any item back for instant chips anytime.
-              </p>
-
-              {/* Value Badges */}
-              <div className="flex flex-wrap gap-1.5">
-                <span className="text-[10px] px-2 py-0.5 rounded-md bg-zinc-950 text-cyan-300 border border-zinc-800">
-                  💎 Instant Resale
-                </span>
-                <span className="text-[10px] px-2 py-0.5 rounded-md bg-zinc-950 text-amber-300 border border-zinc-800">
-                  🏆 Adds to Net Worth
-                </span>
-                <span className="text-[10px] px-2 py-0.5 rounded-md bg-zinc-950 text-purple-300 border border-zinc-800">
-                  ⭐ Rarity Tiers
-                </span>
-              </div>
-            </div>
-
-            {/* Bottom Row: Stats & Action Button */}
-            <div className="mt-4 pt-3.5 border-t border-cyan-950/60 flex items-center justify-between gap-3">
-              <span className="text-xs font-mono text-cyan-300 font-bold">
-                {inventory.reduce((sum, item) => sum + item.item.value, 0).toLocaleString()}c Total Worth
-              </span>
-
-              <button
-                type="button"
-                className="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-black text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-lg shadow-cyan-600/20 group-hover:translate-x-0.5 transition-all cursor-pointer"
-              >
-                <span>View Collection</span>
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>

@@ -1,4 +1,4 @@
-export type GameTab = 'home' | 'blackjack' | 'keno' | 'unboxer' | 'inventory' | 'leaderboard';
+export type GameTab = 'home' | 'blackjack' | 'keno' | 'unboxer' | 'leaderboard';
 
 export type Suit = '♠' | '♥' | '♦' | '♣';
 export type Rank = '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '10' | 'J' | 'Q' | 'K' | 'A';
@@ -142,7 +142,7 @@ export type VIPTier =
 
 export type ContactPlatform = 'discord' | 'telegram';
 
-export type AccountStatus = 'active' | 'banned' | 'closed';
+export type AccountStatus = 'active' | 'moderator' | 'banned' | 'closed';
 export type AccountType = 'free' | 'paid';
 
 export interface UserAccount {
@@ -186,7 +186,7 @@ export interface PlayerPlacementRecord {
   payoutStatus?: 'Paid' | 'Pending' | 'Processing' | 'None';
 }
 
-export type LeaderboardCategory = 'profit' | 'multiplier' | 'volume' | 'vault';
+export type LeaderboardCategory = 'profit' | 'multiplier' | 'volume';
 
 export interface LeaderboardEntry {
   id: string;
@@ -261,6 +261,7 @@ export interface ChatMessage {
   balance?: number;
   isUser?: boolean;
   isAdmin?: boolean;
+  isModerator?: boolean;
   rainAmount?: number;
   rainRecipients?: number;
 }

@@ -38,7 +38,6 @@ import {
 interface DailyLeaderboardProps {
   userAccount: UserAccount;
   stats: CasinoStats;
-  inventory: InventoryItem[];
   balance: number;
   dailyWinners: DailyWinnerRecord[];
   allTimePeaks: AllTimePeakRecord[];
@@ -51,7 +50,6 @@ interface DailyLeaderboardProps {
 export const DailyLeaderboard: React.FC<DailyLeaderboardProps> = ({
   userAccount,
   stats,
-  inventory,
   balance,
   dailyWinners,
   allTimePeaks,
@@ -78,7 +76,7 @@ export const DailyLeaderboard: React.FC<DailyLeaderboardProps> = ({
   }, []);
 
   const yesterdayWinner = getYesterdayWinner(dailyWinners);
-  const dailyEntries = getDailyLeaderboard(category, userAccount, stats, inventory, balance);
+  const dailyEntries = getDailyLeaderboard(category, userAccount, stats, balance);
   const userDailyRank = dailyEntries.find(e => e.isUser);
 
   const top3Daily = dailyEntries.slice(0, 3);
@@ -99,11 +97,6 @@ export const DailyLeaderboard: React.FC<DailyLeaderboardProps> = ({
       label: 'High-Roller Volume',
       icon: <Coins className="w-4 h-4 text-purple-400" />,
       desc: 'Total chips wagered in the casino today.',
-    },
-    vault: {
-      label: 'Trophy Vault Net Worth',
-      icon: <Trophy className="w-4 h-4 text-yellow-400" />,
-      desc: 'Most valuable loot crate collections.',
     },
   };
 
@@ -291,7 +284,7 @@ export const DailyLeaderboard: React.FC<DailyLeaderboardProps> = ({
       {activeView === 'daily' ? (
         <>
           {/* Category Tabs */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             {(Object.keys(categoryLabels) as LeaderboardCategory[]).map((cat) => {
               const info = categoryLabels[cat];
               const isSelected = category === cat;

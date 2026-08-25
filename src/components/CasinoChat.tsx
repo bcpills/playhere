@@ -167,6 +167,8 @@ export const CasinoChat: React.FC<CasinoChatProps> = ({
     }
   }, [messages, isOpen]);
 
+  const isMod = userAccount?.accountStatus === 'moderator';
+
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputText.trim()) return;
@@ -187,6 +189,8 @@ export const CasinoChat: React.FC<CasinoChatProps> = ({
       balance,
       isUser: true,
       isAdmin,
+      isModerator: isMod,
+      badge: isMod ? 'MODERATOR' : isAdmin ? 'ADMIN' : undefined,
     };
 
     setMessages(prev => [...prev, newMsg]);
@@ -321,7 +325,7 @@ export const CasinoChat: React.FC<CasinoChatProps> = ({
 
           {isAdmin && (
             <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/40">
-              ADMIN
+              {isMod ? 'MODERATOR' : 'ADMIN'}
             </span>
           )}
           <button
@@ -542,7 +546,12 @@ export const CasinoChat: React.FC<CasinoChatProps> = ({
                     {msg.username}
                   </span>
 
-                  {msg.isAdmin ? (
+                  {msg.isModerator || msg.badge === 'MODERATOR' ? (
+                    <span className="text-[8px] font-black uppercase px-1.5 py-0.2 rounded bg-indigo-600 text-white flex items-center gap-0.5 shadow-sm">
+                      <ShieldCheck className="w-2.5 h-2.5" />
+                      <span>MOD</span>
+                    </span>
+                  ) : msg.isAdmin ? (
                     <span className="text-[8px] font-black uppercase px-1.5 py-0.2 rounded bg-purple-600 text-white flex items-center gap-0.5 shadow-sm">
                       <ShieldCheck className="w-2.5 h-2.5" />
                       <span>ADMIN</span>

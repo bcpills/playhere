@@ -103,9 +103,21 @@ export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({
               <h2 className="text-lg sm:text-xl font-black uppercase tracking-wider text-zinc-100">
                 {player.username}
               </h2>
-              <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border ${tierInfo.badgeBg}`}>
-                {player.vipTier}
-              </span>
+              {player.accountStatus === 'moderator' || player.isModerator ? (
+                <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 flex items-center gap-1">
+                  <ShieldCheck className="w-3 h-3 text-indigo-400" />
+                  <span>MODERATOR</span>
+                </span>
+              ) : player.isAdmin ? (
+                <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/40 flex items-center gap-1">
+                  <Crown className="w-3 h-3 text-purple-400" />
+                  <span>ADMIN</span>
+                </span>
+              ) : (
+                <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border ${tierInfo.badgeBg}`}>
+                  {player.vipTier}
+                </span>
+              )}
             </div>
 
             <p className="text-xs text-zinc-400 italic">
@@ -298,7 +310,7 @@ export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({
         )}
 
         {/* ========================================================================= */}
-        {/* ADMIN MANAGEMENT ACTION PANEL (ONLY FOR THOMASJOE55@GMAIL.COM)             */}
+        {/* ADMIN & MODERATOR MANAGEMENT ACTION PANEL                                 */}
         {/* ========================================================================= */}
         {isAdmin ? (
           <div className="mt-4 p-4 rounded-2xl bg-gradient-to-br from-purple-950/40 via-zinc-900 to-zinc-950 border-2 border-purple-500/60 shadow-xl space-y-3">
@@ -306,7 +318,7 @@ export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({
               <div className="flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-purple-400" />
                 <span className="text-xs font-black uppercase tracking-wider text-purple-300">
-                  Admin Controls (Thomas Joe)
+                  Admin & Moderator Controls
                 </span>
               </div>
               <span className="text-[9px] px-2 py-0.5 rounded-full font-mono bg-purple-500/20 text-purple-200 border border-purple-500/40">
@@ -315,7 +327,7 @@ export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({
             </div>
 
             <p className="text-xs text-zinc-400">
-              As the casino owner, you can manage this player's session and perform an administrative bankroll reset.
+              As an administrator or moderator, you have full authority to manage this player's session and perform an administrative bankroll reset.
             </p>
 
             {!isConfirmingReset ? (

@@ -34,7 +34,6 @@ interface HeaderProps {
   onToggleChat: () => void;
   onOpenPendingPayouts: () => void;
   onOpenPayForAdFree?: () => void;
-  inventoryCount: number;
   soundEnabled: boolean;
   onToggleSound: () => void;
   pendingPayoutsCount: number;
@@ -54,7 +53,6 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleChat,
   onOpenPendingPayouts,
   onOpenPayForAdFree,
-  inventoryCount,
   soundEnabled,
   onToggleSound,
   pendingPayoutsCount,
@@ -67,7 +65,6 @@ export const Header: React.FC<HeaderProps> = ({
     { id: 'blackjack' as GameTab, label: 'Blackjack', icon: Spade },
     { id: 'keno' as GameTab, label: 'Keno', icon: Dices },
     { id: 'unboxer' as GameTab, label: 'Crates', icon: Package },
-    { id: 'inventory' as GameTab, label: 'Vault', icon: Trophy, count: inventoryCount },
     { id: 'leaderboard' as GameTab, label: 'Leaderboard', icon: Crown },
   ];
 
@@ -109,11 +106,11 @@ export const Header: React.FC<HeaderProps> = ({
                   sound.playChip();
                   onOpenPendingPayouts();
                 }}
-                title="Admin Pending Payouts Portal (Thomas Joe)"
+                title="Admin & Moderator Portal"
                 className="shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-purple-950/90 hover:bg-purple-900 border border-purple-500/60 text-purple-200 text-xs font-black uppercase tracking-wider transition-all shadow-md animate-in fade-in"
               >
                 <ShieldCheck className="w-3.5 h-3.5 text-purple-400 shrink-0" />
-                <span className="hidden md:inline text-[11px]">Pending Payouts</span>
+                <span className="hidden md:inline text-[11px]">Admin / Mod</span>
                 {pendingPayoutsCount > 0 && (
                   <span className="px-1.5 py-0.2 rounded-full text-[9px] font-mono font-black bg-amber-500 text-zinc-950">
                     {pendingPayoutsCount}
@@ -252,14 +249,6 @@ export const Header: React.FC<HeaderProps> = ({
               >
                 <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-zinc-950' : 'text-zinc-400'}`} />
                 <span className="truncate text-[11px] sm:text-xs">{tab.label}</span>
-
-                {typeof tab.count === 'number' && tab.count > 0 && (
-                  <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-black ${
-                    isActive ? 'bg-zinc-950 text-amber-300' : 'bg-purple-600 text-white'
-                  }`}>
-                    {tab.count}
-                  </span>
-                )}
               </button>
             );
           })}

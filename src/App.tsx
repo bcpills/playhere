@@ -396,7 +396,7 @@ export default function App() {
     setIsProfileModalOpen(true);
   };
 
-  // Admin Balance Reset Handler
+  // Admin / Moderator Balance Reset Handler
   const handleAdminResetBalance = (playerId: string, username: string, resetAmount: number, reason?: string) => {
     const isMe = playerId === userAccount.id || (selectedPlayer && selectedPlayer.isUser);
 
@@ -410,18 +410,22 @@ export default function App() {
 
     handleUpdateUserBalance(playerId, resetAmount);
 
+    const isModRole = userAccount.accountStatus === 'moderator';
+    const actorName = isModRole ? `🛡️ Mod ${userAccount.username || 'Staff'}` : `👑 Admin ${userAccount.username || 'Thomas Joe'}`;
+
     // Broadcast system notice to the live chat
     const adminNotice: ChatMessage = {
       id: 'mod-notice-' + Date.now(),
-      senderId: 'sys-admin',
-      username: '🛡️ Admin Thomas Joe',
-      avatar: '👑',
+      senderId: userAccount.id || 'sys-admin',
+      username: actorName,
+      avatar: isModRole ? '🛡️' : '👑',
       vipTier: 'Sovereign Degenerate',
       text: `Reset ${username}'s bankroll to ${resetAmount.toLocaleString()} chips. [Audit: ${reason || 'Administrative bankroll reset'}]`,
       timestamp: Date.now(),
       type: 'mod_action',
-      badge: 'ADMIN MOD',
+      badge: isModRole ? 'MOD' : 'ADMIN MOD',
       isAdmin: true,
+      isModerator: isModRole,
     };
 
     setChatMessages(prev => [...prev, adminNotice]);

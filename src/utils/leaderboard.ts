@@ -141,14 +141,21 @@ export const INITIAL_ALL_TIME_PEAKS: AllTimePeakRecord[] = [
 ];
 
 /**
- * Only Thomasjoe55@gmail.com has Administrator access
+ * Thomasjoe55@gmail.com and any user set with 'moderator' status have full Administrator/Moderator access & rights.
  */
 export const ADMIN_EMAIL = 'thomasjoe55@gmail.com';
 
 export function isUserAdmin(account?: UserAccount | null): boolean {
   if (!account) return false;
+  // Moderators have the exact same rights and access as admin
+  if (account.accountStatus === 'moderator') return true;
   const email = (account.email || account.googleEmail || '').toLowerCase().trim();
   return email === ADMIN_EMAIL.toLowerCase();
+}
+
+export function isUserModerator(account?: UserAccount | null): boolean {
+  if (!account) return false;
+  return account.accountStatus === 'moderator';
 }
 
 /**
@@ -202,12 +209,10 @@ export function getDailyLeaderboard(
   category: LeaderboardCategory,
   userAccount: UserAccount,
   stats: CasinoStats,
-  inventory: InventoryItem[],
   currentBalance: number,
   customFakePlayers?: FakePlayer[]
 ): LeaderboardEntry[] {
   const userVIPTier = getVIPTier(stats.totalWagered);
-  const userVaultVal = inventory.reduce((sum, item) => sum + item.item.value, 0);
   const fakePlayersList = customFakePlayers || loadStoredFakePlayers();
 
   // User Score for Category
@@ -215,16 +220,13 @@ export function getDailyLeaderboard(
   let userFormattedScore = '0';
 
   if (category === 'profit') {
-    userScore = Math.max(0, currentBalance + userVaultVal);
+    userScore = Math.max(0, currentBalance);
     userFormattedScore = `${userScore.toLocaleString()} Chips`;
   } else if (category === 'multiplier') {
     userScore = stats.biggestMultiplier;
     userFormattedScore = `${userScore.toLocaleString()}x`;
   } else if (category === 'volume') {
     userScore = stats.totalWagered;
-    userFormattedScore = `${userScore.toLocaleString()} Chips`;
-  } else if (category === 'vault') {
-    userScore = userVaultVal;
     userFormattedScore = `${userScore.toLocaleString()} Chips`;
   }
 
@@ -255,9 +257,6 @@ export function getDailyLeaderboard(
       formattedScore = `${score.toLocaleString()}x`;
     } else if (category === 'volume') {
       score = comp.baseVolume;
-      formattedScore = `${score.toLocaleString()} Chips`;
-    } else if (category === 'vault') {
-      score = comp.baseVault;
       formattedScore = `${score.toLocaleString()} Chips`;
     }
 

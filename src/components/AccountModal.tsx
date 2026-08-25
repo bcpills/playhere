@@ -36,7 +36,6 @@ interface AccountModalProps {
   account: UserAccount;
   stats: CasinoStats;
   balance: number;
-  inventoryCount: number;
   onUpdateAccount: (updater: (prev: UserAccount) => UserAccount) => void;
   onSignOut: () => void;
   onOpenStats: () => void;
@@ -50,7 +49,6 @@ export const AccountModal: React.FC<AccountModalProps> = ({
   account,
   stats,
   balance,
-  inventoryCount,
   onUpdateAccount,
   onSignOut,
   onOpenStats,
@@ -231,6 +229,12 @@ export const AccountModal: React.FC<AccountModalProps> = ({
                     <h3 className="text-lg font-black text-zinc-100">
                       {account.username}
                     </h3>
+                    {account.accountStatus === 'moderator' && (
+                      <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 flex items-center gap-1 shadow-sm">
+                        <ShieldCheck className="w-3 h-3 text-indigo-400" />
+                        <span>MODERATOR (ADMIN ACCESS)</span>
+                      </span>
+                    )}
                     <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border ${currentTierInfo.badgeBg}`}>
                       {currentVIPTier}
                     </span>
@@ -291,9 +295,9 @@ export const AccountModal: React.FC<AccountModalProps> = ({
                   </span>
                 </div>
                 <div className="p-2 rounded-xl bg-zinc-950/60 border border-zinc-800">
-                  <span className="text-[10px] text-zinc-500 font-bold uppercase block">Vault Items</span>
+                  <span className="text-[10px] text-zinc-500 font-bold uppercase block">Wagered</span>
                   <span className="font-mono font-black text-purple-300 text-sm">
-                    {inventoryCount} Items
+                    {stats.totalWagered.toLocaleString()}c
                   </span>
                 </div>
                 <div className="p-2 rounded-xl bg-zinc-950/60 border border-zinc-800">

@@ -18,7 +18,7 @@ import {
   Plus
 } from 'lucide-react';
 import { LootCrate, LootItem, ItemRarity, InventoryItem, CasinoStats, UserAccount } from '../types';
-import { LOOT_CRATES, RARITY_CONFIG, pickRandomLootItem, generateReelItems } from '../utils/crates';
+import { LOOT_CRATES, RARITY_CONFIG, pickRandomLootItem, generateReelItems, formatDropOdds } from '../utils/crates';
 import { sound } from '../utils/audio';
 import { CrateBattleArena } from './CrateBattleArena';
 
@@ -26,7 +26,6 @@ interface UnboxerGameProps {
   balance: number;
   userAccount: UserAccount;
   onUpdateBalance: (delta: number) => void;
-  onAddToInventory: (item: LootItem, crateId: string) => void;
   onUpdateStats: (updater: (prev: CasinoStats) => CasinoStats) => void;
 }
 
@@ -42,7 +41,6 @@ export const UnboxerGame: React.FC<UnboxerGameProps> = ({
   balance,
   userAccount,
   onUpdateBalance,
-  onAddToInventory,
   onUpdateStats,
 }) => {
   // Navigation: Solo Unbox vs Crate Battles Arena
@@ -62,7 +60,6 @@ export const UnboxerGame: React.FC<UnboxerGameProps> = ({
   const [multiRevealedItems, setMultiRevealedItems] = useState<LootItem[] | null>(null);
   
   const [inspectingCrate, setInspectingCrate] = useState<LootCrate | null>(null);
-  const [claimedStatus, setClaimedStatus] = useState<'cashed' | 'vaulted' | null>(null);
 
   const singleReelRef = useRef<HTMLDivElement>(null);
   const audioTickTimerRef = useRef<number | null>(null);
@@ -87,7 +84,6 @@ export const UnboxerGame: React.FC<UnboxerGameProps> = ({
     setIsOpening(true);
     setRevealedItem(null);
     setMultiRevealedItems(null);
-    setClaimedStatus(null);
     sound.playChip();
 
     // 1. SINGLE CRATE UNBOXING
@@ -130,6 +126,9 @@ export const UnboxerGame: React.FC<UnboxerGameProps> = ({
       setTimeout(() => {
         setIsOpening(false);
         setRevealedItem(winItem);
+
+        // Auto credit winnings directly to balance
+        onUpdateBalance(winItem.value);
 
         const isProfit = winItem.value > selectedCrate.cost;
         if (winItem.rarity === 'covert' || winItem.rarity === 'mythic' || winItem.rarity === 'exotic') {
@@ -194,6 +193,10 @@ export const UnboxerGame: React.FC<UnboxerGameProps> = ({
         setMultiRevealedItems(wonItems);
 
         const totalWonVal = wonItems.reduce((s, item) => s + item.value, 0);
+
+        // Auto credit winnings directly to balance
+        onUpdateBalance(totalWonVal);
+
         const hasRare = wonItems.some(i => i.rarity === 'covert' || i.rarity === 'mythic' || i.rarity === 'exotic');
 
         if (hasRare) {
@@ -214,41 +217,6 @@ export const UnboxerGame: React.FC<UnboxerGameProps> = ({
         }));
       }, 5600);
     }
-  };
-
-  // Single Item Cash Out
-  const handleCashOutSingle = () => {
-    if (!revealedItem || claimedStatus) return;
-    sound.playChip();
-    onUpdateBalance(revealedItem.value);
-    setClaimedStatus('cashed');
-  };
-
-  // Single Item Send to Vault
-  const handleKeepItemSingle = () => {
-    if (!revealedItem || claimedStatus) return;
-    sound.playChip();
-    onAddToInventory(revealedItem, selectedCrate.id);
-    setClaimedStatus('vaulted');
-  };
-
-  // Multi Items Cash Out All
-  const handleCashOutAllMulti = () => {
-    if (!multiRevealedItems || claimedStatus) return;
-    sound.playChip();
-    const totalVal = multiRevealedItems.reduce((s, i) => s + i.value, 0);
-    onUpdateBalance(totalVal);
-    setClaimedStatus('cashed');
-  };
-
-  // Multi Items Vault All
-  const handleKeepAllMulti = () => {
-    if (!multiRevealedItems || claimedStatus) return;
-    sound.playChip();
-    multiRevealedItems.forEach(item => {
-      onAddToInventory(item, selectedCrate.id);
-    });
-    setClaimedStatus('vaulted');
   };
 
   useEffect(() => {
@@ -306,7 +274,6 @@ export const UnboxerGame: React.FC<UnboxerGameProps> = ({
           balance={balance}
           userAccount={userAccount}
           onUpdateBalance={onUpdateBalance}
-          onAddToInventory={onAddToInventory}
           onUpdateStats={onUpdateStats}
         />
       ) : (
@@ -325,7 +292,7 @@ export const UnboxerGame: React.FC<UnboxerGameProps> = ({
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5 sm:gap-3">
               {LOOT_CRATES.map((crate) => {
                 const isSelected = selectedCrate.id === crate.id;
                 const canAfford = balance >= crate.cost * multiCount;
@@ -339,16 +306,16 @@ export const UnboxerGame: React.FC<UnboxerGameProps> = ({
                       sound.playChip();
                       setSelectedCrate(crate);
                     }}
-                    className={`group relative flex flex-col justify-between p-3.5 rounded-3xl border-2 transition-all cursor-pointer ${
+                    className={`group relative flex flex-col justify-between p-3 rounded-2xl border-2 transition-all cursor-pointer ${
                       isSelected
-                        ? 'bg-zinc-900 border-amber-400 ring-2 ring-amber-400/40 shadow-2xl shadow-purple-900/30 scale-102'
-                        : 'bg-zinc-950/80 border-zinc-800 hover:border-zinc-700 opacity-80 hover:opacity-100'
+                        ? 'bg-zinc-900 border-amber-400 ring-2 ring-amber-400/40 shadow-xl shadow-purple-900/30 scale-[1.02]'
+                        : 'bg-zinc-950/80 border-zinc-800 hover:border-zinc-700 opacity-85 hover:opacity-100'
                     }`}
                   >
                     <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-3xl">{crate.icon}</span>
-                        <span className="px-2 py-0.5 rounded-full text-[11px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-2xl sm:text-3xl">{crate.icon}</span>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono">
                           {crate.cost.toLocaleString()}c
                         </span>
                       </div>
@@ -356,12 +323,12 @@ export const UnboxerGame: React.FC<UnboxerGameProps> = ({
                       <h3 className="text-xs sm:text-sm font-black text-zinc-100 group-hover:text-amber-300 transition-colors line-clamp-1">
                         {crate.name}
                       </h3>
-                      <p className="text-[11px] text-zinc-400 mt-1 leading-relaxed line-clamp-2">
+                      <p className="text-[10px] sm:text-[11px] text-zinc-400 mt-0.5 leading-tight line-clamp-2">
                         {crate.tagline}
                       </p>
                     </div>
 
-                    <div className="mt-3 pt-2.5 border-t border-zinc-800 flex items-center justify-between text-[11px]">
+                    <div className="mt-2.5 pt-2 border-t border-zinc-800 flex items-center justify-between text-[10px] sm:text-[11px]">
                       <button
                         type="button"
                         onClick={(e) => {
@@ -374,7 +341,7 @@ export const UnboxerGame: React.FC<UnboxerGameProps> = ({
                         <span>Pool ({crate.items.length})</span>
                       </button>
                       <span className="text-purple-400 font-bold flex items-center">
-                        Select <ChevronRight className="w-3 h-3" />
+                        {isSelected ? 'Active' : 'Select'} <ChevronRight className="w-3 h-3" />
                       </span>
                     </div>
                   </div>
@@ -611,47 +578,33 @@ export const UnboxerGame: React.FC<UnboxerGameProps> = ({
                   </div>
                 </div>
 
-                <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-                  <button
-                    disabled={claimedStatus !== null}
-                    onClick={handleCashOutSingle}
-                    className={`flex-1 py-3 px-4 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider shadow-lg flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                      claimedStatus === 'cashed'
-                        ? 'bg-emerald-600 text-white'
-                        : 'bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 text-zinc-950'
-                    }`}
-                  >
-                    <Coins className="w-4 h-4" />
-                    <span>
-                      {claimedStatus === 'cashed' ? '✓ Chips Added!' : `Cash Out (+${revealedItem.value.toLocaleString()} Chips)`}
-                    </span>
-                  </button>
-
-                  <button
-                    disabled={claimedStatus !== null}
-                    onClick={handleKeepItemSingle}
-                    className={`flex-1 py-3 px-4 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider shadow-lg flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                      claimedStatus === 'vaulted'
-                        ? 'bg-purple-600 text-white'
-                        : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border border-zinc-700'
-                    }`}
-                  >
-                    <Trophy className="w-4 h-4 text-amber-400" />
-                    <span>
-                      {claimedStatus === 'vaulted' ? '✓ In Trophy Vault!' : 'Keep in Trophy Vault'}
-                    </span>
-                  </button>
+                {/* Auto Payout Notification */}
+                <div className="mt-4 p-3 rounded-2xl bg-emerald-950/80 border border-emerald-400/70 flex items-center justify-center gap-2 shadow-lg">
+                  <Coins className="w-4 h-4 text-emerald-400 animate-pulse" />
+                  <span className="text-xs font-black text-emerald-300 font-mono">
+                    ✓ +{revealedItem.value.toLocaleString()} Chips Added Directly to Balance!
+                  </span>
                 </div>
 
-                <button
-                  onClick={() => {
-                    if (!claimedStatus) handleCashOutSingle();
-                    setRevealedItem(null);
-                  }}
-                  className="mt-4 text-xs font-bold text-zinc-400 hover:text-zinc-200 underline cursor-pointer"
-                >
-                  Done / Open Another Crate
-                </button>
+                <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                  <button
+                    onClick={() => {
+                      setRevealedItem(null);
+                      handleOpenSoloCrates(1);
+                    }}
+                    className="flex-1 py-3 px-4 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 text-zinc-950 shadow-lg flex items-center justify-center gap-2 transition-all cursor-pointer transform hover:scale-105"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    <span>Open Again ({selectedCrate.cost.toLocaleString()}c)</span>
+                  </button>
+
+                  <button
+                    onClick={() => setRevealedItem(null)}
+                    className="py-3 px-5 rounded-2xl font-bold text-xs sm:text-sm bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-700 transition-colors cursor-pointer"
+                  >
+                    Done
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -690,6 +643,14 @@ export const UnboxerGame: React.FC<UnboxerGameProps> = ({
                   </div>
                 </div>
 
+                {/* Auto Payout Notification */}
+                <div className="mt-4 p-3 rounded-2xl bg-emerald-950/80 border border-emerald-400/70 flex items-center justify-center gap-2 shadow-lg">
+                  <Coins className="w-4 h-4 text-emerald-400 animate-pulse" />
+                  <span className="text-xs font-black text-emerald-300 font-mono">
+                    ✓ +{multiRevealedItems.reduce((s, i) => s + i.value, 0).toLocaleString()} Total Chips Auto-Collected to Balance!
+                  </span>
+                </div>
+
                 {/* Items Grid */}
                 <div className="mt-5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                   {multiRevealedItems.map((item, idx) => {
@@ -715,45 +676,24 @@ export const UnboxerGame: React.FC<UnboxerGameProps> = ({
                 {/* Action Buttons */}
                 <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
                   <button
-                    disabled={claimedStatus !== null}
-                    onClick={handleCashOutAllMulti}
-                    className={`flex-1 py-3.5 px-5 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider shadow-lg flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                      claimedStatus === 'cashed'
-                        ? 'bg-emerald-600 text-white'
-                        : 'bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 text-zinc-950'
-                    }`}
+                    onClick={() => {
+                      const count = multiRevealedItems.length;
+                      setMultiRevealedItems(null);
+                      handleOpenSoloCrates(count);
+                    }}
+                    className="flex-1 py-3.5 px-5 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 text-zinc-950 shadow-lg flex items-center justify-center gap-2 transition-all cursor-pointer transform hover:scale-105"
                   >
-                    <Coins className="w-4 h-4" />
-                    <span>
-                      {claimedStatus === 'cashed' ? '✓ Chips Added!' : `Cash Out All (+${multiRevealedItems.reduce((s, i) => s + i.value, 0).toLocaleString()} Chips)`}
-                    </span>
+                    <RefreshCw className="w-4 h-4" />
+                    <span>Open Again ({(selectedCrate.cost * multiRevealedItems.length).toLocaleString()}c)</span>
                   </button>
 
                   <button
-                    disabled={claimedStatus !== null}
-                    onClick={handleKeepAllMulti}
-                    className={`flex-1 py-3.5 px-5 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider shadow-lg flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                      claimedStatus === 'vaulted'
-                        ? 'bg-purple-600 text-white'
-                        : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border border-zinc-700'
-                    }`}
+                    onClick={() => setMultiRevealedItems(null)}
+                    className="py-3.5 px-6 rounded-2xl font-bold text-xs sm:text-sm bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-700 transition-colors cursor-pointer"
                   >
-                    <Trophy className="w-4 h-4 text-amber-400" />
-                    <span>
-                      {claimedStatus === 'vaulted' ? '✓ All in Trophy Vault!' : 'Keep All in Trophy Vault'}
-                    </span>
+                    Done
                   </button>
                 </div>
-
-                <button
-                  onClick={() => {
-                    if (!claimedStatus) handleCashOutAllMulti();
-                    setMultiRevealedItems(null);
-                  }}
-                  className="mt-4 text-xs font-bold text-zinc-400 hover:text-zinc-200 underline cursor-pointer"
-                >
-                  Done / Close
-                </button>
               </div>
             </div>
           )}
@@ -788,7 +728,7 @@ export const UnboxerGame: React.FC<UnboxerGameProps> = ({
                   {inspectingCrate.items.map((item) => {
                     const rarity = RARITY_CONFIG[item.rarity];
                     const totalWeight = inspectingCrate.items.reduce((s, i) => s + i.dropWeight, 0);
-                    const dropOdds = ((item.dropWeight / totalWeight) * 100).toFixed(1);
+                    const dropOdds = formatDropOdds(item.dropWeight, totalWeight);
 
                     return (
                       <div
@@ -813,7 +753,7 @@ export const UnboxerGame: React.FC<UnboxerGameProps> = ({
                             {item.value.toLocaleString()} Chips
                           </span>
                           <span className="text-[10px] font-bold text-zinc-400">
-                            {dropOdds}% Drop Rate
+                            {dropOdds} Drop Rate
                           </span>
                         </div>
                       </div>

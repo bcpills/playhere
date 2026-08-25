@@ -109,8 +109,8 @@ const MYTHIC_ITEMS: LootItem[] = [
   { id: 'mb-1', name: 'Solid Gold Horseshoe', description: 'Forged in the fires of Mount Degeneracy.', rarity: 'rare', value: 350, icon: '🧲', color: '#a855f7', bgGradient: 'from-purple-950 to-zinc-950', dropWeight: 14, lore: 'Magnetic attraction to 21.' },
   { id: 'mb-2', name: 'Diamond Roulette Ball', description: 'Precision weighted for maximum chaos.', rarity: 'classified', value: 1400, icon: '💎', color: '#ec4899', bgGradient: 'from-pink-950 to-zinc-950', dropWeight: 4, lore: 'Spins forever on 00.' },
   { id: 'mb-3', name: 'Crown of the Pit Boss King', description: 'Worn by the legend who broke the bank.', rarity: 'covert', value: 4500, icon: '👑', color: '#ef4444', bgGradient: 'from-red-950 to-zinc-950', dropWeight: 1.2, lore: 'All hail the degenerate sovereign.' },
-  { id: 'mb-4', name: '★ M9 Bayonet | Doppler Sapphire ★', description: 'Deep crystalline blue hue that blinds the dealer.', rarity: 'exotic', value: 18000, icon: '🗡️', color: '#eab308', bgGradient: 'from-yellow-950 to-purple-950', dropWeight: 0.3, lore: 'Pure sapphire reflection.' },
-  { id: 'mb-5', name: '★ The Golden ChipZone Trophy ★', description: '100% Solid 24K Gold. Ultimate high-roller glory.', rarity: 'exotic', value: 35000, icon: '🏆', color: '#eab308', bgGradient: 'from-yellow-950 via-amber-950 to-purple-950', dropWeight: 0.05, lore: 'You won the casino. Now keep gambling.' },
+  { id: 'mb-4', name: '★ M9 Bayonet | Doppler Sapphire ★', description: 'Deep crystalline blue hue that blinds the dealer.', rarity: 'exotic', value: 18000, icon: '🗡️', color: '#eab308', bgGradient: 'from-yellow-950 to-purple-950', dropWeight: 0.35, lore: 'Pure sapphire reflection.' },
+  { id: 'mb-5', name: '★ The Golden ChipZone Trophy ★', description: '100% Solid 24K Gold. Ultimate high-roller glory.', rarity: 'exotic', value: 35000, icon: '🏆', color: '#eab308', bgGradient: 'from-yellow-950 via-amber-950 to-purple-950', dropWeight: 0.15, lore: 'You won the casino. Now keep gambling.' },
 ];
 
 // Crate 5: Diamond Whale Coffer ($1,500)
@@ -120,8 +120,8 @@ const DIAMOND_WHALE_ITEMS: LootItem[] = [
   { id: 'dw-1', name: 'Vintage 1982 Dom Pérignon', description: 'Chilled in an ice bucket delivered by the VIP manager.', rarity: 'rare', value: 800, icon: '🍾', color: '#a855f7', bgGradient: 'from-purple-950 to-zinc-950', dropWeight: 15, lore: 'Tastes like high roller comps.' },
   { id: 'dw-2', name: 'Macau VIP Diamond Tile', description: 'Heavy jade and gold baccarat commission marker.', rarity: 'classified', value: 2500, icon: '🀄', color: '#ec4899', bgGradient: 'from-pink-950 to-zinc-950', dropWeight: 4.5, lore: 'Direct from Cotai Strip high-limit salons.' },
   { id: 'dw-3', name: 'Patek Philippe Celestial Watch', description: 'Tracks moonphases and your diminishing savings.', rarity: 'covert', value: 7500, icon: '⌚', color: '#ef4444', bgGradient: 'from-red-950 to-zinc-950', dropWeight: 1.5, lore: 'You never actually own a Patek, you merely blow the money.' },
-  { id: 'dw-4', name: 'Gulfstream Jet Charter Voucher', description: 'Non-stop one-way flight directly to the Monte Carlo casino tarmac.', rarity: 'mythic', value: 16500, icon: '🛩️', color: '#f59e0b', bgGradient: 'from-amber-950 to-zinc-950', dropWeight: 0.4, lore: 'Skip TSA, head straight to the craps table.' },
-  { id: 'dw-5', name: '★ Karambit | Gamma Doppler Emerald ★', description: 'Flawless 0.001 float luminous emerald blade.', rarity: 'exotic', value: 55000, icon: '🗡️', color: '#eab308', bgGradient: 'from-emerald-950 via-teal-950 to-yellow-950', dropWeight: 0.05, lore: 'Radiates pure radioactive wealth.' },
+  { id: 'dw-4', name: 'Gulfstream Jet Charter Voucher', description: 'Non-stop one-way flight directly to the Monte Carlo casino tarmac.', rarity: 'mythic', value: 16500, icon: '🛩️', color: '#f59e0b', bgGradient: 'from-amber-950 to-zinc-950', dropWeight: 0.45, lore: 'Skip TSA, head straight to the craps table.' },
+  { id: 'dw-5', name: '★ Karambit | Gamma Doppler Emerald ★', description: 'Flawless 0.001 float luminous emerald blade.', rarity: 'exotic', value: 55000, icon: '🗡️', color: '#eab308', bgGradient: 'from-emerald-950 via-teal-950 to-yellow-950', dropWeight: 0.15, lore: 'Radiates pure radioactive wealth.' },
 ];
 
 // Crate 6: The Degenerate Overlord Armory ($5,000)
@@ -131,8 +131,8 @@ const OVERLORD_ITEMS: LootItem[] = [
   { id: 'ov-1', name: '1 Kilo Pure Platinum Bullion', description: '99.95% fine platinum bar stamped with the casino crest.', rarity: 'classified', value: 2800, icon: '🪙', color: '#ec4899', bgGradient: 'from-pink-950 to-zinc-950', dropWeight: 14, lore: 'Heavier than your worst financial regrets.' },
   { id: 'ov-2', name: 'Monte Carlo Penthouse Keycard', description: 'Presidential suite key with personal butler on 24/7 call.', rarity: 'covert', value: 11000, icon: '🗝️', color: '#ef4444', bgGradient: 'from-red-950 to-zinc-950', dropWeight: 3.5, lore: 'Overlooks the Mediterranean and the roulette wheels.' },
   { id: 'ov-3', name: '★ Butterfly Knife | Lore (Factory New) ★', description: 'Dragon knotwork inlayed over ancient gold steel.', rarity: 'exotic', value: 38000, icon: '🦋', color: '#eab308', bgGradient: 'from-yellow-950 via-amber-950 to-purple-950', dropWeight: 0.8, lore: 'Smooth spinning motion mesmerizes dealers.' },
-  { id: 'ov-4', name: '1% Ownership Stake in ChipZone', description: 'Certified registered share certificate signed in gold ink.', rarity: 'exotic', value: 85000, icon: '📜', color: '#eab308', bgGradient: 'from-amber-950 via-yellow-950 to-emerald-950', dropWeight: 0.2, lore: 'The house always wins, and now you are the house.' },
-  { id: 'ov-5', name: '★ StatTrak™ AK-47 | Case Hardened (Scar #661) ★', description: 'Tier 1 Blue Gem legendary specimen.', rarity: 'exotic', value: 160000, icon: '💎', color: '#eab308', bgGradient: 'from-blue-950 via-cyan-950 to-yellow-950', dropWeight: 0.05, lore: 'Worth more than an actual high-limit casino license.' },
+  { id: 'ov-4', name: '1% Ownership Stake in ChipZone', description: 'Certified registered share certificate signed in gold ink.', rarity: 'exotic', value: 85000, icon: '📜', color: '#eab308', bgGradient: 'from-amber-950 via-yellow-950 to-emerald-950', dropWeight: 0.25, lore: 'The house always wins, and now you are the house.' },
+  { id: 'ov-5', name: '★ StatTrak™ AK-47 | Case Hardened (Scar #661) ★', description: 'Tier 1 Blue Gem legendary specimen.', rarity: 'exotic', value: 160000, icon: '💎', color: '#eab308', bgGradient: 'from-blue-950 via-cyan-950 to-yellow-950', dropWeight: 0.15, lore: 'Worth more than an actual high-limit casino license.' },
 ];
 
 // Crate 2.5: Neo-Tokyo Cyberpunk Case ($100)
@@ -143,7 +143,7 @@ const CYBERPUNK_ITEMS: LootItem[] = [
   { id: 'cp-2', name: 'Overclocked Neural Deck', description: 'Injects pure adrenaline directly into hard 16 hit decisions.', rarity: 'rare', value: 95, icon: '📟', color: '#a855f7', bgGradient: 'from-purple-950 to-zinc-950', dropWeight: 5, lore: 'Zero ping card counting.' },
   { id: 'cp-3', name: 'Thermal Camo Smart-Pistol', description: 'Auto-locks onto the casino jackpot button.', rarity: 'classified', value: 380, icon: '🔫', color: '#ec4899', bgGradient: 'from-pink-950 to-zinc-950', dropWeight: 2, lore: 'Homing rounds with neon tracer fire.' },
   { id: 'cp-4', name: 'Cyberpunk Hoverbike Keyfob', description: 'Twin-turbine neon speedster parked in the VIP bay.', rarity: 'covert', value: 980, icon: '🏍️', color: '#ef4444', bgGradient: 'from-red-950 to-zinc-950', dropWeight: 0.8, lore: 'Accelerates from 0 to 200 mph in 1.8 seconds.' },
-  { id: 'cp-5', name: '★ Neo-Tokyo Katana | Damascus Matrix ★', description: 'Forged from folded nanotech steel with radioactive cyan glow.', rarity: 'exotic', value: 4200, icon: '🗡️', color: '#eab308', bgGradient: 'from-cyan-950 via-purple-950 to-yellow-950', dropWeight: 0.1, lore: 'Slices through house edge cleanly.' },
+  { id: 'cp-5', name: '★ Neo-Tokyo Katana | Damascus Matrix ★', description: 'Forged from folded nanotech steel with radioactive cyan glow.', rarity: 'exotic', value: 4200, icon: '🗡️', color: '#eab308', bgGradient: 'from-cyan-950 via-purple-950 to-yellow-950', dropWeight: 0.15, lore: 'Slices through house edge cleanly.' },
 ];
 
 // Crate 4.5: Underworld Mafia Syndicate Safe ($800)
@@ -154,7 +154,7 @@ const SYNDICATE_ITEMS: LootItem[] = [
   { id: 'syn-2', name: 'Solid Gold Mafia Signet Ring', description: '24K gold with an onyx skull crest for sealing private deals.', rarity: 'rare', value: 750, icon: '💍', color: '#a855f7', bgGradient: 'from-purple-950 to-zinc-950', dropWeight: 5, lore: 'Kiss the ring before doubling down.' },
   { id: 'syn-3', name: 'Gold-Plated Chicago Typewriter', description: 'Vintage drum-fed Tommy Gun with custom floral engravings.', rarity: 'classified', value: 2600, icon: '🎷', color: '#ec4899', bgGradient: 'from-pink-950 to-zinc-950', dropWeight: 2, lore: 'Plays the music of total table dominance.' },
   { id: 'syn-4', name: 'Armored Syndicate Maybach V12', description: 'Bulletproof presidential cruiser with built-in champagne cellar.', rarity: 'covert', value: 6800, icon: '🚗', color: '#ef4444', bgGradient: 'from-red-950 to-zinc-950', dropWeight: 0.8, lore: 'Silent V12 getaway engine.' },
-  { id: 'syn-5', name: '★ Italian Stiletto | Black Pearl Galaxy ★', description: 'Ultra-rare mirror finish Damascus steel with pearl inlays.', rarity: 'exotic', value: 21000, icon: '🗡️', color: '#eab308', bgGradient: 'from-zinc-950 via-purple-950 to-yellow-950', dropWeight: 0.1, lore: 'Opens with a lethal mechanical snap.' },
+  { id: 'syn-5', name: '★ Italian Stiletto | Black Pearl Galaxy ★', description: 'Ultra-rare mirror finish Damascus steel with pearl inlays.', rarity: 'exotic', value: 21000, icon: '🗡️', color: '#eab308', bgGradient: 'from-zinc-950 via-purple-950 to-yellow-950', dropWeight: 0.15, lore: 'Opens with a lethal mechanical snap.' },
 ];
 
 // Crate 7: Sovereign Bullshit Reliquary ($15,000)
@@ -164,8 +164,8 @@ const SOVEREIGN_ITEMS: LootItem[] = [
   { id: 'sov-1', name: 'Diamond Encrusted Pit Boss Gavel', description: 'Cracks down on card counters and bad bets with 50 carats of VVS1 diamonds.', rarity: 'covert', value: 7500, icon: '🔨', color: '#ef4444', bgGradient: 'from-red-950 to-zinc-950', dropWeight: 14, lore: 'One bang closes the table forever.' },
   { id: 'sov-2', name: 'Master Key to Fort Knox & Federal Reserve', description: 'A solid titanium bypass key for international gold vaults.', rarity: 'mythic', value: 28000, icon: '🗝️', color: '#f59e0b', bgGradient: 'from-amber-950 to-zinc-950', dropWeight: 3.5, lore: 'Guaranteed access to emergency liquidity.' },
   { id: 'sov-3', name: '★ AWP | Gungnir (Souvenir Factory New) ★', description: 'The spear of Odin forged into a celestial precision instrument.', rarity: 'exotic', value: 110000, icon: '🐉', color: '#eab308', bgGradient: 'from-sky-950 via-indigo-950 to-yellow-950', dropWeight: 0.8, lore: 'Never misses the jackpot target.' },
-  { id: 'sov-4', name: 'Imperial Crown of the Sovereign Casino Monarch', description: 'Embossed with 1,000 rubies, sapphires, and uncut Vegas emeralds.', rarity: 'exotic', value: 250000, icon: '👑', color: '#eab308', bgGradient: 'from-purple-950 via-rose-950 to-yellow-950', dropWeight: 0.2, lore: 'Wear it while demanding unlimited ATM bailouts.' },
-  { id: 'sov-5', name: '★ The 1-of-1 Infinity Bullshit Poop Scepter ★', description: 'Mythological supreme artifact of infinite degens. Grants ultimate flex supremacy.', rarity: 'exotic', value: 650000, icon: '💩', color: '#eab308', bgGradient: 'from-yellow-950 via-amber-950 to-purple-950', dropWeight: 0.03, lore: 'The rarest virtual asset ever minted in human civilization.' },
+  { id: 'sov-4', name: 'Imperial Crown of the Sovereign Casino Monarch', description: 'Embossed with 1,000 rubies, sapphires, and uncut Vegas emeralds.', rarity: 'exotic', value: 250000, icon: '👑', color: '#eab308', bgGradient: 'from-purple-950 via-rose-950 to-yellow-950', dropWeight: 0.25, lore: 'Wear it while demanding unlimited ATM bailouts.' },
+  { id: 'sov-5', name: '★ The 1-of-1 Infinity Bullshit Poop Scepter ★', description: 'Mythological supreme artifact of infinite degens. Grants ultimate flex supremacy.', rarity: 'exotic', value: 650000, icon: '💩', color: '#eab308', bgGradient: 'from-yellow-950 via-amber-950 to-purple-950', dropWeight: 0.12, lore: 'The rarest virtual asset ever minted in human civilization.' },
 ];
 
 // Crate 8: Cosmic Supernova God Core ($30,000)
@@ -175,8 +175,69 @@ const COSMIC_SUPERNOVA_ITEMS: LootItem[] = [
   { id: 'cs-1', name: 'Antimatter Containment Core', description: 'Suspends 50 milligrams of pure antimatter in magnetic vacuum.', rarity: 'classified', value: 14000, icon: '🔮', color: '#ec4899', bgGradient: 'from-purple-950 to-zinc-950', dropWeight: 14, lore: 'Handle with utmost care.' },
   { id: 'cs-2', name: 'Starlight Celestial Warp Reactor', description: 'Faster-than-light hyperdrive engine harvested from a Dyson sphere.', rarity: 'covert', value: 48000, icon: '⚛️', color: '#ef4444', bgGradient: 'from-red-950 to-zinc-950', dropWeight: 4, lore: 'Bends space-time around your chip stack.' },
   { id: 'cs-3', name: '★ Gravity Scepter of the Event Horizon ★', description: 'Pulls black hole singularities into physical existence.', rarity: 'mythic', value: 180000, icon: '🪐', color: '#f59e0b', bgGradient: 'from-amber-950 via-purple-950 to-zinc-950', dropWeight: 1.2, lore: 'No light or bad beats can escape its pull.' },
-  { id: 'cs-4', name: '★ Karambit | Cosmic Nebula Supernova ★', description: 'Infused with stellar dust from the birth of the Andromeda galaxy.', rarity: 'exotic', value: 480000, icon: '🗡️', color: '#eab308', bgGradient: 'from-indigo-950 via-purple-950 to-yellow-950', dropWeight: 0.3, lore: 'Shimmers across the infrared and ultraviolet spectrum.' },
-  { id: 'cs-5', name: '★ The Omniversal 1-of-1 Infinite God Core ★', description: 'The primordial seed of all existence in the multiverse.', rarity: 'exotic', value: 1500000, icon: '🌟', color: '#eab308', bgGradient: 'from-yellow-900 via-amber-700 to-violet-950', dropWeight: 0.05, lore: 'Supreme absolute power over reality itself.' },
+  { id: 'cs-4', name: '★ Karambit | Cosmic Nebula Supernova ★', description: 'Infused with stellar dust from the birth of the Andromeda galaxy.', rarity: 'exotic', value: 480000, icon: '🗡️', color: '#eab308', bgGradient: 'from-indigo-950 via-purple-950 to-yellow-950', dropWeight: 0.4, lore: 'Shimmers across the infrared and ultraviolet spectrum.' },
+  { id: 'cs-5', name: '★ The Omniversal 1-of-1 Infinite God Core ★', description: 'The primordial seed of all existence in the multiverse.', rarity: 'exotic', value: 1500000, icon: '🌟', color: '#eab308', bgGradient: 'from-yellow-900 via-amber-700 to-violet-950', dropWeight: 0.15, lore: 'Supreme absolute power over reality itself.' },
+];
+
+// Crate 9: Mythic Gemstones & Fictional Minerals Vault ($350)
+const GEMSTONES_ITEMS: LootItem[] = [
+  { id: 'gem-g1', name: 'Polished River Quartz', description: 'Tumbled in a riverbed. Mildly shiny under direct light.', rarity: 'common', value: 10, icon: '🪨', color: '#9ca3af', bgGradient: 'from-zinc-800 to-zinc-950', dropWeight: 44, lore: 'Standard garden variety stone.' },
+  { id: 'gem-g2', name: 'Raw Pyrite (Fools Gold)', description: 'Glittered like gold until you had it appraised.', rarity: 'common', value: 25, icon: '✨', color: '#9ca3af', bgGradient: 'from-zinc-800 to-zinc-950', dropWeight: 32, lore: 'Classic mineral degen bait.' },
+  { id: 'gem-1', name: 'Deep Ceylon Star Sapphire', description: 'Exhibits a six-rayed asterism under bright light.', rarity: 'uncommon', value: 95, icon: '🔷', color: '#3b82f6', bgGradient: 'from-blue-950 to-zinc-950', dropWeight: 14, lore: 'Deep ocean cobalt radiance.' },
+  { id: 'gem-2', name: 'Glowing Green Kryptonite Shard', description: 'Radiates strange cosmic radiation. Keep away from Supermen.', rarity: 'rare', value: 450, icon: '🧪', color: '#a855f7', bgGradient: 'from-emerald-950 to-zinc-950', dropWeight: 6, lore: 'Harmful to Kryptonians, valuable to collectors.' },
+  { id: 'gem-3', name: 'Refined Wakandan Vibranium Ore', description: 'Absorbs and stores all kinetic energy and vibrational shocks.', rarity: 'classified', value: 1400, icon: '🟣', color: '#ec4899', bgGradient: 'from-purple-950 to-zinc-950', dropWeight: 2.5, lore: 'The foundation of advanced civilization.' },
+  { id: 'gem-4', name: 'Pure Crimson Kyber Crystal', description: 'Attuned through the Dark Side of the Force to power a plasma blade.', rarity: 'covert', value: 3800, icon: '🏮', color: '#ef4444', bgGradient: 'from-red-950 to-zinc-950', dropWeight: 0.9, lore: 'Bleeds with immense thermal energy.' },
+  { id: 'gem-5', name: 'The Philosopher\'s Stone', description: 'Legendary alchemical catalyst capable of turning any base metal into gold.', rarity: 'mythic', value: 12000, icon: '🩸', color: '#f59e0b', bgGradient: 'from-amber-950 to-zinc-950', dropWeight: 0.35, lore: 'Grants infinite wealth and eternal youth.' },
+  { id: 'gem-6', name: '★ The Arkenstone | Heart of the Mountain ★', description: 'Faceted jewel of Thrain that shines with its own inner celestial daylight.', rarity: 'exotic', value: 38000, icon: '💎', color: '#eab308', bgGradient: 'from-sky-950 via-indigo-950 to-yellow-950', dropWeight: 0.15, lore: 'The jewel of kings under the lonely mountain.' },
+  { id: 'gem-7', name: '★ 1-of-1 Infinite Reality Stone ★', description: 'Cosmic singularity condensed into an ethereal crimson gem that bends all reality.', rarity: 'exotic', value: 120000, icon: '🌌', color: '#eab308', bgGradient: 'from-red-950 via-amber-900 to-yellow-950', dropWeight: 0.1, lore: 'Reality can be whatever you want.' },
+];
+
+// Crate 10: Prehistoric Jurassic Fossil Coffer ($150)
+const JURASSIC_FOSSIL_ITEMS: LootItem[] = [
+  { id: 'jf-g1', name: 'Petrified Tree Bark', description: 'Hardened into silicate rock over 65 million years.', rarity: 'common', value: 5, icon: '🪵', color: '#9ca3af', bgGradient: 'from-zinc-800 to-zinc-950', dropWeight: 45, lore: 'Ancient firewood.' },
+  { id: 'jf-g2', name: 'Fossilized Trilobite Shell', description: 'Bottom feeder that swam Paleozoic ocean floors.', rarity: 'common', value: 15, icon: '🪲', color: '#9ca3af', bgGradient: 'from-zinc-800 to-zinc-950', dropWeight: 33, lore: 'Over 500 million years old.' },
+  { id: 'jf-1', name: 'Mosquito Preserved in Golden Amber', description: 'Contains dinosaur hemoglobin trapped inside ancient tree sap.', rarity: 'uncommon', value: 55, icon: '🪰', color: '#3b82f6', bgGradient: 'from-amber-950 to-zinc-950', dropWeight: 14, lore: 'Life finds a way.' },
+  { id: 'jf-2', name: 'Curved Velociraptor Sickle Claw', description: 'Sharp as a scalpel. Retractable predatory toe claw.', rarity: 'rare', value: 240, icon: '🦅', color: '#a855f7', bgGradient: 'from-purple-950 to-zinc-950', dropWeight: 5, lore: 'Taps on kitchen floor tiles in your nightmares.' },
+  { id: 'jf-3', name: 'Giant Megalodon Shark Tooth', description: '7-inch serrated black enamel tooth from the apex ocean beast.', rarity: 'classified', value: 850, icon: '🦈', color: '#ec4899', bgGradient: 'from-pink-950 to-zinc-950', dropWeight: 2, lore: 'Crushed whale vertebrae for breakfast.' },
+  { id: 'jf-4', name: 'Intact Spinosaurus Sail Spine', description: 'Towering dorsal vertebrae with iridescent petrification.', rarity: 'covert', value: 2400, icon: '🦖', color: '#ef4444', bgGradient: 'from-red-950 to-zinc-950', dropWeight: 0.8, lore: 'Ruler of the Cretaceous river networks.' },
+  { id: 'jf-5', name: '★ Tyrannosaurus Rex Skull in Solid Amber ★', description: 'A complete apex predator cranium encased in flawless museum amber.', rarity: 'exotic', value: 16000, icon: '💀', color: '#eab308', bgGradient: 'from-amber-950 via-yellow-950 to-purple-950', dropWeight: 0.15, lore: 'The tyrant lizard king immortalized.' },
+  { id: 'jf-6', name: '★ 1-of-1 Living Micro-Raptor Hatchling ★', description: 'Genetically resurrected companion with feathers and inquisitive eyes.', rarity: 'exotic', value: 65000, icon: '🥚', color: '#eab308', bgGradient: 'from-emerald-950 via-amber-900 to-yellow-950', dropWeight: 0.05, lore: 'Welcome... to your casino menagerie.' },
+];
+
+// Crate 11: Eldritch Arcane Grimoire Cache ($650)
+const ELDRITCH_GRIMOIRE_ITEMS: LootItem[] = [
+  { id: 'eg-g1', name: 'Dried Toad Legs & Black Salt', description: 'Leftovers from an amateur Wiccan ritual in the woods.', rarity: 'common', value: 18, icon: '🧂', color: '#9ca3af', bgGradient: 'from-zinc-800 to-zinc-950', dropWeight: 45, lore: 'Slightly cursed seasoning.' },
+  { id: 'eg-g2', name: 'Melted Black Tallow Candle', description: 'Burned down to the brass dish during a midnight seance.', rarity: 'common', value: 45, icon: '🕯️', color: '#9ca3af', bgGradient: 'from-zinc-800 to-zinc-950', dropWeight: 32, lore: 'Smells of sage and sulfur.' },
+  { id: 'eg-1', name: 'Necromancer\'s Raven Bone Wand', description: 'Carved from the thigh bone of an omen raven.', rarity: 'uncommon', value: 190, icon: '🪄', color: '#3b82f6', bgGradient: 'from-blue-950 to-zinc-950', dropWeight: 14, lore: 'Whispers quiet incantations.' },
+  { id: 'eg-2', name: 'Ancient Golden Scarab Talisman', description: 'Blessed by high priests of Amun-Ra to ward against curses.', rarity: 'rare', value: 720, icon: '🪲', color: '#a855f7', bgGradient: 'from-purple-950 to-zinc-950', dropWeight: 5.5, lore: 'Flaps solid gold wings when danger nears.' },
+  { id: 'eg-3', name: 'Void-Forged Abyssal Dagger', description: 'Absorbs all ambient light around the obsidian blade.', rarity: 'classified', value: 2500, icon: '🗡️', color: '#ec4899', bgGradient: 'from-pink-950 to-zinc-950', dropWeight: 2.2, lore: 'Drawn from the cold dimension beyond stars.' },
+  { id: 'eg-4', name: 'Staff of Archmage Azathoth', description: 'Topped with a pulsing eldritch eye that blinks in rhythm with your bets.', rarity: 'covert', value: 6800, icon: '👁️', color: '#ef4444', bgGradient: 'from-red-950 to-zinc-950', dropWeight: 0.9, lore: 'Channels cosmic horrors directly into chip wins.' },
+  { id: 'eg-5', name: 'Necronomicon Ex-Mortis (Bound in Flesh)', description: 'Ancient Sumerian grimoire inked in demon blood and bound in human leather.', rarity: 'mythic', value: 19500, icon: '📖', color: '#f59e0b', bgGradient: 'from-amber-950 to-zinc-950', dropWeight: 0.3, lore: 'Klaatu barada nikto.' },
+  { id: 'eg-6', name: '★ Scythe of the Void Harbinger ★', description: 'Reaps the souls of bad beats and splits the fabric of time.', rarity: 'exotic', value: 75000, icon: '🌾', color: '#eab308', bgGradient: 'from-purple-950 via-violet-950 to-yellow-950', dropWeight: 0.1, lore: 'The absolute ruler of forbidden shadow magic.' },
+];
+
+// Crate 12: Olympus Mythological Pantheon Reliquary ($2,500)
+const OLYMPUS_PANTHEON_ITEMS: LootItem[] = [
+  { id: 'oly-g1', name: 'Chipped Terracotta Olive Oil Flask', description: 'Unearthed from the ruins of ancient Corinth.', rarity: 'common', value: 50, icon: '🏺', color: '#9ca3af', bgGradient: 'from-zinc-800 to-zinc-950', dropWeight: 45, lore: 'Smells of rancid Mediterranean olive oil.' },
+  { id: 'oly-g2', name: 'Wilted Golden Laurel Wreath', description: 'Awarded to a runner-up in the 480 BC Isthmian Games.', rarity: 'common', value: 120, icon: '🌿', color: '#9ca3af', bgGradient: 'from-zinc-800 to-zinc-950', dropWeight: 32, lore: 'Foliage dried to a crisp.' },
+  { id: 'oly-1', name: 'Spartan King\'s Bronze War Helmet', description: 'Corinthian battle helmet dented by Persian spears.', rarity: 'uncommon', value: 750, icon: '🪖', color: '#3b82f6', bgGradient: 'from-blue-950 to-zinc-950', dropWeight: 14, lore: 'Tonight we dine in high limits!' },
+  { id: 'oly-2', name: 'Hermes\' Winged Golden Talaria', description: 'Sandals that let the messenger god outrun all bad luck.', rarity: 'rare', value: 2900, icon: '🪽', color: '#a855f7', bgGradient: 'from-purple-950 to-zinc-950', dropWeight: 5.5, lore: 'Fly across table minimums.' },
+  { id: 'oly-3', name: 'Golden Fleece of Colchis', description: 'Pure ram fleece of celestial gold guarded by a sleepless dragon.', rarity: 'classified', value: 9500, icon: '🐑', color: '#ec4899', bgGradient: 'from-pink-950 to-zinc-950', dropWeight: 2.2, lore: 'Brought back by Jason and the Argonauts.' },
+  { id: 'oly-4', name: 'Athena\'s Aegis Gorgon Shield', description: 'Embossed with the petrifying gaze of Medusa herself.', rarity: 'covert', value: 24000, icon: '🛡️', color: '#ef4444', bgGradient: 'from-red-950 to-zinc-950', dropWeight: 0.9, lore: 'Turns losing bets to solid marble.' },
+  { id: 'oly-5', name: 'Hades\' Helm of Darkness & Invisibility', description: 'Forged by the Cyclopes to render the wearer completely invisible.', rarity: 'mythic', value: 55000, icon: '👑', color: '#f59e0b', bgGradient: 'from-amber-950 to-zinc-950', dropWeight: 0.28, lore: 'Walk past the pit bosses undetected.' },
+  { id: 'oly-6', name: '★ Zeus\'s Primordial Master Thunderbolt ★', description: 'Forged in the heart of Mount Etna. Crackles with 100 million volts of raw divine fury.', rarity: 'exotic', value: 160000, icon: '⚡', color: '#eab308', bgGradient: 'from-yellow-950 via-amber-900 to-sky-950', dropWeight: 0.12, lore: 'The supreme weapon of Mount Olympus.' },
+  { id: 'oly-7', name: '★ Pandora\'s Box | Primordial Chaos (1-of-1) ★', description: 'The jar containing all cosmic evils and ultimate golden hope.', rarity: 'exotic', value: 380000, icon: '📦', color: '#eab308', bgGradient: 'from-rose-950 via-purple-950 to-yellow-950', dropWeight: 0.05, lore: 'Do not open unless you crave limitless jackpot glory.' },
+];
+
+// Crate 13: Enchanted Forest Alchemist Stash ($75)
+const ENCHANTED_ALCHEMIST_ITEMS: LootItem[] = [
+  { id: 'ea-g1', name: 'Poisonous Purple Toadstool', description: 'Glows softly in the damp moss. Do not consume.', rarity: 'common', value: 3, icon: '🍄', color: '#9ca3af', bgGradient: 'from-zinc-800 to-zinc-950', dropWeight: 45, lore: 'Wild swamp forage.' },
+  { id: 'ea-g2', name: 'Acorn of the Forest Dryad', description: 'Sprouts roots when placed on a roulette wheel.', rarity: 'common', value: 8, icon: '🌰', color: '#9ca3af', bgGradient: 'from-zinc-800 to-zinc-950', dropWeight: 34, lore: 'Blessed by woodland spirits.' },
+  { id: 'ea-1', name: 'Vial of Shimmering Pixie Dust', description: 'Grants temporary weightlessness and extreme good vibes.', rarity: 'uncommon', value: 35, icon: '✨', color: '#3b82f6', bgGradient: 'from-blue-950 to-zinc-950', dropWeight: 13, lore: 'Sprinkle over pocket cards.' },
+  { id: 'ea-2', name: 'Elixir of Liquid Fortune', description: 'Brewed with four-leaf clovers and morning dew.', rarity: 'rare', value: 140, icon: '🧪', color: '#a855f7', bgGradient: 'from-purple-950 to-zinc-950', dropWeight: 5, lore: 'Sweet, sparkling, and lucky.' },
+  { id: 'ea-3', name: 'Root of the Elder Treant', description: 'Knotted root that pulses with ancient botanical magic.', rarity: 'classified', value: 420, icon: '🪵', color: '#ec4899', bgGradient: 'from-pink-950 to-zinc-950', dropWeight: 2, lore: 'Older than the oldest casino in existence.' },
+  { id: 'ea-4', name: 'Radiant Phoenix Feather Quill', description: 'Never runs out of fiery ink. Rebirths lost hands from ashes.', rarity: 'covert', value: 1100, icon: '🪶', color: '#ef4444', bgGradient: 'from-red-950 to-zinc-950', dropWeight: 0.8, lore: 'Burns with eternal warmth.' },
+  { id: 'ea-5', name: '★ Bow of the Celestial Moonlit Huntress ★', description: 'Carved from living Yggdrasil wood strung with silver moonlight.', rarity: 'exotic', value: 4800, icon: '🏹', color: '#eab308', bgGradient: 'from-teal-950 via-emerald-950 to-yellow-950', dropWeight: 0.15, lore: 'Arrows never miss the bullseye multiplier.' },
 ];
 
 export const LOOT_CRATES: LootCrate[] = [
@@ -201,6 +262,16 @@ export const LOOT_CRATES: LootCrate[] = [
     items: STREET_HUSTLER_ITEMS,
   },
   {
+    id: 'enchanted-alchemist',
+    name: 'Enchanted Forest Stash',
+    tagline: 'Pixie dust vials, liquid fortune elixirs, and Phoenix feathers.',
+    cost: 75,
+    icon: '🍄',
+    accentColor: '#10b981',
+    glowColor: 'rgba(16, 185, 129, 0.35)',
+    items: ENCHANTED_ALCHEMIST_ITEMS,
+  },
+  {
     id: 'cyberpunk-case',
     name: 'Neo-Tokyo Cyberpunk Case',
     tagline: 'Neural decks, holographic visors, and Damascus Matrix katanas.',
@@ -209,6 +280,16 @@ export const LOOT_CRATES: LootCrate[] = [
     accentColor: '#06b6d4',
     glowColor: 'rgba(6, 182, 212, 0.4)',
     items: CYBERPUNK_ITEMS,
+  },
+  {
+    id: 'jurassic-fossil',
+    name: 'Prehistoric Jurassic Coffer',
+    tagline: 'Amber mosquitoes, Megalodon shark teeth, and amber T-Rex skulls.',
+    cost: 150,
+    icon: '🦖',
+    accentColor: '#f97316',
+    glowColor: 'rgba(249, 115, 22, 0.4)',
+    items: JURASSIC_FOSSIL_ITEMS,
   },
   {
     id: 'high-roller',
@@ -221,6 +302,16 @@ export const LOOT_CRATES: LootCrate[] = [
     items: HIGH_ROLLER_ITEMS,
   },
   {
+    id: 'mythic-gemstones',
+    name: 'Mythic Gems & Minerals Vault',
+    tagline: 'Kryptonite, Wakandan Vibranium, Kyber Crystals & Arkenstone.',
+    cost: 350,
+    icon: '💎',
+    accentColor: '#6366f1',
+    glowColor: 'rgba(99, 102, 241, 0.45)',
+    items: GEMSTONES_ITEMS,
+  },
+  {
     id: 'mythic-bullshit',
     name: 'The ChipZone Mythic Crate',
     tagline: 'Ridiculous golden artifacts, legendary knifes, and maximum flex.',
@@ -229,6 +320,16 @@ export const LOOT_CRATES: LootCrate[] = [
     accentColor: '#f59e0b',
     glowColor: 'rgba(245, 158, 11, 0.4)',
     items: MYTHIC_ITEMS,
+  },
+  {
+    id: 'eldritch-grimoire',
+    name: 'Eldritch Arcane Grimoire',
+    tagline: 'Ancient scarabs, Necronomicon Ex-Mortis, and Void Harbingers.',
+    cost: 650,
+    icon: '🔮',
+    accentColor: '#d946ef',
+    glowColor: 'rgba(217, 70, 239, 0.45)',
+    items: ELDRITCH_GRIMOIRE_ITEMS,
   },
   {
     id: 'syndicate-safe',
@@ -249,6 +350,16 @@ export const LOOT_CRATES: LootCrate[] = [
     accentColor: '#38bdf8',
     glowColor: 'rgba(56, 189, 248, 0.4)',
     items: DIAMOND_WHALE_ITEMS,
+  },
+  {
+    id: 'olympus-pantheon',
+    name: 'Olympus Pantheon Reliquary',
+    tagline: 'Hermes sandals, Athena Aegis shield, Zeus Master Bolt & Pandora Box.',
+    cost: 2500,
+    icon: '🏛️',
+    accentColor: '#eab308',
+    glowColor: 'rgba(234, 179, 8, 0.55)',
+    items: OLYMPUS_PANTHEON_ITEMS,
   },
   {
     id: 'degenerate-overlord',
@@ -343,5 +454,26 @@ export function getRandomAIBot(excludeNames: string[] = []) {
  */
 export function sortCratesByCost(crates: LootCrate[]): LootCrate[] {
   return [...crates].sort((a, b) => a.cost - b.cost);
+}
+
+/**
+ * Cleanly formats drop rate percentage ensuring no non-zero drop displays as 0.00%
+ */
+export function formatDropOdds(dropWeight: number, totalWeight: number): string {
+  if (totalWeight <= 0 || dropWeight <= 0) return '0.01%';
+  const pct = (dropWeight / totalWeight) * 100;
+  if (pct >= 10) {
+    return `${pct.toFixed(1)}%`;
+  }
+  if (pct >= 1) {
+    return `${pct.toFixed(1)}%`;
+  }
+  if (pct >= 0.1) {
+    return `${pct.toFixed(2)}%`;
+  }
+  if (pct >= 0.01) {
+    return `${pct.toFixed(2)}%`;
+  }
+  return `${pct.toFixed(3)}%`;
 }
 
