@@ -208,24 +208,24 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
         </div>
       )}
 
-      {/* CASINO FLOOR: 2x2 GAMES & COLLECTION GRID (EXACT LAYOUT FROM DIAGRAM) */}
+      {/* CASINO FLOOR: GAMES GRID */}
       <div className="space-y-3">
         <div className="flex items-center justify-between px-1">
           <div className="flex items-center gap-2">
             <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-zinc-300 flex items-center gap-2">
-              <span>Casino Floor & Vault</span>
+              <span>Casino Floor</span>
             </h3>
             <span className="text-[10px] px-2 py-0.5 rounded-md bg-zinc-900 border border-zinc-800 text-zinc-400 font-mono">
-              2 Games • 2 Vault Portals
+              3 Games Live
             </span>
           </div>
           <span className="text-[10px] text-zinc-500 hidden sm:inline font-mono">
-            Select any box below to enter
+            Select any table below to play
           </span>
         </div>
 
-        {/* CASINO FLOOR GAMES GRID */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
+        {/* CASINO FLOOR GAMES GRID (2-COL MOBILE GRID LIKE CASES) */}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-4">
           {/* ========================================================================= */}
           {/* GAME 1: 40-BALL KENO                                                      */}
           {/* ========================================================================= */}
@@ -235,60 +235,59 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
               sound.playChip();
               onNavigate('keno');
             }}
-            className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-950/30 via-zinc-900/90 to-zinc-950 border-2 border-emerald-500/40 hover:border-emerald-400 p-5 cursor-pointer transition-all duration-200 hover:shadow-2xl hover:shadow-emerald-500/20 flex flex-col justify-between min-h-[260px]"
+            className="group relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-emerald-950/30 via-zinc-900/90 to-zinc-950 border-2 border-emerald-500/40 hover:border-emerald-400 p-3 sm:p-5 cursor-pointer transition-all duration-200 hover:shadow-2xl hover:shadow-emerald-500/20 flex flex-col justify-between"
           >
             {/* Top Row: Icon & Mode Tags */}
             <div>
-              <div className="flex items-center justify-between gap-2 mb-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-13 h-13 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-700 border border-emerald-300/50 flex items-center justify-center text-zinc-950 shadow-lg shadow-emerald-500/30 group-hover:scale-105 transition-transform">
-                    <Dices className="w-7 h-7" />
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 block">
-                      Table 1
-                    </span>
-                    <h4 className="text-lg sm:text-xl font-black uppercase text-zinc-100 group-hover:text-emerald-300 transition-colors">
-                      Keno
-                    </h4>
-                  </div>
+              <div className="flex items-start justify-between gap-2 mb-2 sm:mb-3">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-700 border border-emerald-300/50 flex items-center justify-center text-zinc-950 shadow-lg shadow-emerald-500/30 group-hover:scale-105 transition-transform shrink-0">
+                  <Dices className="w-5 h-5 sm:w-6 sm:h-6" />
                 </div>
 
-                <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-500/50 font-mono">
+                <span className="text-[9px] sm:text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-500/50 font-mono whitespace-nowrap">
                   10-Ball Draw
                 </span>
               </div>
 
-              <p className="text-xs text-zinc-300 leading-relaxed mb-3">
-                Compact 40-number board with 10 drawn balls. Choose between <strong>Safe Grinder</strong>, <strong>Classic Vegas (~95% RTP)</strong>, or <strong>Bullshit Degen (3,000,000x)</strong>.
+              <div>
+                <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-emerald-400 block">
+                  Table 1
+                </span>
+                <h4 className="text-sm sm:text-lg font-black uppercase text-zinc-100 group-hover:text-emerald-300 transition-colors">
+                  Keno
+                </h4>
+              </div>
+
+              <p className="text-[10px] sm:text-xs text-zinc-400 mt-1 leading-snug line-clamp-2">
+                40-ball board with 10 drawn balls. Safe Grinder, Vegas 95% RTP, or Degen (3,000,000x).
               </p>
 
               {/* Mode Badges */}
-              <div className="flex flex-wrap gap-1.5">
-                <span className="text-[10px] px-2 py-0.5 rounded-md bg-zinc-950 text-emerald-400 border border-zinc-800">
+              <div className="flex flex-wrap gap-1 mt-2 sm:mt-3">
+                <span className="text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded bg-zinc-950 text-emerald-400 border border-zinc-800">
                   🛡️ Safe
                 </span>
-                <span className="text-[10px] px-2 py-0.5 rounded-md bg-zinc-950 text-amber-300 border border-zinc-800">
-                  ⚖️ Classic Vegas
+                <span className="text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded bg-zinc-950 text-amber-300 border border-zinc-800">
+                  ⚖️ Vegas
                 </span>
-                <span className="text-[10px] px-2 py-0.5 rounded-md bg-zinc-950 text-rose-400 border border-zinc-800">
-                  🔥 Degen (3,000,000x)
+                <span className="text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded bg-zinc-950 text-rose-400 border border-zinc-800">
+                  🔥 3,000,000x
                 </span>
               </div>
             </div>
 
             {/* Bottom Row: Stats & Action Button */}
-            <div className="mt-4 pt-3.5 border-t border-emerald-950/60 flex items-center justify-between gap-3">
-              <span className="text-xs font-mono text-zinc-400">
-                {stats.roundsPlayedKeno} Rounds Drawn
+            <div className="mt-3 pt-2.5 sm:mt-4 sm:pt-3.5 border-t border-emerald-950/60 flex items-center justify-between gap-2">
+              <span className="text-[9px] sm:text-xs font-mono text-zinc-400 truncate">
+                {stats.roundsPlayedKeno} Draws
               </span>
 
               <button
                 type="button"
-                className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-lg shadow-emerald-500/20 group-hover:translate-x-0.5 transition-all cursor-pointer"
+                className="px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black text-[10px] sm:text-xs uppercase tracking-wider flex items-center gap-1 shadow-md shadow-emerald-500/20 group-hover:translate-x-0.5 transition-all cursor-pointer whitespace-nowrap"
               >
-                <span>Play Keno</span>
-                <ChevronRight className="w-4 h-4" />
+                <span>Play</span>
+                <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
               </button>
             </div>
           </div>
@@ -302,60 +301,59 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
               sound.playChip();
               onNavigate('blackjack');
             }}
-            className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-950/30 via-zinc-900/90 to-zinc-950 border-2 border-amber-500/40 hover:border-amber-400 p-5 cursor-pointer transition-all duration-200 hover:shadow-2xl hover:shadow-amber-500/20 flex flex-col justify-between min-h-[260px]"
+            className="group relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-amber-950/30 via-zinc-900/90 to-zinc-950 border-2 border-amber-500/40 hover:border-amber-400 p-3 sm:p-5 cursor-pointer transition-all duration-200 hover:shadow-2xl hover:shadow-amber-500/20 flex flex-col justify-between"
           >
             {/* Top Row: Icon & Payout Tags */}
             <div>
-              <div className="flex items-center justify-between gap-2 mb-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-13 h-13 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-700 border border-amber-300/50 flex items-center justify-center text-zinc-950 shadow-lg shadow-amber-500/30 group-hover:scale-105 transition-transform">
-                    <Spade className="w-7 h-7" />
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-amber-400 block">
-                      Table 2
-                    </span>
-                    <h4 className="text-lg sm:text-xl font-black uppercase text-zinc-100 group-hover:text-amber-300 transition-colors">
-                      Blackjack (BJ)
-                    </h4>
-                  </div>
+              <div className="flex items-start justify-between gap-2 mb-2 sm:mb-3">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-br from-amber-400 to-amber-700 border border-amber-300/50 flex items-center justify-center text-zinc-950 shadow-lg shadow-amber-500/30 group-hover:scale-105 transition-transform shrink-0">
+                  <Spade className="w-5 h-5 sm:w-6 sm:h-6" />
                 </div>
 
-                <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-full bg-amber-950/80 text-amber-300 border border-amber-500/50 font-mono">
+                <span className="text-[9px] sm:text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-950/80 text-amber-300 border border-amber-500/50 font-mono whitespace-nowrap">
                   Pays 3:2
                 </span>
               </div>
 
-              <p className="text-xs text-zinc-300 leading-relaxed mb-3">
-                Vegas rules 6-deck shoe with splits, double downs, plus <strong>21+3 Poker</strong> (100:1), <strong>Pairs Match</strong> (25:1), and <strong>Lucky Queens</strong> (1000:1).
+              <div>
+                <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-amber-400 block">
+                  Table 2
+                </span>
+                <h4 className="text-sm sm:text-lg font-black uppercase text-zinc-100 group-hover:text-amber-300 transition-colors">
+                  Blackjack
+                </h4>
+              </div>
+
+              <p className="text-[10px] sm:text-xs text-zinc-400 mt-1 leading-snug line-clamp-2">
+                6-deck Vegas shoe with splits, doubles, 21+3 Poker (100:1), & 1000:1 Queens.
               </p>
 
               {/* Side Bets Badges */}
-              <div className="flex flex-wrap gap-1.5">
-                <span className="text-[10px] px-2 py-0.5 rounded-md bg-zinc-950 text-amber-300 border border-zinc-800">
+              <div className="flex flex-wrap gap-1 mt-2 sm:mt-3">
+                <span className="text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded bg-zinc-950 text-amber-300 border border-zinc-800">
                   🃏 21+3 (100:1)
                 </span>
-                <span className="text-[10px] px-2 py-0.5 rounded-md bg-zinc-950 text-blue-300 border border-zinc-800">
-                  👥 Pairs Match
+                <span className="text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded bg-zinc-950 text-blue-300 border border-zinc-800">
+                  👥 Pairs
                 </span>
-                <span className="text-[10px] px-2 py-0.5 rounded-md bg-zinc-950 text-purple-300 border border-zinc-800">
+                <span className="text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded bg-zinc-950 text-purple-300 border border-zinc-800">
                   👸 1000:1 Queens
                 </span>
               </div>
             </div>
 
             {/* Bottom Row: Stats & Action Button */}
-            <div className="mt-4 pt-3.5 border-t border-amber-950/60 flex items-center justify-between gap-3">
-              <span className="text-xs font-mono text-zinc-400">
-                {stats.handsPlayedBlackjack} Hands Played
+            <div className="mt-3 pt-2.5 sm:mt-4 sm:pt-3.5 border-t border-amber-950/60 flex items-center justify-between gap-2">
+              <span className="text-[9px] sm:text-xs font-mono text-zinc-400 truncate">
+                {stats.handsPlayedBlackjack} Hands
               </span>
 
               <button
                 type="button"
-                className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-lg shadow-amber-500/20 group-hover:translate-x-0.5 transition-all cursor-pointer"
+                className="px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black text-[10px] sm:text-xs uppercase tracking-wider flex items-center gap-1 shadow-md shadow-amber-500/20 group-hover:translate-x-0.5 transition-all cursor-pointer whitespace-nowrap"
               >
-                <span>Play BJ</span>
-                <ChevronRight className="w-4 h-4" />
+                <span>Play</span>
+                <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
               </button>
             </div>
           </div>
@@ -369,60 +367,59 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
               sound.playChip();
               onNavigate('unboxer');
             }}
-            className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-950/30 via-zinc-900/90 to-zinc-950 border-2 border-purple-500/40 hover:border-purple-400 p-5 cursor-pointer transition-all duration-200 hover:shadow-2xl hover:shadow-purple-500/20 flex flex-col justify-between min-h-[260px]"
+            className="col-span-2 md:col-span-1 group relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-purple-950/30 via-zinc-900/90 to-zinc-950 border-2 border-purple-500/40 hover:border-purple-400 p-3 sm:p-5 cursor-pointer transition-all duration-200 hover:shadow-2xl hover:shadow-purple-500/20 flex flex-col justify-between"
           >
             {/* Top Row: Icon & Tier Tags */}
             <div>
-              <div className="flex items-center justify-between gap-2 mb-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-13 h-13 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-700 border border-purple-300/50 flex items-center justify-center text-zinc-950 shadow-lg shadow-purple-500/30 group-hover:scale-105 transition-transform">
-                    <Package className="w-7 h-7" />
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-purple-400 block">
-                      Table 3
-                    </span>
-                    <h4 className="text-lg sm:text-xl font-black uppercase text-zinc-100 group-hover:text-purple-300 transition-colors">
-                      Loot Crates
-                    </h4>
-                  </div>
+              <div className="flex items-start justify-between gap-2 mb-2 sm:mb-3">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-700 border border-purple-300/50 flex items-center justify-center text-zinc-950 shadow-lg shadow-purple-500/30 group-hover:scale-105 transition-transform shrink-0">
+                  <Package className="w-5 h-5 sm:w-6 sm:h-6" />
                 </div>
 
-                <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-full bg-purple-950/80 text-purple-300 border border-purple-500/50 font-mono">
+                <span className="text-[9px] sm:text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-purple-950/80 text-purple-300 border border-purple-500/50 font-mono whitespace-nowrap">
                   10 Tiers & Battles
                 </span>
               </div>
 
-              <p className="text-xs text-zinc-300 leading-relaxed mb-3">
-                Solo multi-open up to 10× at once, or join <strong>Crate Battles</strong> (1v1, 2v2, Group Pots) with AI competitors across 10 crate tiers with instant auto-credited payouts.
+              <div>
+                <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-purple-400 block">
+                  Table 3
+                </span>
+                <h4 className="text-sm sm:text-lg font-black uppercase text-zinc-100 group-hover:text-purple-300 transition-colors">
+                  Loot Crates
+                </h4>
+              </div>
+
+              <p className="text-[10px] sm:text-xs text-zinc-400 mt-1 leading-snug line-clamp-2">
+                Solo multi-open up to 10× at once, or join 1v1 and 2v2 Crate Battles with auto chip payouts.
               </p>
 
               {/* Case Badges */}
-              <div className="flex flex-wrap gap-1.5">
-                <span className="text-[10px] px-2 py-0.5 rounded-md bg-zinc-950 text-amber-300 border border-zinc-800">
-                  ⚡ Multi-Open (1x-10x)
+              <div className="flex flex-wrap gap-1 mt-2 sm:mt-3">
+                <span className="text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded bg-zinc-950 text-amber-300 border border-zinc-800">
+                  ⚡ Multi (1x-10x)
                 </span>
-                <span className="text-[10px] px-2 py-0.5 rounded-md bg-zinc-950 text-purple-300 border border-zinc-800">
-                  ⚔️ 1v1 & 2v2 Battles
+                <span className="text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded bg-zinc-950 text-purple-300 border border-zinc-800">
+                  ⚔️ Crate Battles
                 </span>
-                <span className="text-[10px] px-2 py-0.5 rounded-md bg-zinc-950 text-emerald-300 border border-zinc-800">
-                  💰 Auto Chip Payouts
+                <span className="text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded bg-zinc-950 text-emerald-300 border border-zinc-800">
+                  💰 Auto Payouts
                 </span>
               </div>
             </div>
 
             {/* Bottom Row: Stats & Action Button */}
-            <div className="mt-4 pt-3.5 border-t border-purple-950/60 flex items-center justify-between gap-3">
-              <span className="text-xs font-mono text-zinc-400">
-                {stats.cratesOpened} Crates Opened
+            <div className="mt-3 pt-2.5 sm:mt-4 sm:pt-3.5 border-t border-purple-950/60 flex items-center justify-between gap-2">
+              <span className="text-[9px] sm:text-xs font-mono text-zinc-400 truncate">
+                {stats.cratesOpened} Crates
               </span>
 
               <button
                 type="button"
-                className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-black text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-lg shadow-purple-600/20 group-hover:translate-x-0.5 transition-all cursor-pointer"
+                className="px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-black text-[10px] sm:text-xs uppercase tracking-wider flex items-center gap-1 shadow-md shadow-purple-600/20 group-hover:translate-x-0.5 transition-all cursor-pointer whitespace-nowrap"
               >
-                <span>Open Crates</span>
-                <ChevronRight className="w-4 h-4" />
+                <span>Open</span>
+                <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
               </button>
             </div>
           </div>
