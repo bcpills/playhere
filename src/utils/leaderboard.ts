@@ -113,7 +113,7 @@ export function loadStoredFakePlayers(): FakePlayer[] {
       if (Array.isArray(parsed) && parsed.length > 0) {
         // Ensure only fakeplayer1, fakeplayer2, fakeplayer3 exist
         const validIds = new Set(['fakeplayer1', 'fakeplayer2', 'fakeplayer3']);
-        const filtered = parsed.filter(p => validIds.has(p.id));
+        const filtered = parsed.filter(p => p && validIds.has(p.id));
         if (filtered.length === 3) return filtered;
       }
     }
@@ -213,7 +213,8 @@ export function getDailyLeaderboard(
   customFakePlayers?: FakePlayer[]
 ): LeaderboardEntry[] {
   const userVIPTier = getVIPTier(stats.totalWagered);
-  const fakePlayersList = customFakePlayers || loadStoredFakePlayers();
+  const rawList = Array.isArray(customFakePlayers) ? customFakePlayers : loadStoredFakePlayers();
+  const fakePlayersList = Array.isArray(rawList) ? rawList : INITIAL_FAKE_PLAYERS;
 
   // User Score for Category
   let userScore = 0;

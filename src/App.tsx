@@ -15,7 +15,6 @@ import { LobbyHome } from './components/LobbyHome';
 import { BlackjackGame } from './components/BlackjackGame';
 import { KenoGame } from './components/KenoGame';
 import { UnboxerGame } from './components/UnboxerGame';
-import { TrophyVault } from './components/TrophyVault';
 import { DailyLeaderboard } from './components/DailyLeaderboard';
 import { AccountModal } from './components/AccountModal';
 import { BailoutModal } from './components/BailoutModal';
@@ -225,7 +224,7 @@ export default function App() {
         const alreadyLogged = dailyWinners.some(w => w.dateEst === yesterdayEstDate);
         if (!alreadyLogged) {
           // Determine yesterday's top player from yesterday's daily leaderboard
-          const standings = getDailyLeaderboard('profit', userAccount, stats, inventory, balance);
+          const standings = getDailyLeaderboard('profit', userAccount, stats, balance);
           const topRanked = standings[0];
 
           if (topRanked) {
@@ -376,7 +375,7 @@ export default function App() {
   // Inspect Player Profile
   const handleInspectPlayer = (player: PlayerProfileData) => {
     const isMe = player.id === userAccount.id || player.isUser;
-    const currentLeaderboard = getDailyLeaderboard('profit', userAccount, stats, inventory, balance);
+    const currentLeaderboard = getDailyLeaderboard('profit', userAccount, stats, balance);
     const placementData = getPlayerPlacementData(
       player.id, 
       player.username, 
@@ -447,7 +446,6 @@ export default function App() {
         onToggleChat={() => setIsChatOpen(prev => !prev)}
         onOpenPendingPayouts={() => setIsModeratorOpen(true)}
         onOpenPayForAdFree={() => setIsPayForAdFreeOpen(true)}
-        inventoryCount={inventory.length}
         soundEnabled={soundEnabled}
         onToggleSound={() => setSoundEnabled(prev => !prev)}
         pendingPayoutsCount={pendingPayoutsCount}
@@ -461,7 +459,6 @@ export default function App() {
             balance={balance}
             netProfit={stats.netProfit}
             stats={stats}
-            inventory={inventory}
             userAccount={userAccount}
             dailyWinners={dailyWinners}
             onNavigate={setCurrentTab}
@@ -497,17 +494,7 @@ export default function App() {
             balance={balance}
             userAccount={userAccount}
             onUpdateBalance={handleUpdateBalance}
-            onAddToInventory={handleAddToInventory}
             onUpdateStats={setStats}
-          />
-        )}
-
-        {currentTab === 'inventory' && (
-          <TrophyVault
-            inventory={inventory}
-            onSellItem={handleSellItem}
-            onSellAll={handleSellAll}
-            onUpdateBalance={handleUpdateBalance}
           />
         )}
 
@@ -515,7 +502,6 @@ export default function App() {
           <DailyLeaderboard
             userAccount={userAccount}
             stats={stats}
-            inventory={inventory}
             balance={balance}
             dailyWinners={dailyWinners}
             allTimePeaks={allTimePeaks}
@@ -562,7 +548,6 @@ export default function App() {
         account={userAccount}
         stats={stats}
         balance={balance}
-        inventoryCount={inventory.length}
         onUpdateAccount={setUserAccount}
         onSignOut={handleSignOut}
         onOpenStats={() => setIsStatsOpen(true)}
