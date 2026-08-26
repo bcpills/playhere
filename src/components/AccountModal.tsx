@@ -4,7 +4,8 @@ import {
   AVATAR_OPTIONS, 
   getVIPTier, 
   getVIPTierInfo, 
-  VIP_TIER_THRESHOLDS 
+  VIP_TIER_THRESHOLDS,
+  formatCompactWager
 } from '../utils/leaderboard';
 import { sound } from '../utils/audio';
 import { GoogleIcon } from './GoogleIcon';
@@ -294,10 +295,13 @@ export const AccountModal: React.FC<AccountModalProps> = ({
                     {balance.toLocaleString()}c
                   </span>
                 </div>
-                <div className="p-2 rounded-xl bg-zinc-950/60 border border-zinc-800">
+                <div 
+                  className="p-2 rounded-xl bg-zinc-950/60 border border-zinc-800 group cursor-help transition-all"
+                  title={`${stats.totalWagered.toLocaleString()} chips total lifetime wagered`}
+                >
                   <span className="text-[10px] text-zinc-500 font-bold uppercase block">Wagered</span>
                   <span className="font-mono font-black text-purple-300 text-sm">
-                    {stats.totalWagered.toLocaleString()}c
+                    {formatCompactWager(stats.totalWagered)}c
                   </span>
                 </div>
                 <div className="p-2 rounded-xl bg-zinc-950/60 border border-zinc-800">
@@ -595,8 +599,11 @@ export const AccountModal: React.FC<AccountModalProps> = ({
                   </span>
                 </div>
                 {nextTier ? (
-                  <span className="text-[11px] text-zinc-400 font-mono">
-                    {stats.totalWagered.toLocaleString()} / {nextTier.minWager.toLocaleString()} Wagered
+                  <span 
+                    className="text-[11px] text-zinc-400 font-mono group cursor-help"
+                    title={`${stats.totalWagered.toLocaleString()} / ${nextTier.minWager.toLocaleString()} chips total`}
+                  >
+                    {formatCompactWager(stats.totalWagered)} / {formatCompactWager(nextTier.minWager)} Wagered
                   </span>
                 ) : (
                   <span className="text-[11px] text-yellow-300 font-black">MAX VIP RANK REACHED</span>

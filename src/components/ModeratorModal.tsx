@@ -9,6 +9,7 @@ import {
   ChatMessage 
 } from '../types';
 import { sound } from '../utils/audio';
+import { formatCompactWager } from '../utils/leaderboard';
 import { 
   ShieldCheck, 
   X, 
@@ -460,6 +461,16 @@ export const ModeratorModal: React.FC<ModeratorModalProps> = ({
                                 {user.balance.toLocaleString()} <span className="text-[9px] text-zinc-500 font-sans">CHIPS</span>
                               </div>
                             )}
+                          </div>
+
+                          <div 
+                            className="p-2 rounded-xl bg-zinc-950/80 border border-zinc-800 text-left min-w-[90px] group cursor-help"
+                            title={`${user.totalWagered.toLocaleString()} chips total lifetime wagered`}
+                          >
+                            <div className="text-[10px] text-zinc-500 font-bold uppercase">Wagered</div>
+                            <div className="font-mono font-bold text-purple-300 text-xs">
+                              {formatCompactWager(user.totalWagered)}
+                            </div>
                           </div>
 
                           <div className="p-2 rounded-xl bg-zinc-950/80 border border-zinc-800 text-left min-w-[90px]">

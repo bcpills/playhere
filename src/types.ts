@@ -259,6 +259,7 @@ export interface ChatMessage {
   contactPlatform?: ContactPlatform;
   contactHandle?: string;
   balance?: number;
+  totalWagered?: number;
   isUser?: boolean;
   isAdmin?: boolean;
   isModerator?: boolean;

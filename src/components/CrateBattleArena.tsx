@@ -92,8 +92,98 @@ export const CrateBattleArena: React.FC<CrateBattleArenaProps> = ({
   const nextRoundTimerRef = useRef<number | null>(null);
   const reelContainerRefs = useRef<Record<number, HTMLDivElement | null>>({});
 
-  // User-created Battles in Lobby (seeded with active community matches)
+  // User-created and Live Matches in Lobby
   const [availableBattles, setAvailableBattles] = useState<CrateBattle[]>([
+    {
+      id: 'lobby-live-1v1',
+      title: '💎 1v1 High Roller Duel (600c)',
+      mode: '1v1',
+      maxPlayers: 2,
+      crates: [LOOT_CRATES[1], LOOT_CRATES[4], LOOT_CRATES[6]],
+      seats: [
+        {
+          id: 'bot-hr-1',
+          name: 'Vegas VIP',
+          avatar: '🎰',
+          isAI: true,
+          isUser: false,
+          ready: true,
+          currentTotalValue: 0,
+          unboxedItems: [],
+        },
+        {
+          id: 'bot-hr-2',
+          name: 'Diamond Hands',
+          avatar: '💎',
+          isAI: true,
+          isUser: false,
+          ready: true,
+          currentTotalValue: 0,
+          unboxedItems: [],
+        },
+      ],
+      status: 'in-progress',
+      currentRound: 0,
+      createdAt: Date.now() - 15000,
+      createdBy: 'Vegas VIP',
+    },
+    {
+      id: 'lobby-live-2v2',
+      title: '🛡️ 2v2 Neo-Tokyo Squad Clash (800c)',
+      mode: '2v2',
+      maxPlayers: 4,
+      crates: [LOOT_CRATES[2], LOOT_CRATES[3], LOOT_CRATES[5]],
+      seats: [
+        {
+          id: 'bot-cyber-1',
+          name: 'Neon Ronin',
+          avatar: '⚡',
+          isAI: true,
+          isUser: false,
+          team: 1,
+          ready: true,
+          currentTotalValue: 0,
+          unboxedItems: [],
+        },
+        {
+          id: 'bot-cyber-2',
+          name: 'Matrix Ghost',
+          avatar: '👾',
+          isAI: true,
+          isUser: false,
+          team: 1,
+          ready: true,
+          currentTotalValue: 0,
+          unboxedItems: [],
+        },
+        {
+          id: 'bot-cyber-3',
+          name: 'Viper Strike',
+          avatar: '🐍',
+          isAI: true,
+          isUser: false,
+          team: 2,
+          ready: true,
+          currentTotalValue: 0,
+          unboxedItems: [],
+        },
+        {
+          id: 'bot-cyber-4',
+          name: 'Shadow Samurai',
+          avatar: '🥷',
+          isAI: true,
+          isUser: false,
+          team: 2,
+          ready: true,
+          currentTotalValue: 0,
+          unboxedItems: [],
+        },
+      ],
+      status: 'in-progress',
+      currentRound: 0,
+      createdAt: Date.now() - 25000,
+      createdBy: 'Neon Ronin',
+    },
     {
       id: 'lobby-2v2-demo',
       title: '🛡️ 2v2 High Stakes Squad Showdown (450c)',
@@ -164,6 +254,41 @@ export const CrateBattleArena: React.FC<CrateBattleArenaProps> = ({
       currentRound: 0,
       createdAt: Date.now() - 30000,
       createdBy: 'Diamond Hands',
+    },
+    {
+      id: 'lobby-ffa-4p',
+      title: '👑 4-Player Degenerate FFA (300c)',
+      mode: 'group-ffa',
+      maxPlayers: 4,
+      crates: [LOOT_CRATES[0], LOOT_CRATES[1], LOOT_CRATES[3]],
+      seats: [
+        {
+          id: 'bot-ffa-1',
+          name: 'Lucky Strike',
+          avatar: '🍀',
+          isAI: true,
+          isUser: false,
+          ready: true,
+          currentTotalValue: 0,
+          unboxedItems: [],
+        },
+        {
+          id: 'bot-ffa-2',
+          name: 'Card Sharp',
+          avatar: '🃏',
+          isAI: true,
+          isUser: false,
+          ready: true,
+          currentTotalValue: 0,
+          unboxedItems: [],
+        },
+        null,
+        null,
+      ],
+      status: 'waiting',
+      currentRound: 0,
+      createdAt: Date.now() - 40000,
+      createdBy: 'Lucky Strike',
     },
   ]);
 
@@ -296,7 +421,11 @@ export const CrateBattleArena: React.FC<CrateBattleArenaProps> = ({
     setViewState('battle');
     if (battle.status === 'in-progress') {
       setBattlePhase('spinning');
-      setCurrentRoundIndex(battle.currentRound || 0);
+      const startRound = battle.currentRound || 0;
+      setCurrentRoundIndex(startRound);
+      setTimeout(() => {
+        executeRound(startRound, battle);
+      }, 350);
     } else if (battle.status === 'completed') {
       setBattlePhase('completed');
     } else {
@@ -803,9 +932,17 @@ export const CrateBattleArena: React.FC<CrateBattleArenaProps> = ({
                     <div>
                       {/* Header */}
                       <div className="flex items-center justify-between mb-2.5">
-                        <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-purple-950 text-purple-300 border border-purple-500/40">
-                          {battle.mode === '1v1' ? '1v1 Duel' : battle.mode === '2v2' ? '2v2 Squad' : battle.mode === 'group-ffa' ? 'FFA Versus' : 'Shared Pot Co-op'}
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-purple-950 text-purple-300 border border-purple-500/40">
+                            {battle.mode === '1v1' ? '1v1 Duel' : battle.mode === '2v2' ? '2v2 Squad' : battle.mode === 'group-ffa' ? 'FFA Versus' : 'Shared Pot Co-op'}
+                          </span>
+                          {battle.status === 'in-progress' && (
+                            <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-rose-500/20 text-rose-400 border border-rose-500/40 flex items-center gap-1 animate-pulse">
+                              <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                              LIVE
+                            </span>
+                          )}
+                        </div>
                         <span className="text-xs font-mono font-black text-amber-300">
                           {totalCost.toLocaleString()}c / seat
                         </span>
@@ -870,45 +1007,61 @@ export const CrateBattleArena: React.FC<CrateBattleArenaProps> = ({
 
                     <div className="mt-4 pt-3 border-t border-zinc-800/80 flex items-center justify-between text-xs gap-2">
                       <span className="text-zinc-500 font-mono">
-                        {filledSeatsCount}/{battle.maxPlayers} Players Ready
+                        {battle.status === 'in-progress' 
+                          ? 'In Progress (Live)'
+                          : `${filledSeatsCount}/${battle.maxPlayers} Players Ready`}
                       </span>
 
                       <div className="flex items-center gap-2">
                         {/* Spectate Button */}
-                        <button
-                          type="button"
-                          onClick={() => handleSpectateBattle(battle)}
-                          className="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white font-bold text-xs flex items-center gap-1 border border-zinc-700 transition-all cursor-pointer"
-                        >
-                          <Eye className="w-3.5 h-3.5 text-indigo-400" />
-                          <span>Watch</span>
-                        </button>
-
-                        {/* Join / Enter Arena Button */}
-                        {filledSeatsCount < battle.maxPlayers ? (
-                          <button
-                            type="button"
-                            disabled={!canAfford}
-                            onClick={() => {
-                              const firstEmpty = battle.seats.findIndex(s => s === null);
-                              if (firstEmpty !== -1) {
-                                handleJoinBattle(battle, firstEmpty);
-                              }
-                            }}
-                            className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold text-xs flex items-center gap-1 transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-md"
-                          >
-                            <span>Join Match</span>
-                            <ChevronRight className="w-3.5 h-3.5" />
-                          </button>
-                        ) : (
+                        {battle.status === 'in-progress' ? (
                           <button
                             type="button"
                             onClick={() => handleSpectateBattle(battle)}
-                            className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1 transition-all cursor-pointer shadow-md"
+                            className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-rose-600 to-purple-600 hover:from-rose-500 hover:to-purple-500 text-white font-black text-xs flex items-center gap-1.5 transition-all shadow-md cursor-pointer animate-pulse"
                           >
-                            <span>Live Arena</span>
+                            <Eye className="w-3.5 h-3.5 text-yellow-300" />
+                            <span>Watch Live</span>
                             <ChevronRight className="w-3.5 h-3.5" />
                           </button>
+                        ) : (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => handleSpectateBattle(battle)}
+                              className="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white font-bold text-xs flex items-center gap-1 border border-zinc-700 transition-all cursor-pointer"
+                            >
+                              <Eye className="w-3.5 h-3.5 text-indigo-400" />
+                              <span>Watch</span>
+                            </button>
+
+                            {/* Join / Enter Arena Button */}
+                            {filledSeatsCount < battle.maxPlayers ? (
+                              <button
+                                type="button"
+                                disabled={!canAfford}
+                                onClick={() => {
+                                  const firstEmpty = battle.seats.findIndex(s => s === null);
+                                  if (firstEmpty !== -1) {
+                                    handleJoinBattle(battle, firstEmpty);
+                                  }
+                                }}
+                                className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold text-xs flex items-center gap-1 transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-md"
+                              >
+                                <span>Join Match</span>
+                                <ChevronRight className="w-3.5 h-3.5" />
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => handleSpectateBattle(battle)}
+                                className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1 transition-all cursor-pointer shadow-md"
+                              >
+                                <span>Live Arena</span>
+                                <ChevronRight className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </>
                         )}
                       </div>
                     </div>
@@ -1482,41 +1635,55 @@ export const CrateBattleArena: React.FC<CrateBattleArenaProps> = ({
                       : 'bg-zinc-950 border-zinc-800'
                   }`}
                 >
-                  {/* Seat Header Bar */}
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2.5">
-                      <span className="text-2xl p-1 rounded-xl bg-zinc-900 border border-zinc-800 shadow">
+                  {/* Seat Header Bar - Compact stacked layout with loot underneath player name */}
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-xl sm:text-2xl p-1 rounded-xl bg-zinc-900 border border-zinc-800 shadow shrink-0">
                         {seat.avatar}
                       </span>
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-sm font-black text-zinc-100">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-xs sm:text-sm font-black text-zinc-100 truncate max-w-[105px] sm:max-w-[150px]">
                             {seat.name}
                           </span>
                           {seat.isUser && (
-                            <span className="text-[9px] font-black uppercase px-1.5 py-0.2 rounded bg-purple-600 text-white">
+                            <span className="text-[8px] sm:text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-purple-600 text-white shrink-0">
                               YOU
                             </span>
                           )}
                           {isWinner && (
-                            <Crown className="w-4 h-4 text-yellow-400 fill-current animate-bounce" />
+                            <Crown className="w-3.5 h-3.5 text-yellow-400 fill-current animate-bounce shrink-0" />
                           )}
                         </div>
-                        {activeBattle.mode === '2v2' && (
-                          <span className={`text-[9px] font-black uppercase px-2 py-0.2 rounded ${
-                            seat.team === 1 ? 'bg-blue-950 text-blue-300 border border-blue-500/40' : 'bg-rose-950 text-rose-300 border border-rose-500/40'
-                          }`}>
-                            Team {seat.team} Teammate
+
+                        {/* Loot Total Under Name */}
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <span className="text-[10px] sm:text-xs font-black font-mono text-amber-300">
+                            Loot: {seat.currentTotalValue.toLocaleString()}c
                           </span>
-                        )}
+                          {activeBattle.mode === '2v2' && (
+                            <span className={`text-[8px] font-bold uppercase px-1.5 py-0.2 rounded shrink-0 ${
+                              seat.team === 1 ? 'bg-blue-950 text-blue-300 border border-blue-500/40' : 'bg-rose-950 text-rose-300 border border-rose-500/40'
+                            }`}>
+                              T{seat.team}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
 
-                    <div className="text-right">
-                      <span className="text-[9px] uppercase font-bold text-zinc-400 block">Loot Total</span>
-                      <span className="text-sm font-black font-mono text-amber-300">
-                        {seat.currentTotalValue.toLocaleString()}c
-                      </span>
+                    <div className="shrink-0 text-right">
+                      {isWinner ? (
+                        <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/40">
+                          Winner
+                        </span>
+                      ) : battlePhase === 'waiting' ? (
+                        <span className="text-[9px] font-mono font-bold text-emerald-400">Ready</span>
+                      ) : (
+                        <span className="text-[9px] font-mono text-zinc-400">
+                          R{currentRoundIndex + 1}/{activeBattle.crates.length}
+                        </span>
+                      )}
                     </div>
                   </div>
 

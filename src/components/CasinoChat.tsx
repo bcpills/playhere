@@ -208,6 +208,7 @@ export const CasinoChat: React.FC<CasinoChatProps> = ({
       contactPlatform: msg.contactPlatform,
       contactHandle: msg.contactHandle,
       balance: msg.balance || 1000,
+      totalWagered: msg.totalWagered,
       isUser: msg.isUser,
       isAdmin: msg.isAdmin,
     });

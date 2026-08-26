@@ -33,7 +33,8 @@ import {
   getDailyLeaderboard,
   getPlayerPlacementData,
   isUserAdmin,
-  ADMIN_EMAIL
+  ADMIN_EMAIL,
+  getEstimatedWagerForTier
 } from './utils/leaderboard';
 import { 
   getCurrentEstDateString, 
@@ -384,9 +385,16 @@ export default function App() {
       allTimePeaks
     );
 
+    const foundAdminUser = adminUsersList.find(u => u.id === player.id || u.username === player.username);
+    const resolvedWager = isMe 
+      ? stats.totalWagered 
+      : (player.totalWagered ?? foundAdminUser?.totalWagered ?? getEstimatedWagerForTier(player.vipTier));
+
     setSelectedPlayer({
       ...player,
       balance: isMe ? balance : player.balance,
+      totalWagered: resolvedWager,
+      peakBalance: isMe ? Math.max(userAccount.peakBalanceAllTime || 0, balance) : (player.peakBalance ?? foundAdminUser?.peakBalance ?? player.balance),
       isUser: isMe,
       currentPlacement: placementData.currentPlacement,
       highestEverPlacement: placementData.highestEverPlacement,

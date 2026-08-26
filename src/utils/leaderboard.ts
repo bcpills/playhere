@@ -40,6 +40,58 @@ export function getVIPTierInfo(tier: VIPTier) {
   return VIP_TIER_THRESHOLDS.find(t => t.tier === tier) || VIP_TIER_THRESHOLDS[0];
 }
 
+/**
+ * Returns an estimated total wager for a VIP Tier (useful for AI/community players).
+ */
+export function getEstimatedWagerForTier(tier: VIPTier): number {
+  switch (tier) {
+    case 'Sovereign Degenerate': return 2500000;
+    case 'Whale of the Lounge': return 750000;
+    case 'Diamond High-Roller': return 185000;
+    case 'Platinum Shark': return 45000;
+    case 'Gold Regular': return 12500;
+    case 'Silver Grinder': return 2290;
+    case 'Bronze Degen':
+    default:
+      return 650;
+  }
+}
+
+/**
+ * Formats large wager or chip amounts with compact K/M/B/T/Qa/Q/etc. notation, rounded to up to 2 decimal places.
+ * Example: 2290 -> "2.29k", 2500000 -> "2.5M", 1250000000000 -> "1.25T", 5000000000000000000 -> "5Q"
+ */
+export function formatCompactWager(val: number | undefined | null): string {
+  if (val === undefined || val === null || isNaN(val)) return '0';
+  if (val < 0) return `-${formatCompactWager(Math.abs(val))}`;
+  if (val < 1000) return val.toLocaleString();
+
+  const units = [
+    { value: 1e33, symbol: 'Dc' },
+    { value: 1e30, symbol: 'No' },
+    { value: 1e27, symbol: 'Oc' },
+    { value: 1e24, symbol: 'Sp' },
+    { value: 1e21, symbol: 'Sx' },
+    { value: 1e18, symbol: 'Q' },   // Quintillion
+    { value: 1e15, symbol: 'Qa' },  // Quadrillion
+    { value: 1e12, symbol: 'T' },   // Trillion
+    { value: 1e9,  symbol: 'B' },   // Billion
+    { value: 1e6,  symbol: 'M' },   // Million
+    { value: 1e3,  symbol: 'k' },   // Thousand (e.g. 2.29k)
+  ];
+
+  for (const unit of units) {
+    if (val >= unit.value) {
+      const num = val / unit.value;
+      const rounded = Math.round(num * 100) / 100;
+      const str = rounded.toFixed(2).replace(/\.?0+$/, '');
+      return `${str}${unit.symbol}`;
+    }
+  }
+
+  return val.toLocaleString();
+}
+
 export const AVATAR_OPTIONS = [
   '👑', '💎', '🎲', '🃏', '🦈', '🐺', '🦁', '🎩', 
   '🏴‍☠️', '🚀', '🍾', '🦍', '⚡', '🕶️', '🎰', '💩'

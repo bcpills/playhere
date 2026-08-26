@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { PlayerProfileData, UserAccount } from '../types';
-import { isUserAdmin, getVIPTierInfo } from '../utils/leaderboard';
+import { isUserAdmin, getVIPTierInfo, formatCompactWager } from '../utils/leaderboard';
 import { sound } from '../utils/audio';
 import { 
   X, 
@@ -200,12 +200,23 @@ export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({
         </div>
 
         {/* Player Bankroll & Stats Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mb-4 text-xs">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-4 text-xs">
           <div className="p-3 rounded-2xl bg-zinc-900/80 border border-zinc-800">
             <span className="text-[10px] uppercase font-bold text-zinc-500 block">Current Balance</span>
             <span className="text-base font-black font-mono text-amber-300 flex items-center gap-1">
               <Coins className="w-3.5 h-3.5 text-amber-400" />
               <span>{player.balance.toLocaleString()}</span>
+            </span>
+          </div>
+
+          <div 
+            className="p-3 rounded-2xl bg-zinc-900/80 border border-zinc-800 group transition-all"
+            title={`${(player.totalWagered ?? 0).toLocaleString()} chips total lifetime wagered`}
+          >
+            <span className="text-[10px] uppercase font-bold text-zinc-500 block">Total Wagered</span>
+            <span className="text-base font-black font-mono text-purple-300 flex items-center gap-1">
+              <Flame className="w-3.5 h-3.5 text-purple-400" />
+              <span>{formatCompactWager(player.totalWagered ?? 0)}</span>
             </span>
           </div>
 
@@ -217,9 +228,9 @@ export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({
             </span>
           </div>
 
-          <div className="p-3 rounded-2xl bg-zinc-900/80 border border-zinc-800 col-span-2 sm:col-span-1">
+          <div className="p-3 rounded-2xl bg-zinc-900/80 border border-zinc-800">
             <span className="text-[10px] uppercase font-bold text-zinc-500 block">Lucky Number</span>
-            <span className="text-base font-black font-mono text-purple-300">
+            <span className="text-base font-black font-mono text-amber-200">
               #{player.luckyNumber || 7}
             </span>
           </div>

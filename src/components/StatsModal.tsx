@@ -1,6 +1,7 @@
 import React from 'react';
-import { BarChart2, Coins, Trophy, Zap, ShieldAlert, Sparkles, Lock } from 'lucide-react';
+import { BarChart2, Coins, Trophy, Zap, ShieldAlert, Sparkles, Lock, Flame } from 'lucide-react';
 import { CasinoStats } from '../types';
+import { formatCompactWager } from '../utils/leaderboard';
 
 interface StatsModalProps {
   isOpen: boolean;
@@ -63,17 +64,35 @@ export const StatsModal: React.FC<StatsModalProps> = ({
 
         {/* 2x2 Stats Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
-          <div className="p-3.5 rounded-2xl bg-zinc-900/60 border border-zinc-800/80">
-            <span className="text-zinc-500 font-bold uppercase text-[10px]">Total Wagered</span>
-            <div className="text-base font-black text-zinc-200 font-mono mt-1">
-              {stats.totalWagered.toLocaleString()}
+          <div 
+            className="p-3.5 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 group cursor-help transition-all"
+            title={`${stats.totalWagered.toLocaleString()} chips total career wagered`}
+          >
+            <span className="text-zinc-500 font-bold uppercase text-[10px] flex items-center justify-between">
+              <span>Total Wagered</span>
+              <Flame className="w-3 h-3 text-purple-400 opacity-60" />
+            </span>
+            <div className="text-base font-black text-purple-300 font-mono mt-1 flex items-baseline gap-1.5">
+              <span>{formatCompactWager(stats.totalWagered)}</span>
+              <span className="text-[10px] text-zinc-500 font-normal font-sans">
+                ({stats.totalWagered.toLocaleString()})
+              </span>
             </div>
           </div>
 
-          <div className="p-3.5 rounded-2xl bg-zinc-900/60 border border-zinc-800/80">
-            <span className="text-zinc-500 font-bold uppercase text-[10px]">Total Won</span>
-            <div className="text-base font-black text-amber-300 font-mono mt-1">
-              {stats.totalWon.toLocaleString()}
+          <div 
+            className="p-3.5 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 group cursor-help transition-all"
+            title={`${stats.totalWon.toLocaleString()} chips total career payout`}
+          >
+            <span className="text-zinc-500 font-bold uppercase text-[10px] flex items-center justify-between">
+              <span>Total Won</span>
+              <Coins className="w-3 h-3 text-amber-400 opacity-60" />
+            </span>
+            <div className="text-base font-black text-amber-300 font-mono mt-1 flex items-baseline gap-1.5">
+              <span>{formatCompactWager(stats.totalWon)}</span>
+              <span className="text-[10px] text-zinc-500 font-normal font-sans">
+                ({stats.totalWon.toLocaleString()})
+              </span>
             </div>
           </div>
 

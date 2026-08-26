@@ -306,9 +306,9 @@ export const UnboxerGame: React.FC<UnboxerGameProps> = ({
                       sound.playChip();
                       setSelectedCrate(crate);
                     }}
-                    className={`group relative flex flex-col justify-between p-3 rounded-2xl border-2 transition-all cursor-pointer ${
+                    className={`group relative flex flex-col justify-between p-3 rounded-2xl border-2 transition-colors cursor-pointer ${
                       isSelected
-                        ? 'bg-zinc-900 border-amber-400 ring-2 ring-amber-400/40 shadow-xl shadow-purple-900/30 scale-[1.02]'
+                        ? 'bg-zinc-900 border-amber-400 ring-1 ring-amber-400/50 shadow-xl shadow-purple-900/30'
                         : 'bg-zinc-950/80 border-zinc-800 hover:border-zinc-700 opacity-85 hover:opacity-100'
                     }`}
                   >
