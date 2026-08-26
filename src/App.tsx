@@ -15,6 +15,10 @@ import { LobbyHome } from './components/LobbyHome';
 import { BlackjackGame } from './components/BlackjackGame';
 import { KenoGame } from './components/KenoGame';
 import { UnboxerGame } from './components/UnboxerGame';
+import { MinesGame } from './components/MinesGame';
+import { DiceDuelsGame } from './components/DiceDuelsGame';
+import { CoinflipGame } from './components/CoinflipGame';
+import { MilestoneCratesModal } from './components/MilestoneCratesModal';
 import { DailyLeaderboard } from './components/DailyLeaderboard';
 import { AccountModal } from './components/AccountModal';
 import { BailoutModal } from './components/BailoutModal';
@@ -25,6 +29,7 @@ import { ModeratorModal } from './components/ModeratorModal';
 import { CasinoChat } from './components/CasinoChat';
 import { PlayerProfileModal } from './components/PlayerProfileModal';
 import { PayForAdFreeModal } from './components/PayForAdFreeModal';
+import { MilestoneCrateDef } from './utils/milestones';
 import { 
   DEFAULT_USER_ACCOUNT, 
   INITIAL_DAILY_WINNERS, 
@@ -84,13 +89,14 @@ export default function App() {
   // State Initialization from LocalStorage or 1000 Default
   const [balance, setBalance] = useState<number>(() => {
     const saved = getStoredItem(STORAGE_KEYS.BALANCE, 'freebiesonly_balance', 'bullshit_casino_balance');
-    return saved !== null ? parseInt(saved, 10) : 1000;
+    if (saved !== null) {
+      const parsed = parseInt(saved, 10);
+      return !isNaN(parsed) && isFinite(parsed) ? Math.max(0, parsed) : 1000;
+    }
+    return 1000;
   });
 
-  const [inventory, setInventory] = useState<InventoryItem[]>(() => {
-    const saved = getStoredItem(STORAGE_KEYS.INVENTORY, 'freebiesonly_inventory', 'bullshit_casino_inventory');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
 
   const [stats, setStats] = useState<CasinoStats>(() => {
     const saved = getStoredItem(STORAGE_KEYS.STATS, 'freebiesonly_stats', 'bullshit_casino_stats');
@@ -127,6 +133,7 @@ export default function App() {
   const [isStatsOpen, setIsStatsOpen] = useState<boolean>(false);
   const [isRulesOpen, setIsRulesOpen] = useState<boolean>(false);
   const [isAccountOpen, setIsAccountOpen] = useState<boolean>(false);
+  const [isMilestonesOpen, setIsMilestonesOpen] = useState<boolean>(false);
   const [isModeratorOpen, setIsModeratorOpen] = useState<boolean>(false);
   const [isChatOpen, setIsChatOpen] = useState<boolean>(false);
   const [isPayForAdFreeOpen, setIsPayForAdFreeOpen] = useState<boolean>(false);
@@ -266,37 +273,32 @@ export default function App() {
 
   // Balance Update Handler
   const handleUpdateBalance = (delta: number) => {
-    setBalance(prev => Math.max(0, prev + delta));
+    if (isNaN(delta) || !isFinite(delta)) return;
+    setBalance(prev => {
+      const safePrev = isNaN(prev) || !isFinite(prev) ? 1000 : prev;
+      const next = Math.max(0, Math.round(safePrev + delta));
+      return isNaN(next) ? 1000 : next;
+    });
     setStats(prev => ({
       ...prev,
-      netProfit: prev.netProfit + delta,
+      netProfit: (isNaN(prev.netProfit) ? 0 : prev.netProfit) + delta,
     }));
   };
 
-  // Inventory Handlers
-  const handleAddToInventory = (item: LootItem, crateId: string) => {
-    const newInvItem: InventoryItem = {
-      instanceId: `inv-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-      item,
-      obtainedAt: Date.now(),
-      crateId,
-    };
-    setInventory(prev => [newInvItem, ...prev]);
+  // Inventory Handlers (Items Auto-Sell directly into chips)
+  const handleAddToInventory = (item: LootItem, _crateId: string) => {
+    if (item && item.value > 0) {
+      handleUpdateBalance(item.value);
+    }
   };
 
-  const handleSellItem = (instanceId: string, value: number) => {
+  const handleSellItem = (_instanceId: string, value: number) => {
     sound.playChip();
-    setInventory(prev => prev.filter(i => i.instanceId !== instanceId));
     handleUpdateBalance(value);
   };
 
   const handleSellAll = () => {
-    const totalVal = inventory.reduce((sum, i) => sum + i.item.value, 0);
-    if (totalVal > 0) {
-      sound.playProfit();
-      handleUpdateBalance(totalVal);
-      setInventory([]);
-    }
+    setInventory([]);
   };
 
   // Bailout Handler (100 chips, 5 pulls/day, 10-min cooldown)
@@ -306,6 +308,43 @@ export default function App() {
     setStats(prev => ({
       ...prev,
       bailoutCount: prev.bailoutCount + 1,
+    }));
+  };
+
+  // Rakeback System: 10% on general bets, 2% on Blackjack
+  const handleAddRakeback = (wager: number, isBlackjack?: boolean) => {
+    if (isNaN(wager) || wager <= 0) return;
+    const rate = isBlackjack ? 0.02 : 0.10;
+    const rakebackEarned = Math.max(1, Math.round(wager * rate));
+    setUserAccount(prev => ({
+      ...prev,
+      unclaimedRakeback: (isNaN(prev.unclaimedRakeback || 0) ? 0 : (prev.unclaimedRakeback || 0)) + rakebackEarned,
+    }));
+  };
+
+  const handleClaimRakeback = () => {
+    const amount = isNaN(userAccount.unclaimedRakeback || 0) ? 0 : (userAccount.unclaimedRakeback || 0);
+    if (amount <= 0) return;
+    sound.playProfit();
+    handleUpdateBalance(amount);
+    setUserAccount(prev => ({
+      ...prev,
+      unclaimedRakeback: 0,
+      totalRakebackClaimed: (isNaN(prev.totalRakebackClaimed || 0) ? 0 : (prev.totalRakebackClaimed || 0)) + amount,
+    }));
+  };
+
+  // Milestone Crates Claim Handler: Auto-Sell reward item for chips immediately!
+  const handleClaimMilestone = (milestone: MilestoneCrateDef) => {
+    sound.playBigWin();
+    const itemBonus = milestone.rewardItem?.value || 0;
+    const totalBonus = (milestone.bonusChips || 0) + itemBonus;
+    if (totalBonus > 0) {
+      handleUpdateBalance(totalBonus);
+    }
+    setUserAccount(prev => ({
+      ...prev,
+      claimedMilestoneCrates: [...(prev.claimedMilestoneCrates || []), milestone.id],
     }));
   };
 
@@ -444,6 +483,7 @@ export default function App() {
       <Header
         balance={balance}
         netProfit={stats.netProfit}
+        totalWagered={stats.totalWagered}
         currentTab={currentTab}
         userAccount={userAccount}
         onTabChange={setCurrentTab}
@@ -451,6 +491,8 @@ export default function App() {
         onOpenStats={() => setIsStatsOpen(true)}
         onOpenRules={() => setIsRulesOpen(true)}
         onOpenAccount={() => setIsAccountOpen(true)}
+        onOpenMilestones={() => setIsMilestonesOpen(true)}
+        onClaimRakeback={handleClaimRakeback}
         onToggleChat={() => setIsChatOpen(prev => !prev)}
         onOpenPendingPayouts={() => setIsModeratorOpen(true)}
         onOpenPayForAdFree={() => setIsPayForAdFreeOpen(true)}
@@ -474,10 +516,46 @@ export default function App() {
             onOpenStats={() => setIsStatsOpen(true)}
             onOpenRules={() => setIsRulesOpen(true)}
             onOpenAccount={() => setIsAccountOpen(true)}
+            onOpenMilestones={() => setIsMilestonesOpen(true)}
+            onClaimRakeback={handleClaimRakeback}
             onOpenModeratorLog={() => setIsModeratorOpen(true)}
             onOpenPayForAdFree={() => setIsPayForAdFreeOpen(true)}
             onInspectPlayer={handleInspectPlayer}
             onToggleChat={() => setIsChatOpen(prev => !prev)}
+          />
+        )}
+
+        {currentTab === 'mines' && (
+          <MinesGame
+            balance={balance}
+            onUpdateBalance={handleUpdateBalance}
+            stats={stats}
+            onUpdateStats={setStats}
+            onAddRakeback={handleAddRakeback}
+          />
+        )}
+
+        {currentTab === 'dice-duels' && (
+          <DiceDuelsGame
+            balance={balance}
+            onUpdateBalance={handleUpdateBalance}
+            stats={stats}
+            onUpdateStats={setStats}
+            onAddRakeback={handleAddRakeback}
+            username={userAccount.username || 'Gambler'}
+            avatar={userAccount.avatar || '🎲'}
+          />
+        )}
+
+        {currentTab === 'coinflip' && (
+          <CoinflipGame
+            balance={balance}
+            onUpdateBalance={handleUpdateBalance}
+            stats={stats}
+            onUpdateStats={setStats}
+            onAddRakeback={handleAddRakeback}
+            username={userAccount.username || 'Gambler'}
+            avatar={userAccount.avatar || '🪙'}
           />
         )}
 
@@ -486,6 +564,7 @@ export default function App() {
             balance={balance}
             onUpdateBalance={handleUpdateBalance}
             onUpdateStats={setStats}
+            onAddRakeback={handleAddRakeback}
           />
         )}
 
@@ -494,6 +573,7 @@ export default function App() {
             balance={balance}
             onUpdateBalance={handleUpdateBalance}
             onUpdateStats={setStats}
+            onAddRakeback={handleAddRakeback}
           />
         )}
 
@@ -620,6 +700,15 @@ export default function App() {
       <RulesModal
         isOpen={isRulesOpen}
         onClose={() => setIsRulesOpen(false)}
+      />
+
+      {/* Leveling Milestone Crates Modal */}
+      <MilestoneCratesModal
+        isOpen={isMilestonesOpen}
+        onClose={() => setIsMilestonesOpen(false)}
+        userAccount={userAccount}
+        totalWagered={stats.totalWagered}
+        onClaimMilestone={handleClaimMilestone}
       />
 
       {/* Owner & Admin Pending Payouts Portal (Thomas Joe) */}

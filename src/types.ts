@@ -1,4 +1,13 @@
-export type GameTab = 'home' | 'blackjack' | 'keno' | 'unboxer' | 'leaderboard';
+export type GameTab = 
+  | 'home' 
+  | 'blackjack' 
+  | 'keno' 
+  | 'unboxer' 
+  | 'crate-battles' 
+  | 'mines' 
+  | 'dice-duels' 
+  | 'coinflip' 
+  | 'leaderboard';
 
 export type Suit = '♠' | '♥' | '♦' | '♣';
 export type Rank = '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '10' | 'J' | 'Q' | 'K' | 'A';
@@ -125,6 +134,9 @@ export interface CasinoStats {
   handsPlayedBlackjack: number;
   roundsPlayedKeno: number;
   cratesOpened: number;
+  roundsPlayedMines?: number;
+  roundsPlayedDice?: number;
+  roundsPlayedCoinflip?: number;
   biggestWin: number;
   biggestMultiplier: number;
   sideBetWinsBlackjack: number;
@@ -160,6 +172,9 @@ export interface UserAccount {
   lastDailyClaim: number;
   lastActiveEstDate: string; // YYYY-MM-DD in EST
   peakBalanceAllTime: number; // Highest chip count reached
+  unclaimedRakeback?: number; // Accumulated instant rakeback
+  totalRakebackClaimed?: number; // Total rakeback redeemed all-time
+  claimedMilestoneCrates?: string[]; // IDs of claimed VIP milestone crates
   authMethod?: 'google' | 'email' | 'guest';
   email?: string;
   googleLinked?: boolean;

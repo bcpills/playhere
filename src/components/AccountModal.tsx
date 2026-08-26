@@ -292,7 +292,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({
                 <div className="p-2 rounded-xl bg-zinc-950/60 border border-zinc-800">
                   <span className="text-[10px] text-zinc-500 font-bold uppercase block">Bankroll</span>
                   <span className="font-mono font-black text-amber-300 text-sm">
-                    {balance.toLocaleString()}c
+                    {(isNaN(balance) ? 1000 : balance).toLocaleString()}c
                   </span>
                 </div>
                 <div 

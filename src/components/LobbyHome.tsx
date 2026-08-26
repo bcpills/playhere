@@ -15,12 +15,19 @@ import {
   Clock,
   Send,
   MessageSquare,
-  ShieldCheck
+  ShieldCheck,
+  Bomb,
+  Swords,
+  Coins,
+  Gift,
+  Flame,
+  Zap
 } from 'lucide-react';
 import { sound } from '../utils/audio';
-import { getVIPTier, getVIPTierInfo, getYesterdayWinner, isUserAdmin } from '../utils/leaderboard';
+import { getVIPTier, getVIPTierInfo, getYesterdayWinner, isUserAdmin, formatCompactWager } from '../utils/leaderboard';
 import { getTimeUntilEstMidnight } from '../utils/estTime';
 import { AdBanner } from './AdBanner';
+import { getUnclaimedMilestoneCount } from '../utils/milestones';
 
 interface LobbyHomeProps {
   balance: number;
@@ -33,6 +40,8 @@ interface LobbyHomeProps {
   onOpenStats: () => void;
   onOpenRules: () => void;
   onOpenAccount: () => void;
+  onOpenMilestones?: () => void;
+  onClaimRakeback?: () => void;
   onOpenModeratorLog: () => void;
   onOpenPayForAdFree?: () => void;
   onInspectPlayer?: (player: PlayerProfileData) => void;
@@ -50,6 +59,8 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
   onOpenStats,
   onOpenRules,
   onOpenAccount,
+  onOpenMilestones,
+  onClaimRakeback,
   onOpenModeratorLog,
   onOpenPayForAdFree,
   onInspectPlayer,
@@ -57,6 +68,8 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
 }) => {
   const [countdown, setCountdown] = useState<string>('');
   const isAdmin = isUserAdmin(userAccount);
+  const unclaimedMilestones = getUnclaimedMilestoneCount(stats.totalWagered, userAccount.claimedMilestoneCrates);
+  const pendingRakeback = userAccount.unclaimedRakeback || 0;
 
   useEffect(() => {
     const updateTime = () => {
@@ -150,7 +163,7 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
                 Daily Bankroll
               </span>
               <span className="text-xl sm:text-2xl font-black text-amber-300 font-mono leading-tight">
-                {balance.toLocaleString()} <span className="text-xs text-amber-500 font-normal">Chips</span>
+                {(isNaN(balance) ? 1000 : balance).toLocaleString()} <span className="text-xs text-amber-500 font-normal">Chips</span>
               </span>
             </div>
 
@@ -216,7 +229,7 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
               <span>Casino Floor</span>
             </h3>
             <span className="text-[10px] px-2 py-0.5 rounded-md bg-zinc-900 border border-zinc-800 text-zinc-400 font-mono">
-              3 Games Live
+              6 Games Live
             </span>
           </div>
           <span className="text-[10px] text-zinc-500 hidden sm:inline font-mono">
@@ -224,11 +237,177 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
           </span>
         </div>
 
-        {/* CASINO FLOOR GAMES GRID (2-COL MOBILE GRID LIKE CASES) */}
+        {/* CASINO FLOOR GAMES GRID (2-COL MOBILE, 3-COL DESKTOP) */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-4">
-          {/* ========================================================================= */}
-          {/* GAME 1: 40-BALL KENO                                                      */}
-          {/* ========================================================================= */}
+          {/* GAME 1: MINES RUSH */}
+          <div 
+            id="portal-mines"
+            onClick={() => {
+              sound.playChip();
+              onNavigate('mines');
+            }}
+            className="group relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-rose-950/30 via-zinc-900/90 to-zinc-950 border-2 border-rose-500/40 hover:border-rose-400 p-3 sm:p-5 cursor-pointer transition-all duration-200 hover:shadow-2xl hover:shadow-rose-500/20 flex flex-col justify-between"
+          >
+            <div>
+              <div className="flex items-start justify-between gap-2 mb-2 sm:mb-3">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-br from-rose-500 to-red-700 border border-rose-300/50 flex items-center justify-center text-white shadow-lg shadow-rose-500/30 group-hover:scale-105 transition-transform shrink-0">
+                  <Bomb className="w-5 h-5 sm:w-6 sm:h-6" />
+                </div>
+                <span className="text-[9px] sm:text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-rose-950/80 text-rose-300 border border-rose-500/50 font-mono whitespace-nowrap">
+                  5x5 Grid
+                </span>
+              </div>
+
+              <div>
+                <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-rose-400 block">
+                  Provably Fair
+                </span>
+                <h4 className="text-sm sm:text-lg font-black uppercase text-zinc-100 group-hover:text-rose-300 transition-colors">
+                  Mines
+                </h4>
+              </div>
+
+              <p className="text-[10px] sm:text-xs text-zinc-400 mt-1 leading-snug line-clamp-2">
+                Uncover hidden diamonds, dodge the bombs, and cash out massive multipliers at any step!
+              </p>
+
+              <div className="flex flex-wrap gap-1 mt-2 sm:mt-3">
+                <span className="text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded bg-zinc-950 text-rose-300 border border-zinc-800">
+                  💣 1-24 Mines
+                </span>
+                <span className="text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded bg-zinc-950 text-emerald-300 border border-zinc-800">
+                  💎 5M× Max
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-3 pt-2.5 sm:mt-4 sm:pt-3.5 border-t border-rose-950/60 flex items-center justify-between gap-2">
+              <span className="text-[9px] sm:text-xs font-mono text-zinc-400 truncate">
+                {stats.roundsPlayedMines || 0} Runs
+              </span>
+              <button
+                type="button"
+                className="px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-rose-500 hover:bg-rose-400 text-zinc-950 font-black text-[10px] sm:text-xs uppercase tracking-wider flex items-center gap-1 shadow-md shadow-rose-500/20 group-hover:translate-x-0.5 transition-all cursor-pointer whitespace-nowrap"
+              >
+                <span>Play</span>
+                <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* GAME 2: DICE DUELS */}
+          <div 
+            id="portal-dice-duels"
+            onClick={() => {
+              sound.playChip();
+              onNavigate('dice-duels');
+            }}
+            className="group relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-indigo-950/30 via-zinc-900/90 to-zinc-950 border-2 border-indigo-500/40 hover:border-indigo-400 p-3 sm:p-5 cursor-pointer transition-all duration-200 hover:shadow-2xl hover:shadow-indigo-500/20 flex flex-col justify-between"
+          >
+            <div>
+              <div className="flex items-start justify-between gap-2 mb-2 sm:mb-3">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-700 border border-indigo-300/50 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30 group-hover:scale-105 transition-transform shrink-0">
+                  <Swords className="w-5 h-5 sm:w-6 sm:h-6" />
+                </div>
+                <span className="text-[9px] sm:text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-indigo-950/80 text-indigo-300 border border-indigo-500/50 font-mono whitespace-nowrap">
+                  1v1 Battle
+                </span>
+              </div>
+
+              <div>
+                <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-indigo-400 block">
+                  Head to Head
+                </span>
+                <h4 className="text-sm sm:text-lg font-black uppercase text-zinc-100 group-hover:text-indigo-300 transition-colors">
+                  Dice Duels
+                </h4>
+              </div>
+
+              <p className="text-[10px] sm:text-xs text-zinc-400 mt-1 leading-snug line-clamp-2">
+                Challenge high-roller bots or gamblers to 1v1 rollouts or Best-of-3 arena matches!
+              </p>
+
+              <div className="flex flex-wrap gap-1 mt-2 sm:mt-3">
+                <span className="text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded bg-zinc-950 text-indigo-300 border border-zinc-800">
+                  🎲 2-Dice Clash
+                </span>
+                <span className="text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded bg-zinc-950 text-amber-300 border border-zinc-800">
+                  ⚔️ Best of 3
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-3 pt-2.5 sm:mt-4 sm:pt-3.5 border-t border-indigo-950/60 flex items-center justify-between gap-2">
+              <span className="text-[9px] sm:text-xs font-mono text-zinc-400 truncate">
+                {stats.roundsPlayedDiceDuels || 0} Clashes
+              </span>
+              <button
+                type="button"
+                className="px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-zinc-950 font-black text-[10px] sm:text-xs uppercase tracking-wider flex items-center gap-1 shadow-md shadow-indigo-500/20 group-hover:translate-x-0.5 transition-all cursor-pointer whitespace-nowrap"
+              >
+                <span>Play</span>
+                <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* GAME 3: COINFLIP */}
+          <div 
+            id="portal-coinflip"
+            onClick={() => {
+              sound.playChip();
+              onNavigate('coinflip');
+            }}
+            className="group relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-yellow-950/30 via-zinc-900/90 to-zinc-950 border-2 border-yellow-500/40 hover:border-yellow-400 p-3 sm:p-5 cursor-pointer transition-all duration-200 hover:shadow-2xl hover:shadow-yellow-500/20 flex flex-col justify-between"
+          >
+            <div>
+              <div className="flex items-start justify-between gap-2 mb-2 sm:mb-3">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-br from-amber-400 to-yellow-600 border border-yellow-300/50 flex items-center justify-center text-zinc-950 shadow-lg shadow-yellow-500/30 group-hover:scale-105 transition-transform shrink-0">
+                  <Coins className="w-5 h-5 sm:w-6 sm:h-6" />
+                </div>
+                <span className="text-[9px] sm:text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-yellow-950/80 text-yellow-300 border border-yellow-500/50 font-mono whitespace-nowrap">
+                  50/50 Odds
+                </span>
+              </div>
+
+              <div>
+                <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-yellow-400 block">
+                  Classic
+                </span>
+                <h4 className="text-sm sm:text-lg font-black uppercase text-zinc-100 group-hover:text-yellow-300 transition-colors">
+                  Coinflip
+                </h4>
+              </div>
+
+              <p className="text-[10px] sm:text-xs text-zinc-400 mt-1 leading-snug line-clamp-2">
+                Pick Heads or Tails. 3D coin toss with instant double-up stakes and 10% rakeback!
+              </p>
+
+              <div className="flex flex-wrap gap-1 mt-2 sm:mt-3">
+                <span className="text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded bg-zinc-950 text-amber-300 border border-zinc-800">
+                  👑 Heads
+                </span>
+                <span className="text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded bg-zinc-950 text-purple-300 border border-zinc-800">
+                  ⚡ Tails
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-3 pt-2.5 sm:mt-4 sm:pt-3.5 border-t border-yellow-950/60 flex items-center justify-between gap-2">
+              <span className="text-[9px] sm:text-xs font-mono text-zinc-400 truncate">
+                {stats.roundsPlayedCoinflip || 0} Flips
+              </span>
+              <button
+                type="button"
+                className="px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-yellow-500 hover:bg-yellow-400 text-zinc-950 font-black text-[10px] sm:text-xs uppercase tracking-wider flex items-center gap-1 shadow-md shadow-yellow-500/20 group-hover:translate-x-0.5 transition-all cursor-pointer whitespace-nowrap"
+              >
+                <span>Play</span>
+                <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* GAME 4: 40-BALL KENO */}
           <div 
             id="portal-keno"
             onClick={() => {
@@ -237,13 +416,11 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
             }}
             className="group relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-emerald-950/30 via-zinc-900/90 to-zinc-950 border-2 border-emerald-500/40 hover:border-emerald-400 p-3 sm:p-5 cursor-pointer transition-all duration-200 hover:shadow-2xl hover:shadow-emerald-500/20 flex flex-col justify-between"
           >
-            {/* Top Row: Icon & Mode Tags */}
             <div>
               <div className="flex items-start justify-between gap-2 mb-2 sm:mb-3">
                 <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-700 border border-emerald-300/50 flex items-center justify-center text-zinc-950 shadow-lg shadow-emerald-500/30 group-hover:scale-105 transition-transform shrink-0">
                   <Dices className="w-5 h-5 sm:w-6 sm:h-6" />
                 </div>
-
                 <span className="text-[9px] sm:text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-500/50 font-mono whitespace-nowrap">
                   10-Ball Draw
                 </span>
@@ -262,7 +439,6 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
                 40-ball board with 10 drawn balls. Safe Grinder, Vegas 95% RTP, or Degen (3,000,000x).
               </p>
 
-              {/* Mode Badges */}
               <div className="flex flex-wrap gap-1 mt-2 sm:mt-3">
                 <span className="text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded bg-zinc-950 text-emerald-400 border border-zinc-800">
                   🛡️ Safe
@@ -276,12 +452,10 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
               </div>
             </div>
 
-            {/* Bottom Row: Stats & Action Button */}
             <div className="mt-3 pt-2.5 sm:mt-4 sm:pt-3.5 border-t border-emerald-950/60 flex items-center justify-between gap-2">
               <span className="text-[9px] sm:text-xs font-mono text-zinc-400 truncate">
                 {stats.roundsPlayedKeno} Draws
               </span>
-
               <button
                 type="button"
                 className="px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black text-[10px] sm:text-xs uppercase tracking-wider flex items-center gap-1 shadow-md shadow-emerald-500/20 group-hover:translate-x-0.5 transition-all cursor-pointer whitespace-nowrap"
@@ -292,9 +466,7 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
             </div>
           </div>
 
-          {/* ========================================================================= */}
-          {/* GAME 2: BJ (BLACKJACK & SIDE BETS)                                        */}
-          {/* ========================================================================= */}
+          {/* GAME 5: BJ */}
           <div 
             id="portal-blackjack"
             onClick={() => {
@@ -303,13 +475,11 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
             }}
             className="group relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-amber-950/30 via-zinc-900/90 to-zinc-950 border-2 border-amber-500/40 hover:border-amber-400 p-3 sm:p-5 cursor-pointer transition-all duration-200 hover:shadow-2xl hover:shadow-amber-500/20 flex flex-col justify-between"
           >
-            {/* Top Row: Icon & Payout Tags */}
             <div>
               <div className="flex items-start justify-between gap-2 mb-2 sm:mb-3">
                 <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-br from-amber-400 to-amber-700 border border-amber-300/50 flex items-center justify-center text-zinc-950 shadow-lg shadow-amber-500/30 group-hover:scale-105 transition-transform shrink-0">
                   <Spade className="w-5 h-5 sm:w-6 sm:h-6" />
                 </div>
-
                 <span className="text-[9px] sm:text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-950/80 text-amber-300 border border-amber-500/50 font-mono whitespace-nowrap">
                   Pays 3:2
                 </span>
@@ -328,7 +498,6 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
                 6-deck Vegas shoe with splits, doubles, 21+3 Poker (100:1), & 1000:1 Queens.
               </p>
 
-              {/* Side Bets Badges */}
               <div className="flex flex-wrap gap-1 mt-2 sm:mt-3">
                 <span className="text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded bg-zinc-950 text-amber-300 border border-zinc-800">
                   🃏 21+3 (100:1)
@@ -342,12 +511,10 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
               </div>
             </div>
 
-            {/* Bottom Row: Stats & Action Button */}
             <div className="mt-3 pt-2.5 sm:mt-4 sm:pt-3.5 border-t border-amber-950/60 flex items-center justify-between gap-2">
               <span className="text-[9px] sm:text-xs font-mono text-zinc-400 truncate">
                 {stats.handsPlayedBlackjack} Hands
               </span>
-
               <button
                 type="button"
                 className="px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black text-[10px] sm:text-xs uppercase tracking-wider flex items-center gap-1 shadow-md shadow-amber-500/20 group-hover:translate-x-0.5 transition-all cursor-pointer whitespace-nowrap"
@@ -358,24 +525,20 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
             </div>
           </div>
 
-          {/* ========================================================================= */}
-          {/* GAME 3: LOOT CRATE UNBOXER & CRATE BATTLES                                */}
-          {/* ========================================================================= */}
+          {/* GAME 6: LOOT CRATES */}
           <div 
             id="portal-unboxer"
             onClick={() => {
               sound.playChip();
               onNavigate('unboxer');
             }}
-            className="col-span-2 md:col-span-1 group relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-purple-950/30 via-zinc-900/90 to-zinc-950 border-2 border-purple-500/40 hover:border-purple-400 p-3 sm:p-5 cursor-pointer transition-all duration-200 hover:shadow-2xl hover:shadow-purple-500/20 flex flex-col justify-between"
+            className="group relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-purple-950/30 via-zinc-900/90 to-zinc-950 border-2 border-purple-500/40 hover:border-purple-400 p-3 sm:p-5 cursor-pointer transition-all duration-200 hover:shadow-2xl hover:shadow-purple-500/20 flex flex-col justify-between"
           >
-            {/* Top Row: Icon & Tier Tags */}
             <div>
               <div className="flex items-start justify-between gap-2 mb-2 sm:mb-3">
                 <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-700 border border-purple-300/50 flex items-center justify-center text-zinc-950 shadow-lg shadow-purple-500/30 group-hover:scale-105 transition-transform shrink-0">
                   <Package className="w-5 h-5 sm:w-6 sm:h-6" />
                 </div>
-
                 <span className="text-[9px] sm:text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-purple-950/80 text-purple-300 border border-purple-500/50 font-mono whitespace-nowrap">
                   10 Tiers & Battles
                 </span>
@@ -394,7 +557,6 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
                 Solo multi-open up to 10× at once, or join 1v1 and 2v2 Crate Battles with auto chip payouts.
               </p>
 
-              {/* Case Badges */}
               <div className="flex flex-wrap gap-1 mt-2 sm:mt-3">
                 <span className="text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded bg-zinc-950 text-amber-300 border border-zinc-800">
                   ⚡ Multi (1x-10x)
@@ -408,7 +570,6 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
               </div>
             </div>
 
-            {/* Bottom Row: Stats & Action Button */}
             <div className="mt-3 pt-2.5 sm:mt-4 sm:pt-3.5 border-t border-purple-950/60 flex items-center justify-between gap-2">
               <span className="text-[9px] sm:text-xs font-mono text-zinc-400 truncate">
                 {stats.cratesOpened} Crates
@@ -424,7 +585,7 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
             </div>
           </div>
         </div>
-
+      </div>
         {/* TOURNAMENT ARENA & TOP 20 HALL OF FAME QUICK BAR */}
         <div 
           id="portal-leaderboard"
@@ -461,7 +622,6 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
             <ChevronRight className="w-3.5 h-3.5" />
           </button>
         </div>
-      </div>
 
       {/* Ad Banner placement */}
       <AdBanner 

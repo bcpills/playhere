@@ -17,12 +17,14 @@ interface KenoGameProps {
   balance: number;
   onUpdateBalance: (delta: number) => void;
   onUpdateStats: React.Dispatch<React.SetStateAction<CasinoStats>>;
+  onAddRakeback?: (wager: number, isBlackjack?: boolean) => void;
 }
 
 export const KenoGame: React.FC<KenoGameProps> = ({
   balance,
   onUpdateBalance,
   onUpdateStats,
+  onAddRakeback,
 }) => {
   const [selectedNumbers, setSelectedNumbers] = useState<number[]>([]);
   const [drawnNumbers, setDrawnNumbers] = useState<number[]>([]);
@@ -89,6 +91,7 @@ export const KenoGame: React.FC<KenoGameProps> = ({
       totalWagered: prev.totalWagered + wager,
       roundsPlayedKeno: prev.roundsPlayedKeno + 1,
     }));
+    onAddRakeback?.(wager, false);
 
     setActiveDrawing(true);
     setDrawnNumbers([]);

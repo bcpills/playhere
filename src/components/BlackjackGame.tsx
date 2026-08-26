@@ -16,12 +16,14 @@ interface BlackjackGameProps {
   balance: number;
   onUpdateBalance: (delta: number) => void;
   onUpdateStats: (updater: (prev: CasinoStats) => CasinoStats) => void;
+  onAddRakeback?: (wager: number, isBlackjack?: boolean) => void;
 }
 
 export const BlackjackGame: React.FC<BlackjackGameProps> = ({
   balance,
   onUpdateBalance,
   onUpdateStats,
+  onAddRakeback,
 }) => {
   // Shoe & Deck
   const [shoe, setShoe] = useState<Card[]>(() => createShoe(6));
@@ -124,6 +126,7 @@ export const BlackjackGame: React.FC<BlackjackGameProps> = ({
       totalWagered: prev.totalWagered + totalCurrentBet,
       handsPlayedBlackjack: prev.handsPlayedBlackjack + 1,
     }));
+    onAddRakeback?.(totalCurrentBet, true);
 
     setPhase('dealing');
     setSideBetResults(null);
@@ -315,6 +318,7 @@ export const BlackjackGame: React.FC<BlackjackGameProps> = ({
 
     onUpdateBalance(-currentHand.bet);
     onUpdateStats(prev => ({ ...prev, totalWagered: prev.totalWagered + currentHand.bet }));
+    onAddRakeback?.(currentHand.bet, true);
 
     sound.playChip();
     sound.playCardDeal();
@@ -347,6 +351,7 @@ export const BlackjackGame: React.FC<BlackjackGameProps> = ({
 
     onUpdateBalance(-currentHand.bet);
     onUpdateStats(prev => ({ ...prev, totalWagered: prev.totalWagered + currentHand.bet }));
+    onAddRakeback?.(currentHand.bet, true);
     sound.playChip();
 
     let currentDeck = shoe;

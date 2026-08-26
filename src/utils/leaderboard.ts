@@ -62,9 +62,9 @@ export function getEstimatedWagerForTier(tier: VIPTier): number {
  * Example: 2290 -> "2.29k", 2500000 -> "2.5M", 1250000000000 -> "1.25T", 5000000000000000000 -> "5Q"
  */
 export function formatCompactWager(val: number | undefined | null): string {
-  if (val === undefined || val === null || isNaN(val)) return '0';
+  if (val === undefined || val === null || isNaN(val) || !isFinite(val)) return '0';
   if (val < 0) return `-${formatCompactWager(Math.abs(val))}`;
-  if (val < 1000) return val.toLocaleString();
+  if (val < 1000) return Math.round(val).toLocaleString();
 
   const units = [
     { value: 1e33, symbol: 'Dc' },
@@ -280,7 +280,7 @@ export function getDailyLeaderboard(
     userFormattedScore = `${userScore.toLocaleString()}x`;
   } else if (category === 'volume') {
     userScore = stats.totalWagered;
-    userFormattedScore = `${userScore.toLocaleString()} Chips`;
+    userFormattedScore = `${formatCompactWager(userScore)} Chips`;
   }
 
   const userEntry: LeaderboardEntry = {
@@ -310,7 +310,7 @@ export function getDailyLeaderboard(
       formattedScore = `${score.toLocaleString()}x`;
     } else if (category === 'volume') {
       score = comp.baseVolume;
-      formattedScore = `${score.toLocaleString()} Chips`;
+      formattedScore = `${formatCompactWager(score)} Chips`;
     }
 
     return {
