@@ -7,8 +7,6 @@ import {
   ShieldCheck, 
   Coins, 
   Trophy, 
-  MessageSquare, 
-  Send, 
   Copy, 
   Check, 
   RotateCcw, 
@@ -16,12 +14,11 @@ import {
   Award,
   Sparkles,
   Flame,
-  UserCheck,
-  Medal,
   Crown,
   History,
   Calendar,
-  TrendingUp
+  TrendingUp,
+  UserCheck
 } from 'lucide-react';
 
 interface PlayerProfileModalProps {
@@ -39,7 +36,6 @@ export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({
   currentUserAccount,
   onResetBalance,
 }) => {
-  const [copiedHandle, setCopiedHandle] = useState<boolean>(false);
   const [resetAmount, setResetAmount] = useState<number>(1000);
   const [resetReason, setResetReason] = useState<string>('Administrative bankroll reset');
   const [isConfirmingReset, setIsConfirmingReset] = useState<boolean>(false);
@@ -53,13 +49,6 @@ export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({
   const currentRank = player.currentPlacement || 1;
   const highestRank = player.highestEverPlacement || 1;
   const placementHistory = player.placementHistory || [];
-
-  const handleCopy = (text: string) => {
-    sound.playChip();
-    navigator.clipboard.writeText(text);
-    setCopiedHandle(true);
-    setTimeout(() => setCopiedHandle(false), 2000);
-  };
 
   const handleExecuteReset = () => {
     sound.playWin(false);
@@ -124,37 +113,16 @@ export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({
               "{player.bio || 'High-stakes grinder aiming for 12:00 AM EST victory.'}"
             </p>
 
-            {/* Payout Handle Info */}
-            {player.contactHandle && (
-              <div className="flex items-center justify-center sm:justify-start gap-2 pt-1">
-                <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md flex items-center gap-1 ${
-                  player.contactPlatform === 'discord'
-                    ? 'bg-[#5865F2]/20 text-indigo-300 border border-[#5865F2]/40'
-                    : 'bg-[#229ED9]/20 text-sky-300 border border-[#229ED9]/40'
-                }`}>
-                  {player.contactPlatform === 'discord' ? <MessageSquare className="w-3 h-3" /> : <Send className="w-3 h-3" />}
-                  <span>{player.contactPlatform || 'discord'}</span>
-                </span>
-
-                <span className="text-xs font-mono font-bold text-zinc-200">
-                  {player.contactHandle}
-                </span>
-
-                <button
-                  onClick={() => handleCopy(player.contactHandle!)}
-                  title="Copy Contact Handle"
-                  className="p-1 rounded-md bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 border border-zinc-700 transition-colors cursor-pointer"
-                >
-                  {copiedHandle ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                </button>
-              </div>
-            )}
+            <div className="flex items-center justify-center sm:justify-start gap-2 pt-1">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400 flex items-center gap-1">
+                <UserCheck className="w-3 h-3 text-emerald-400" />
+                <span>Verified Gambler ID</span>
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* ========================================================================= */}
-        {/* PLACEMENT HIGHLIGHTS (CURRENT & HIGHEST EVER PLACEMENT)                   */}
-        {/* ========================================================================= */}
+        {/* PLACEMENT HIGHLIGHTS */}
         <div className="grid grid-cols-2 gap-2.5 mb-3.5">
           {/* Current Placement Box */}
           <div className="p-3 rounded-2xl bg-gradient-to-br from-amber-950/40 via-zinc-900 to-zinc-950 border border-amber-500/40 relative overflow-hidden">
@@ -236,9 +204,7 @@ export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({
           </div>
         </div>
 
-        {/* ========================================================================= */}
-        {/* TOURNAMENT PLACEMENT HISTORY LOG                                          */}
-        {/* ========================================================================= */}
+        {/* TOURNAMENT PLACEMENT HISTORY LOG */}
         <div className="mb-4 p-3.5 rounded-2xl bg-zinc-900/90 border border-zinc-800 space-y-2.5">
           <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
             <div className="flex items-center gap-2">
@@ -260,7 +226,6 @@ export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({
                   className="flex items-center justify-between p-2 rounded-xl bg-zinc-950/80 border border-zinc-800/80 text-xs"
                 >
                   <div className="flex items-center gap-2.5">
-                    {/* Rank Badge Icon */}
                     <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-black font-mono text-xs ${
                       item.rank === 1
                         ? 'bg-amber-400 text-zinc-950 shadow-md shadow-amber-400/20'
@@ -320,9 +285,7 @@ export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({
           </div>
         )}
 
-        {/* ========================================================================= */}
-        {/* ADMIN & MODERATOR MANAGEMENT ACTION PANEL                                 */}
-        {/* ========================================================================= */}
+        {/* ADMIN CONTROLS */}
         {isAdmin ? (
           <div className="mt-4 p-4 rounded-2xl bg-gradient-to-br from-purple-950/40 via-zinc-900 to-zinc-950 border-2 border-purple-500/60 shadow-xl space-y-3">
             <div className="flex items-center justify-between border-b border-purple-500/30 pb-2">
@@ -338,7 +301,7 @@ export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({
             </div>
 
             <p className="text-xs text-zinc-400">
-              As an administrator or moderator, you have full authority to manage this player's session and perform an administrative bankroll reset.
+              As an administrator or moderator, you have full authority to adjust this player's balance and manage accounts.
             </p>
 
             {!isConfirmingReset ? (
@@ -352,14 +315,14 @@ export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({
                   className="w-full py-2.5 px-4 rounded-xl bg-red-950/80 hover:bg-red-900 border border-red-500/60 text-red-200 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer"
                 >
                   <RotateCcw className="w-3.5 h-3.5 text-red-400" />
-                  <span>Reset {player.username}'s Balance</span>
+                  <span>Adjust {player.username}'s Balance</span>
                 </button>
               </div>
             ) : (
               <div className="space-y-2.5 p-3 rounded-xl bg-zinc-950 border border-red-500/40 animate-in fade-in">
                 <div className="flex items-center gap-2 text-red-400 text-xs font-bold">
                   <AlertTriangle className="w-4 h-4 shrink-0" />
-                  <span>Confirm Balance Reset for {player.username}</span>
+                  <span>Confirm Balance Adjustment for {player.username}</span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
@@ -384,7 +347,7 @@ export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({
                       type="text"
                       value={resetReason}
                       onChange={e => setResetReason(e.target.value)}
-                      placeholder="e.g. Daily reset enforcement"
+                      placeholder="e.g. Balance adjustment"
                       className="w-full px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-700 text-xs text-zinc-100 focus:outline-none focus:border-red-400"
                     />
                   </div>
@@ -397,7 +360,7 @@ export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({
                     className="flex-1 py-2 px-3 rounded-lg bg-red-600 hover:bg-red-500 text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-md transition-all cursor-pointer"
                   >
                     <Check className="w-3.5 h-3.5" />
-                    <span>Confirm Reset</span>
+                    <span>Confirm Adjustment</span>
                   </button>
 
                   <button
@@ -415,7 +378,7 @@ export const PlayerProfileModal: React.FC<PlayerProfileModalProps> = ({
 
         {/* Footer */}
         <div className="mt-4 pt-3 border-t border-zinc-800/80 flex items-center justify-between text-xs text-zinc-500">
-          <span className="text-[10px]">ChipZone Placement & Dossier Registry</span>
+          <span className="text-[10px]">ChipZone Player Registry</span>
           <button
             onClick={onClose}
             className="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300 font-bold text-xs cursor-pointer"

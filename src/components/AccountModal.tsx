@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { UserAccount, CasinoStats, VIPTier, ContactPlatform, InventoryItem } from '../types';
+import { UserAccount, CasinoStats, VIPTier, UserRole } from '../types';
 import { 
   AVATAR_OPTIONS, 
   getVIPTier, 
@@ -13,22 +13,19 @@ import {
   Award, 
   Edit3, 
   Save, 
-  ShieldCheck,
-  Send,
-  MessageSquare,
-  Flame,
-  Coins,
-  CheckCircle2,
-  Lock,
-  LogOut,
-  User,
-  Shield,
-  RotateCcw,
-  Sparkles,
-  ExternalLink,
-  ChevronRight,
-  HelpCircle,
-  BarChart2
+  ShieldCheck, 
+  Flame, 
+  Coins, 
+  CheckCircle2, 
+  Lock, 
+  LogOut, 
+  User, 
+  Shield, 
+  Sparkles, 
+  ChevronRight, 
+  HelpCircle, 
+  BarChart2,
+  DollarSign
 } from 'lucide-react';
 
 interface AccountModalProps {
@@ -42,6 +39,7 @@ interface AccountModalProps {
   onOpenStats: () => void;
   onOpenRules: () => void;
   onOpenPayForAdFree?: () => void;
+  onOpenCashier?: () => void;
 }
 
 export const AccountModal: React.FC<AccountModalProps> = ({
@@ -55,6 +53,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({
   onOpenStats,
   onOpenRules,
   onOpenPayForAdFree,
+  onOpenCashier,
 }) => {
   const [activeTab, setActiveTab] = useState<'profile' | 'security' | 'session'>('profile');
   const [isEditing, setIsEditing] = useState<boolean>(false);
@@ -63,8 +62,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({
   const [editTitle, setEditTitle] = useState<string>(account.title);
   const [editBio, setEditBio] = useState<string>(account.bio);
   const [editLuckyNumber, setEditLuckyNumber] = useState<number>(account.luckyNumber);
-  const [editPlatform, setEditPlatform] = useState<ContactPlatform>(account.contactPlatform || 'discord');
-  const [editHandle, setEditHandle] = useState<string>(account.contactHandle || '');
+  const [editRole, setEditRole] = useState<UserRole>(account.userRole || 'admin');
   const [isLinkingGoogle, setIsLinkingGoogle] = useState<boolean>(false);
   const [confirmSignOut, setConfirmSignOut] = useState<boolean>(false);
 
@@ -123,8 +121,8 @@ export const AccountModal: React.FC<AccountModalProps> = ({
       title: editTitle.trim() || 'Casino High-Roller',
       bio: editBio.trim() || 'Daily tournament contender.',
       luckyNumber: editLuckyNumber,
-      contactPlatform: editPlatform,
-      contactHandle: editHandle.trim() || prev.contactHandle,
+      userRole: editRole,
+      accountStatus: editRole === 'admin' ? 'admin' : editRole === 'moderator' ? 'moderator' : 'active',
     }));
     setIsEditing(false);
   };
@@ -146,7 +144,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({
             </div>
             <div>
               <h2 className="text-base sm:text-lg font-black uppercase tracking-wider text-zinc-100 flex items-center gap-2">
-                <span>Account & Session Center</span>
+                <span>Account & VIP Center</span>
               </h2>
               <span className="text-[11px] text-zinc-400">
                 {account.username} • 12:00 AM EST Tournament Cycle
@@ -172,7 +170,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({
               sound.playChip();
               setActiveTab('profile');
             }}
-            className={`py-1.5 px-3 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1.5 transition-all ${
+            className={`py-1.5 px-3 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
               activeTab === 'profile'
                 ? 'bg-amber-500 text-zinc-950 shadow-md'
                 : 'text-zinc-400 hover:text-zinc-200'
@@ -187,14 +185,14 @@ export const AccountModal: React.FC<AccountModalProps> = ({
               sound.playChip();
               setActiveTab('security');
             }}
-            className={`py-1.5 px-3 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1.5 transition-all ${
+            className={`py-1.5 px-3 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
               activeTab === 'security'
                 ? 'bg-amber-500 text-zinc-950 shadow-md'
                 : 'text-zinc-400 hover:text-zinc-200'
             }`}
           >
             <Shield className="w-3.5 h-3.5" />
-            <span>Google & VIP</span>
+            <span>VIP & Role</span>
           </button>
 
           <button
@@ -202,7 +200,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({
               sound.playChip();
               setActiveTab('session');
             }}
-            className={`py-1.5 px-3 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1.5 transition-all ${
+            className={`py-1.5 px-3 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
               activeTab === 'session'
                 ? 'bg-rose-600 text-white shadow-md'
                 : 'text-zinc-400 hover:text-zinc-200'
@@ -213,7 +211,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({
           </button>
         </div>
 
-        {/* TAB 1: PROFILE & PAYOUT INFO */}
+        {/* TAB 1: PROFILE */}
         {activeTab === 'profile' && (
           <div className="space-y-4">
             {/* Profile Overview Card */}
@@ -230,12 +228,9 @@ export const AccountModal: React.FC<AccountModalProps> = ({
                     <h3 className="text-lg font-black text-zinc-100">
                       {account.username}
                     </h3>
-                    {account.accountStatus === 'moderator' && (
-                      <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 flex items-center gap-1 shadow-sm">
-                        <ShieldCheck className="w-3 h-3 text-indigo-400" />
-                        <span>MODERATOR (ADMIN ACCESS)</span>
-                      </span>
-                    )}
+                    <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/40 font-mono">
+                      {account.userRole?.toUpperCase() || 'ADMIN'}
+                    </span>
                     <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border ${currentTierInfo.badgeBg}`}>
                       {currentVIPTier}
                     </span>
@@ -246,21 +241,6 @@ export const AccountModal: React.FC<AccountModalProps> = ({
                         <span>Google Linked</span>
                       </span>
                     )}
-                  </div>
-
-                  {/* Payout Tag */}
-                  <div className="flex items-center justify-center sm:justify-start gap-2 pt-0.5">
-                    <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded flex items-center gap-1 ${
-                      account.contactPlatform === 'discord'
-                        ? 'bg-[#5865F2]/20 text-indigo-300 border border-[#5865F2]/40'
-                        : 'bg-[#229ED9]/20 text-sky-300 border border-[#229ED9]/40'
-                    }`}>
-                      {account.contactPlatform === 'discord' ? <MessageSquare className="w-3 h-3" /> : <Send className="w-3 h-3" />}
-                      <span>{account.contactPlatform}</span>
-                    </span>
-                    <span className="text-xs font-mono font-bold text-zinc-300">
-                      {account.contactHandle || 'Not configured'}
-                    </span>
                   </div>
 
                   <p className="text-xs font-bold text-amber-400 pt-0.5">
@@ -287,7 +267,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({
                 )}
               </div>
 
-              {/* Quick Quick Balances */}
+              {/* Quick Balances */}
               <div className="grid grid-cols-3 gap-2 pt-3 mt-3 border-t border-zinc-800/80 text-center text-xs">
                 <div className="p-2 rounded-xl bg-zinc-950/60 border border-zinc-800">
                   <span className="text-[10px] text-zinc-500 font-bold uppercase block">Bankroll</span>
@@ -313,7 +293,38 @@ export const AccountModal: React.FC<AccountModalProps> = ({
               </div>
             </div>
 
-            {/* AD-FREE VIP STATUS & REMOVE ADS ACTION IN PROFILE */}
+            {/* REAL MONEY CASHIER ACTION */}
+            {onOpenCashier && (
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-950/40 via-teal-950/30 to-zinc-900 border border-emerald-500/40 flex items-center justify-between gap-3 shadow-md">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center shrink-0">
+                    <DollarSign className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-black uppercase tracking-wider text-zinc-100">
+                      Real Money Cashier
+                    </h4>
+                    <p className="text-[11px] text-zinc-400">
+                      Deposit instantly via Card/Crypto/PayPal or request real cashouts.
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    sound.playChip();
+                    onClose();
+                    onOpenCashier();
+                  }}
+                  className="px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black text-xs uppercase tracking-wider shadow-md shadow-emerald-500/20 cursor-pointer shrink-0"
+                >
+                  Open Cashier
+                </button>
+              </div>
+            )}
+
+            {/* AD-FREE VIP STATUS */}
             <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-950/40 via-indigo-950/30 to-zinc-900 border border-purple-500/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-md">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-amber-500 p-0.5 shadow-md flex items-center justify-center shrink-0">
@@ -369,7 +380,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({
               <div className="p-4 rounded-2xl bg-zinc-900 border border-amber-500/40 space-y-3 animate-fade-in">
                 <h4 className="text-xs font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
                   <Edit3 className="w-3.5 h-3.5" />
-                  <span>Update Profile & Payout Handle</span>
+                  <span>Update Profile & Role</span>
                 </h4>
 
                 {/* Avatar Grid */}
@@ -385,7 +396,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({
                           sound.playChip();
                           setEditAvatar(emoji);
                         }}
-                        className={`h-9 rounded-xl border text-lg flex items-center justify-center transition-all ${
+                        className={`h-9 rounded-xl border text-lg flex items-center justify-center transition-all cursor-pointer ${
                           editAvatar === emoji
                             ? 'bg-amber-500 text-zinc-950 border-amber-300 scale-110 shadow-md'
                             : 'bg-zinc-950 border-zinc-800 text-zinc-300 hover:border-zinc-700'
@@ -426,47 +437,27 @@ export const AccountModal: React.FC<AccountModalProps> = ({
                   </div>
                 </div>
 
-                {/* Payout Platform & Handle */}
-                <div className="p-3 rounded-xl bg-zinc-950/80 border border-zinc-800 space-y-2">
-                  <label className="text-[10px] font-black uppercase text-zinc-300 block">
-                    Winner Payout Channel (Discord or Telegram)
+                {/* Role Selector */}
+                <div>
+                  <label className="text-[10px] font-black uppercase text-zinc-400 block mb-1">
+                    System Role (Admin / Moderator / Player)
                   </label>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setEditPlatform('discord')}
-                      className={`py-1.5 px-3 rounded-lg border flex items-center justify-center gap-1.5 text-xs font-bold ${
-                        editPlatform === 'discord'
-                          ? 'bg-[#5865F2]/20 border-[#5865F2] text-indigo-300'
-                          : 'bg-zinc-900 border-zinc-800 text-zinc-500'
-                      }`}
-                    >
-                      <MessageSquare className="w-3.5 h-3.5 text-[#5865F2]" />
-                      <span>Discord</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setEditPlatform('telegram')}
-                      className={`py-1.5 px-3 rounded-lg border flex items-center justify-center gap-1.5 text-xs font-bold ${
-                        editPlatform === 'telegram'
-                          ? 'bg-[#229ED9]/20 border-[#229ED9] text-sky-300'
-                          : 'bg-zinc-900 border-zinc-800 text-zinc-500'
-                      }`}
-                    >
-                      <Send className="w-3.5 h-3.5 text-[#229ED9]" />
-                      <span>Telegram</span>
-                    </button>
+                  <div className="grid grid-cols-3 gap-2">
+                    {(['admin', 'moderator', 'player'] as UserRole[]).map(r => (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => setEditRole(r)}
+                        className={`py-1.5 px-2 rounded-xl text-xs font-black uppercase border transition-all cursor-pointer ${
+                          editRole === r
+                            ? 'bg-purple-600 text-white border-purple-400 shadow-md'
+                            : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:text-zinc-200'
+                        }`}
+                      >
+                        {r}
+                      </button>
+                    ))}
                   </div>
-
-                  <input
-                    type="text"
-                    value={editHandle}
-                    onChange={(e) => setEditHandle(e.target.value)}
-                    placeholder={editPlatform === 'discord' ? 'e.g. username#1234 or @username' : 'e.g. @telegram_handle'}
-                    className="w-full px-3 py-1.5 rounded-xl bg-zinc-900 border border-zinc-800 text-xs font-mono text-zinc-100 focus:outline-none focus:border-amber-400"
-                  />
                 </div>
 
                 <div>
@@ -500,13 +491,13 @@ export const AccountModal: React.FC<AccountModalProps> = ({
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => setIsEditing(false)}
-                      className="px-3 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold"
+                      className="px-3 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold cursor-pointer"
                     >
                       Cancel
                     </button>
                     <button
                       onClick={handleSaveProfile}
-                      className="px-4 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 text-zinc-950 text-xs font-black uppercase flex items-center gap-1 shadow-md"
+                      className="px-4 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 text-zinc-950 text-xs font-black uppercase flex items-center gap-1 shadow-md cursor-pointer"
                     >
                       <Save className="w-3.5 h-3.5" />
                       <span>Save Profile</span>
@@ -625,52 +616,6 @@ export const AccountModal: React.FC<AccountModalProps> = ({
               </div>
             </div>
 
-            {/* AD-FREE VIP MEMBERSHIP CARD */}
-            <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-950/40 via-indigo-950/30 to-zinc-900 border border-purple-500/40 space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">👑</span>
-                  <div>
-                    <h4 className="text-xs font-black uppercase tracking-wider text-zinc-100 flex items-center gap-1.5">
-                      <span>Ad-Free VIP Status</span>
-                      {account.isAdFree ? (
-                        <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-black">
-                          ACTIVE
-                        </span>
-                      ) : (
-                        <span className="text-[9px] px-1.5 py-0.2 rounded bg-zinc-800 text-zinc-400 border border-zinc-700">
-                          FREE TIER
-                        </span>
-                      )}
-                    </h4>
-                    <p className="text-[11px] text-zinc-400">
-                      {account.isAdFree 
-                        ? '100% ad-free gameplay active. Instant ATM bailouts unlocked.'
-                        : 'Remove all banner ads & skip video ad requirements on 100 free chips.'}
-                    </p>
-                  </div>
-                </div>
-
-                {onOpenPayForAdFree && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      sound.playChip();
-                      onClose();
-                      onOpenPayForAdFree();
-                    }}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                      account.isAdFree
-                        ? 'bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700'
-                        : 'bg-gradient-to-r from-purple-600 to-amber-500 text-white font-black shadow-md'
-                    }`}
-                  >
-                    {account.isAdFree ? 'Manage VIP' : 'Upgrade ($4.99)'}
-                  </button>
-                )}
-              </div>
-            </div>
-
             {/* Quick Links */}
             <div className="grid grid-cols-2 gap-2">
               <button
@@ -679,7 +624,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({
                   onClose();
                   onOpenStats();
                 }}
-                className="p-3 rounded-2xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-left flex items-center justify-between gap-2 text-xs text-zinc-300"
+                className="p-3 rounded-2xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-left flex items-center justify-between gap-2 text-xs text-zinc-300 cursor-pointer"
               >
                 <div className="flex items-center gap-2">
                   <BarChart2 className="w-4 h-4 text-emerald-400" />
@@ -694,7 +639,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({
                   onClose();
                   onOpenRules();
                 }}
-                className="p-3 rounded-2xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-left flex items-center justify-between gap-2 text-xs text-zinc-300"
+                className="p-3 rounded-2xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-left flex items-center justify-between gap-2 text-xs text-zinc-300 cursor-pointer"
               >
                 <div className="flex items-center gap-2">
                   <HelpCircle className="w-4 h-4 text-amber-400" />
@@ -706,7 +651,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({
           </div>
         )}
 
-        {/* TAB 3: SIGN OUT & SESSION CONTROL */}
+        {/* TAB 3: SIGN OUT */}
         {activeTab === 'session' && (
           <div className="space-y-4">
             <div className="p-4 rounded-2xl bg-rose-950/30 border border-rose-500/40 space-y-3">
@@ -742,7 +687,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({
                     <button
                       type="button"
                       onClick={() => setConfirmSignOut(false)}
-                      className="px-4 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold"
+                      className="px-4 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold cursor-pointer"
                     >
                       Cancel
                     </button>
@@ -771,9 +716,9 @@ export const AccountModal: React.FC<AccountModalProps> = ({
                 </span>
               </div>
               <div className="flex items-center justify-between text-[11px]">
-                <span className="text-zinc-500 font-mono">Payout Destination:</span>
-                <span className="text-zinc-200 font-mono">
-                  {account.contactPlatform}: {account.contactHandle || 'Not Set'}
+                <span className="text-zinc-500 font-mono">System Role:</span>
+                <span className="text-purple-300 font-mono font-bold uppercase">
+                  {account.userRole || 'admin'}
                 </span>
               </div>
             </div>
@@ -787,7 +732,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({
               sound.playChip();
               setActiveTab('session');
             }}
-            className="text-rose-400 hover:text-rose-300 text-xs font-bold flex items-center gap-1"
+            className="text-rose-400 hover:text-rose-300 text-xs font-bold flex items-center gap-1 cursor-pointer"
           >
             <LogOut className="w-3.5 h-3.5" />
             <span>Sign Out</span>

@@ -1,779 +1,899 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  DailyWinnerRecord, 
-  ContactPlatform, 
-  PlayerProfileData, 
   AdminManagedUser, 
+  UserAccount, 
+  DailyWinnerRecord, 
   AccountStatus, 
   AccountType,
-  ChatMessage 
+  UserRole,
+  PayoutRequest,
+  BalanceAdjustmentLog,
+  DepositTransaction
 } from '../types';
+import { 
+  getAdminUserDirectory, 
+  updateUserInAdminDirectory, 
+  saveAdminUserDirectory 
+} from '../utils/adminUsers';
+import { isUserAdmin, isUserModerator, getVIPTier, getVIPTierInfo, formatCompactWager } from '../utils/leaderboard';
 import { sound } from '../utils/audio';
-import { formatCompactWager } from '../utils/leaderboard';
+import confetti from 'canvas-confetti';
 import { 
   ShieldCheck, 
   X, 
-  Copy, 
-  Check, 
-  MessageSquare, 
-  Send, 
-  Award, 
+  Search, 
+  UserCheck, 
+  Ban, 
   Coins, 
-  FileText, 
-  ExternalLink,
-  Download,
-  Search,
-  CheckCircle2,
-  Clock,
-  Edit3,
-  Filter,
-  User,
-  AlertCircle,
-  Shield,
-  Ban,
-  Lock,
-  Unlock,
-  Crown,
-  Users,
-  ChevronDown,
+  Trophy, 
+  CheckCircle2, 
+  AlertCircle, 
+  Clock, 
+  UserX, 
+  RotateCcw, 
+  DollarSign, 
+  Save, 
   Sparkles,
-  ChevronRight
+  ArrowUpRight,
+  TrendingUp,
+  FileText,
+  Lock,
+  Eye,
+  CreditCard,
+  Building2,
+  QrCode,
+  Shield,
+  Activity,
+  Plus,
+  Minus
 } from 'lucide-react';
 
 interface ModeratorModalProps {
   isOpen: boolean;
   onClose: () => void;
+  currentUser: UserAccount;
+  currentBalance: number;
+  totalWagered: number;
   dailyWinners: DailyWinnerRecord[];
-  onUpdateWinner: (winnerId: string, updates: Partial<DailyWinnerRecord>) => void;
-  onInspectPlayer?: (player: PlayerProfileData) => void;
-  usersList: AdminManagedUser[];
-  onUpdateUserStatus: (userId: string, status: AccountStatus) => void;
-  onUpdateUserTier: (userId: string, isAdFree: boolean) => void;
-  onUpdateUserBalance?: (userId: string, newBalance: number) => void;
-  allChatMessages: ChatMessage[];
+  onUpdateDailyWinnerStatus: (winnerId: string, status: 'Pending' | 'Paid' | 'Processing', note?: string) => void;
+  onAdminAdjustBalance: (userId: string, username: string, deltaAmount: number, reason: string) => void;
+  payoutRequests: PayoutRequest[];
+  onUpdatePayoutRequest: (requestId: string, status: 'Pending' | 'Processing' | 'Paid' | 'Rejected', adminNote?: string) => void;
+  balanceAdjustments: BalanceAdjustmentLog[];
+  depositHistory: DepositTransaction[];
+  onUpdateUserAccount?: (updater: (prev: UserAccount) => UserAccount) => void;
 }
+
+type ModTab = 'payouts' | 'balances' | 'users' | 'ledger';
 
 export const ModeratorModal: React.FC<ModeratorModalProps> = ({
   isOpen,
   onClose,
+  currentUser,
+  currentBalance,
+  totalWagered,
   dailyWinners,
-  onUpdateWinner,
-  onInspectPlayer,
-  usersList,
-  onUpdateUserStatus,
-  onUpdateUserTier,
-  onUpdateUserBalance,
-  allChatMessages,
+  onUpdateDailyWinnerStatus,
+  onAdminAdjustBalance,
+  payoutRequests,
+  onUpdatePayoutRequest,
+  balanceAdjustments,
+  depositHistory,
+  onUpdateUserAccount,
 }) => {
-  const [activeTab, setActiveTab] = useState<'users' | 'payouts'>('users');
-  
-  // Payouts state
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [payoutSearchQuery, setPayoutSearchQuery] = useState<string>('');
-  const [filterPayoutStatus, setFilterPayoutStatus] = useState<'pending' | 'paid' | 'all'>('pending');
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [noteText, setNoteText] = useState<string>('');
+  const [activeTab, setActiveTab] = useState<ModTab>('payouts');
+  const [userList, setUserList] = useState<AdminManagedUser[]>([]);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [selectedUser, setSelectedUser] = useState<AdminManagedUser | null>(null);
 
-  // Users & Moderation state
-  const [userSearchQuery, setUserSearchQuery] = useState<string>('');
-  const [filterUserStatus, setFilterUserStatus] = useState<'all' | 'active' | 'moderator' | 'banned' | 'closed'>('all');
-  const [filterUserTier, setFilterUserTier] = useState<'all' | 'paid' | 'free'>('all');
-  const [selectedUserForChat, setSelectedUserForChat] = useState<AdminManagedUser | null>(null);
-  const [editingBalanceUserId, setEditingBalanceUserId] = useState<string | null>(null);
-  const [tempBalanceInput, setTempBalanceInput] = useState<string>('');
+  // Balance Adjustment Form State
+  const [adjustmentType, setAdjustmentType] = useState<'add' | 'deduct' | 'set'>('add');
+  const [adjustAmount, setAdjustAmount] = useState<number>(5000);
+  const [adjustReason, setAdjustReason] = useState<string>('Promotional Deposit Bonus');
+  const [adjustSuccessMsg, setAdjustSuccessMsg] = useState<string | null>(null);
+
+  // Payout Approval Note
+  const [rejectionNote, setRejectionNote] = useState<string>('');
+  const [rejectingReqId, setRejectingReqId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      const users = getAdminUserDirectory(currentUser, currentBalance, totalWagered);
+      setUserList(users);
+      if (!selectedUser && users.length > 0) {
+        setSelectedUser(users[0]);
+      }
+    }
+  }, [isOpen, currentUser, currentBalance, totalWagered]);
 
   if (!isOpen) return null;
 
-  const handleCopyHandle = (handle: string, id: string) => {
-    sound.playChip();
-    navigator.clipboard.writeText(handle);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
-  };
+  const isAdmin = isUserAdmin(currentUser);
+  const isMod = isUserModerator(currentUser);
 
-  const handleSaveNote = (winnerId: string) => {
-    sound.playChip();
-    onUpdateWinner(winnerId, { payoutNote: noteText });
-    setEditingId(null);
-    setNoteText('');
-  };
+  const filteredUsers = userList.filter(u => 
+    u.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (u.email && u.email.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
 
-  const handleExportCSV = () => {
-    sound.playChip();
-    const headers = ['Date (EST)', 'Username', 'Platform', 'Contact Handle', 'Winning Chips', 'Payout Status', 'Payout Note'];
-    const rows = dailyWinners.map(w => [
-      w.dateEst,
-      `"${w.username}"`,
-      w.contactPlatform.toUpperCase(),
-      `"${w.contactHandle}"`,
-      w.winningChips,
-      w.payoutStatus,
-      `"${w.payoutNote || ''}"`
-    ]);
-
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `chipzone_payouts_log_${Date.now()}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  // Filtered Winners
-  const filteredWinners = dailyWinners.filter(w => {
-    const matchesSearch = 
-      w.username.toLowerCase().includes(payoutSearchQuery.toLowerCase()) ||
-      w.contactHandle.toLowerCase().includes(payoutSearchQuery.toLowerCase()) ||
-      w.dateEst.includes(payoutSearchQuery);
-
-    if (!matchesSearch) return false;
-    if (filterPayoutStatus === 'pending') return w.payoutStatus === 'Pending';
-    if (filterPayoutStatus === 'paid') return w.payoutStatus === 'Paid';
-    return true;
-  });
-
-  // Filtered Users
-  const filteredUsers = usersList.filter(u => {
-    const q = userSearchQuery.toLowerCase().trim();
-    const matchesSearch = 
-      !q ||
-      u.username.toLowerCase().includes(q) ||
-      u.id.toLowerCase().includes(q) ||
-      (u.email && u.email.toLowerCase().includes(q)) ||
-      u.contactHandle.toLowerCase().includes(q);
-
-    if (!matchesSearch) return false;
-    if (filterUserStatus !== 'all' && u.accountStatus !== filterUserStatus) return false;
-    if (filterUserTier === 'paid' && !u.isAdFree) return false;
-    if (filterUserTier === 'free' && u.isAdFree) return false;
-    return true;
-  });
-
-  // User Chat Logs
-  const getUserChatMessages = (user: AdminManagedUser) => {
-    return allChatMessages.filter(
-      m => m.senderId === user.id || m.username.toLowerCase() === user.username.toLowerCase()
-    );
-  };
-
-  const handleSaveBalance = (userId: string) => {
-    const parsed = parseInt(tempBalanceInput.replace(/,/g, ''), 10);
-    if (!isNaN(parsed) && parsed >= 0 && onUpdateUserBalance) {
-      sound.playChip();
-      onUpdateUserBalance(userId, parsed);
+  // Handle Balance Adjustment
+  const handleExecuteBalanceAdjustment = () => {
+    if (!selectedUser) return;
+    if (adjustAmount <= 0) {
+      alert('Please enter a valid chip amount.');
+      return;
     }
-    setEditingBalanceUserId(null);
-    setTempBalanceInput('');
+
+    sound.playWin();
+    confetti({ particleCount: 50, spread: 45, origin: { y: 0.6 } });
+
+    let delta = adjustAmount;
+    if (adjustmentType === 'deduct') {
+      delta = -adjustAmount;
+    } else if (adjustmentType === 'set') {
+      delta = adjustAmount - selectedUser.balance;
+    }
+
+    onAdminAdjustBalance(selectedUser.id, selectedUser.username, delta, adjustReason);
+
+    // Update local list
+    const updatedUsers = updateUserInAdminDirectory(selectedUser.id, {
+      balance: Math.max(0, selectedUser.balance + delta),
+    });
+    setUserList(updatedUsers);
+    
+    const refreshed = updatedUsers.find(u => u.id === selectedUser.id);
+    if (refreshed) setSelectedUser(refreshed);
+
+    setAdjustSuccessMsg(`Successfully updated ${selectedUser.username}'s balance (${delta >= 0 ? '+' : ''}${delta.toLocaleString()} chips)!`);
+    setTimeout(() => setAdjustSuccessMsg(null), 4000);
   };
 
-  const pendingCount = dailyWinners.filter(w => w.payoutStatus === 'Pending').length;
+  // Handle Payout Status Update
+  const handleApprovePayout = (req: PayoutRequest) => {
+    sound.playProfit();
+    confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } });
+    const txHash = '0x' + Array.from({length: 32}, () => Math.floor(Math.random()*16).toString(16)).join('');
+    onUpdatePayoutRequest(req.id, 'Paid', `Approved by Admin ${currentUser.username || 'Thomas J'}. Wire Reference: ${txHash.slice(0, 16)}`);
+  };
+
+  const handleMarkProcessing = (req: PayoutRequest) => {
+    sound.playChip();
+    onUpdatePayoutRequest(req.id, 'Processing', `In queue with banking partner. Reviewed by ${currentUser.username || 'Mod'}.`);
+  };
+
+  const handleRejectPayout = (reqId: string) => {
+    sound.playLose();
+    const reason = rejectionNote.trim() || 'Account verification required. Chips refunded to bankroll.';
+    onUpdatePayoutRequest(reqId, 'Rejected', reason);
+    setRejectingReqId(null);
+    setRejectionNote('');
+  };
+
+  // Handle Role / Status Changes
+  const handleUpdateUserStatus = (userId: string, newStatus: AccountStatus) => {
+    sound.playChip();
+    const updated = updateUserInAdminDirectory(userId, { accountStatus: newStatus });
+    setUserList(updated);
+    if (selectedUser?.id === userId) {
+      setSelectedUser(prev => prev ? { ...prev, accountStatus: newStatus } : null);
+    }
+  };
+
+  const handleUpdateUserRole = (userId: string, newRole: UserRole) => {
+    sound.playChip();
+    const updated = updateUserInAdminDirectory(userId, { userRole: newRole });
+    setUserList(updated);
+    if (selectedUser?.id === userId) {
+      setSelectedUser(prev => prev ? { ...prev, userRole: newRole } : null);
+    }
+    if (userId === currentUser.id && onUpdateUserAccount) {
+      onUpdateUserAccount(prev => ({ ...prev, userRole: newRole }));
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4">
-      <div className="w-full max-w-5xl max-h-[94vh] rounded-3xl bg-zinc-950 border-2 border-purple-500/60 shadow-2xl flex flex-col relative overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div className="w-full max-w-5xl max-h-[94vh] rounded-3xl bg-zinc-950 border-2 border-amber-500/60 shadow-2xl flex flex-col relative overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         
-        {/* Top Header */}
-        <div className="p-4 sm:p-5 border-b border-zinc-800/80 bg-zinc-900/80 flex items-center justify-between gap-3 shrink-0">
+        {/* Top Bar Header */}
+        <div className="p-4 sm:p-5 border-b border-zinc-800/80 bg-zinc-900/90 flex items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-purple-700 to-indigo-600 border border-purple-400/50 flex items-center justify-center text-white shadow-lg shadow-purple-900/40">
-              <ShieldCheck className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-400 border border-amber-300/60 flex items-center justify-center text-zinc-950 shadow-lg shadow-amber-500/30 font-black">
+              <ShieldCheck className="w-6 h-6 stroke-[2.5]" />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-base sm:text-lg font-black uppercase tracking-wider text-zinc-100">
-                  Admin & Moderator Portal
+                  Admin & Moderator Command Center
                 </h2>
-                <span className="text-[10px] px-2 py-0.5 rounded-full font-black uppercase bg-purple-500/20 text-purple-300 border border-purple-500/40">
-                  ADMIN & MOD ACCESS
+                <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                  {currentUser.userRole?.toUpperCase() || 'ADMIN'} ACCESS
                 </span>
               </div>
               <p className="text-xs text-zinc-400">
-                Manage accounts, grant moderator roles, search player chat logs, toggle paid vs free, adjust balances, and distribute tournament prizes.
+                Real-money payout authorizations, instant player balance adjustments, and financial ledgers.
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={onClose}
-              className="w-8 h-8 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-400 hover:text-zinc-200 flex items-center justify-center transition-colors cursor-pointer"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-400 hover:text-zinc-200 flex items-center justify-center transition-colors cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
 
-        {/* Tab Selector */}
-        <div className="flex items-center justify-between px-4 sm:px-6 pt-3 pb-2 bg-zinc-950 border-b border-zinc-800 gap-2 shrink-0">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => {
-                sound.playChip();
-                setActiveTab('users');
-              }}
-              className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer ${
-                activeTab === 'users'
-                  ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30'
-                  : 'bg-zinc-900/80 text-zinc-400 hover:text-zinc-200 border border-zinc-800'
-              }`}
-            >
-              <Users className="w-4 h-4" />
-              <span>User Search & Moderation</span>
-              <span className="px-1.5 py-0.2 rounded-md bg-black/40 text-[10px] font-mono">
-                {usersList.length}
-              </span>
-            </button>
+        {/* Tab Navigators */}
+        <div className="flex items-center px-4 sm:px-6 pt-3 pb-2 bg-zinc-950 border-b border-zinc-800 gap-2 shrink-0 overflow-x-auto">
+          <button
+            onClick={() => {
+              sound.playChip();
+              setActiveTab('payouts');
+            }}
+            className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer shrink-0 ${
+              activeTab === 'payouts'
+                ? 'bg-gradient-to-r from-amber-500 to-yellow-400 text-zinc-950 font-black shadow-lg shadow-amber-500/20'
+                : 'bg-zinc-900/80 text-zinc-400 hover:text-zinc-200 border border-zinc-800'
+            }`}
+          >
+            <DollarSign className="w-4 h-4" />
+            <span>Payout Approvals ({payoutRequests.filter(r => r.status === 'Pending' || r.status === 'Processing').length} Pending)</span>
+          </button>
 
-            <button
-              onClick={() => {
-                sound.playChip();
-                setActiveTab('payouts');
-              }}
-              className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer ${
-                activeTab === 'payouts'
-                  ? 'bg-amber-500 text-zinc-950 shadow-lg shadow-amber-500/30 font-black'
-                  : 'bg-zinc-900/80 text-zinc-400 hover:text-zinc-200 border border-zinc-800'
-              }`}
-            >
-              <Award className="w-4 h-4" />
-              <span>Pending Payouts</span>
-              {pendingCount > 0 && (
-                <span className="px-1.5 py-0.2 rounded-md bg-red-500 text-white text-[10px] font-black animate-pulse">
-                  {pendingCount}
-                </span>
-              )}
-            </button>
-          </div>
+          <button
+            onClick={() => {
+              sound.playChip();
+              setActiveTab('balances');
+            }}
+            className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer shrink-0 ${
+              activeTab === 'balances'
+                ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-zinc-950 font-black shadow-lg shadow-emerald-500/20'
+                : 'bg-zinc-900/80 text-zinc-400 hover:text-zinc-200 border border-zinc-800'
+            }`}
+          >
+            <Coins className="w-4 h-4" />
+            <span>Balance Adjuster & Mod Tools</span>
+          </button>
 
-          {activeTab === 'payouts' && (
-            <button
-              onClick={handleExportCSV}
-              className="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
-            >
-              <Download className="w-3.5 h-3.5 text-zinc-400" />
-              <span className="hidden sm:inline">Export CSV</span>
-            </button>
-          )}
+          <button
+            onClick={() => {
+              sound.playChip();
+              setActiveTab('users');
+            }}
+            className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer shrink-0 ${
+              activeTab === 'users'
+                ? 'bg-sky-500 text-zinc-950 font-black shadow-lg shadow-sky-500/20'
+                : 'bg-zinc-900/80 text-zinc-400 hover:text-zinc-200 border border-zinc-800'
+            }`}
+          >
+            <UserCheck className="w-4 h-4" />
+            <span>User Accounts Directory ({userList.length})</span>
+          </button>
+
+          <button
+            onClick={() => {
+              sound.playChip();
+              setActiveTab('ledger');
+            }}
+            className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer shrink-0 ${
+              activeTab === 'ledger'
+                ? 'bg-purple-600 text-white font-black shadow-lg shadow-purple-600/30'
+                : 'bg-zinc-900/80 text-zinc-400 hover:text-zinc-200 border border-zinc-800'
+            }`}
+          >
+            <FileText className="w-4 h-4" />
+            <span>Financial Audit Ledger</span>
+          </button>
         </div>
 
-        {/* TAB 1: USER SEARCH, STATUS, PAID VS FREE, & CHAT LOGS */}
-        {activeTab === 'users' && (
-          <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
-            {/* Search & Filter Bar */}
-            <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 p-3.5 rounded-2xl bg-zinc-900/90 border border-zinc-800">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
-                <input
-                  type="text"
-                  placeholder="Search any user by username, email, ID, or handle..."
-                  value={userSearchQuery}
-                  onChange={(e) => setUserSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 rounded-xl bg-zinc-950 border border-zinc-700 text-zinc-200 text-xs placeholder:text-zinc-500 focus:outline-none focus:border-purple-500"
-                />
-                {userSearchQuery && (
-                  <button
-                    onClick={() => setUserSearchQuery('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200 text-xs"
-                  >
-                    ✕
-                  </button>
-                )}
-              </div>
-
-              {/* Status Filters */}
-              <div className="flex items-center gap-2 flex-wrap">
-                <div className="flex items-center gap-1 bg-zinc-950 p-1 rounded-xl border border-zinc-800 text-xs">
-                  <span className="text-[10px] text-zinc-500 font-bold px-1.5 uppercase">Status:</span>
-                  {(['all', 'active', 'moderator', 'banned', 'closed'] as const).map((status) => (
-                    <button
-                      key={status}
-                      onClick={() => {
-                        sound.playChip();
-                        setFilterUserStatus(status);
-                      }}
-                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold capitalize transition-all cursor-pointer ${
-                        filterUserStatus === status
-                          ? status === 'active'
-                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                            : status === 'moderator'
-                            ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40'
-                            : status === 'banned'
-                            ? 'bg-red-500/20 text-red-300 border border-red-500/40'
-                            : status === 'closed'
-                            ? 'bg-zinc-700 text-zinc-200'
-                            : 'bg-purple-600 text-white'
-                          : 'text-zinc-400 hover:text-zinc-200'
-                      }`}
-                    >
-                      {status === 'moderator' ? '🛡️ Moderator' : status}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Tier Filters */}
-                <div className="flex items-center gap-1 bg-zinc-950 p-1 rounded-xl border border-zinc-800 text-xs">
-                  <span className="text-[10px] text-zinc-500 font-bold px-1.5 uppercase">Tier:</span>
-                  {(['all', 'paid', 'free'] as const).map((tier) => (
-                    <button
-                      key={tier}
-                      onClick={() => {
-                        sound.playChip();
-                        setFilterUserTier(tier);
-                      }}
-                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold capitalize transition-all cursor-pointer ${
-                        filterUserTier === tier
-                          ? tier === 'paid'
-                            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 font-black'
-                            : 'bg-purple-600 text-white'
-                          : 'text-zinc-400 hover:text-zinc-200'
-                      }`}
-                    >
-                      {tier === 'paid' ? '👑 Paid VIP' : tier === 'free' ? 'Free Tier' : 'All'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Users List */}
-            {filteredUsers.length === 0 ? (
-              <div className="py-12 text-center rounded-2xl bg-zinc-900/40 border border-zinc-800/60">
-                <User className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
-                <p className="text-sm font-bold text-zinc-400">No users match your search criteria.</p>
-                <button
-                  onClick={() => {
-                    setUserSearchQuery('');
-                    setFilterUserStatus('all');
-                    setFilterUserTier('all');
-                  }}
-                  className="mt-2 text-xs text-purple-400 hover:underline cursor-pointer"
-                >
-                  Reset all filters
-                </button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 gap-3">
-                {filteredUsers.map((user) => {
-                  const userMessages = getUserChatMessages(user);
-                  const isChatDrawerOpen = selectedUserForChat?.id === user.id;
-
-                  return (
-                    <div
-                      key={user.id}
-                      className={`p-4 rounded-2xl border transition-all ${
-                        user.accountStatus === 'banned'
-                          ? 'bg-red-950/20 border-red-500/40'
-                          : user.accountStatus === 'closed'
-                          ? 'bg-zinc-900/40 border-zinc-800 opacity-75'
-                          : user.isAdFree
-                          ? 'bg-purple-950/20 border-purple-500/40'
-                          : 'bg-zinc-900/70 border-zinc-800'
-                      }`}
-                    >
-                      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
-                        {/* User Identity & Info */}
-                        <div className="flex items-start sm:items-center gap-3">
-                          <div className="w-12 h-12 rounded-2xl bg-zinc-950 border border-zinc-700 flex items-center justify-center text-2xl shadow-inner shrink-0 relative">
-                            {user.avatar}
-                            {user.isAdFree && (
-                              <span className="absolute -top-1.5 -right-1.5 text-xs">👑</span>
-                            )}
-                          </div>
-
-                          <div className="space-y-0.5">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <h3 className="text-sm sm:text-base font-black text-zinc-100">
-                                {user.username}
-                              </h3>
-                              
-                              {/* Account Status Badge */}
-                              <span className={`text-[10px] font-black uppercase px-2 py-0.2 rounded-md ${
-                                user.accountStatus === 'active'
-                                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                                  : user.accountStatus === 'moderator'
-                                  ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 flex items-center gap-1'
-                                  : user.accountStatus === 'banned'
-                                  ? 'bg-red-500/20 text-red-300 border border-red-500/40'
-                                  : 'bg-zinc-800 text-zinc-400 border border-zinc-700'
-                              }`}>
-                                {user.accountStatus === 'moderator' ? '🛡️ MODERATOR' : user.accountStatus}
-                              </span>
-
-                              {/* Paid vs Free Tier Badge */}
-                              <span className={`text-[10px] font-black uppercase px-2 py-0.2 rounded-md ${
-                                user.isAdFree
-                                  ? 'bg-gradient-to-r from-purple-900/60 to-amber-950/60 text-amber-300 border border-amber-500/40'
-                                  : 'bg-zinc-800 text-zinc-400 border border-zinc-700'
-                              }`}>
-                                {user.isAdFree ? '👑 Paid VIP (Ad-Free)' : 'Free Tier'}
-                              </span>
-
-                              {user.isCurrentUser && (
-                                <span className="text-[10px] font-bold text-sky-400 bg-sky-950/60 border border-sky-500/30 px-1.5 py-0.2 rounded">
-                                  You
-                                </span>
-                              )}
-                            </div>
-
-                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-zinc-400">
-                              <span className="font-mono text-zinc-500 text-[11px]">ID: {user.id}</span>
-                              {user.email && (
-                                <span className="text-zinc-300">{user.email}</span>
-                              )}
-                              <span className="flex items-center gap-1 text-zinc-300">
-                                {user.contactPlatform === 'discord' ? '🎮' : '✈️'} {user.contactHandle}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Balance, Peak & Quick Stats */}
-                        <div className="flex flex-wrap items-center gap-3 text-xs w-full lg:w-auto justify-between lg:justify-end">
-                          <div className="p-2 rounded-xl bg-zinc-950/80 border border-zinc-800 text-left min-w-[110px]">
-                            <div className="text-[10px] text-zinc-500 font-bold uppercase">Balance</div>
-                            {editingBalanceUserId === user.id ? (
-                              <div className="flex items-center gap-1 mt-0.5">
-                                <input
-                                  type="number"
-                                  value={tempBalanceInput}
-                                  onChange={(e) => setTempBalanceInput(e.target.value)}
-                                  className="w-20 px-1.5 py-0.5 rounded bg-zinc-900 border border-amber-500 text-amber-300 font-mono text-xs font-bold"
-                                  autoFocus
-                                />
-                                <button
-                                  onClick={() => handleSaveBalance(user.id)}
-                                  className="px-1.5 py-0.5 rounded bg-amber-500 text-zinc-950 text-[10px] font-black"
-                                >
-                                  ✓
-                                </button>
-                              </div>
-                            ) : (
-                              <div 
-                                onClick={() => {
-                                  setEditingBalanceUserId(user.id);
-                                  setTempBalanceInput(user.balance.toString());
-                                }}
-                                className="font-mono font-black text-amber-300 text-sm cursor-pointer hover:underline"
-                                title="Click to adjust balance as admin"
-                              >
-                                {user.balance.toLocaleString()} <span className="text-[9px] text-zinc-500 font-sans">CHIPS</span>
-                              </div>
-                            )}
-                          </div>
-
-                          <div 
-                            className="p-2 rounded-xl bg-zinc-950/80 border border-zinc-800 text-left min-w-[90px] group cursor-help"
-                            title={`${user.totalWagered.toLocaleString()} chips total lifetime wagered`}
-                          >
-                            <div className="text-[10px] text-zinc-500 font-bold uppercase">Wagered</div>
-                            <div className="font-mono font-bold text-purple-300 text-xs">
-                              {formatCompactWager(user.totalWagered)}
-                            </div>
-                          </div>
-
-                          <div className="p-2 rounded-xl bg-zinc-950/80 border border-zinc-800 text-left min-w-[90px]">
-                            <div className="text-[10px] text-zinc-500 font-bold uppercase">Peak Chips</div>
-                            <div className="font-mono font-bold text-zinc-300 text-xs">
-                              {user.peakBalance.toLocaleString()}
-                            </div>
-                          </div>
-
-                          {/* Quick Actions Buttons */}
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            {/* Toggle Status (Active / Banned / Closed) */}
-                            <div className="relative group">
-                              <select
-                                value={user.accountStatus}
-                                onChange={(e) => {
-                                  sound.playChip();
-                                  onUpdateUserStatus(user.id, e.target.value as AccountStatus);
-                                }}
-                                className="px-2.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-xs font-bold text-zinc-200 focus:outline-none cursor-pointer"
-                              >
-                                <option value="active">Active</option>
-                                <option value="moderator">🛡️ Moderator</option>
-                                <option value="banned">Banned</option>
-                                <option value="closed">Closed</option>
-                              </select>
-                            </div>
-
-                            {/* Toggle Paid VIP vs Free */}
-                            <button
-                              onClick={() => {
-                                sound.playChip();
-                                onUpdateUserTier(user.id, !user.isAdFree);
-                              }}
-                              className={`px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 border transition-all cursor-pointer ${
-                                user.isAdFree
-                                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 hover:bg-amber-500/30'
-                                  : 'bg-zinc-900 hover:bg-zinc-800 text-zinc-400 border-zinc-700 hover:text-zinc-200'
-                              }`}
-                              title="Toggle Paid Ad-Free status"
-                            >
-                              <Crown className="w-3.5 h-3.5 text-amber-400" />
-                              <span>{user.isAdFree ? 'Paid VIP' : 'Set Paid'}</span>
-                            </button>
-
-                            {/* View Chat Logs Toggle */}
-                            <button
-                              onClick={() => {
-                                sound.playChip();
-                                setSelectedUserForChat(isChatDrawerOpen ? null : user);
-                              }}
-                              className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 border transition-all cursor-pointer ${
-                                isChatDrawerOpen
-                                  ? 'bg-purple-600 text-white border-purple-400 shadow-md'
-                                  : 'bg-zinc-900 hover:bg-zinc-800 text-purple-300 border-purple-500/30 hover:border-purple-400'
-                              }`}
-                            >
-                              <MessageSquare className="w-3.5 h-3.5" />
-                              <span>Chat Logs</span>
-                              <span className="px-1.5 py-0.2 rounded-md bg-purple-950 text-purple-200 text-[10px] font-mono">
-                                {userMessages.length}
-                              </span>
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Expandable Chat Logs Drawer for User */}
-                      {isChatDrawerOpen && (
-                        <div className="mt-3 pt-3 border-t border-zinc-800/80 animate-in fade-in slide-in-from-top-1">
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2 text-xs font-bold text-purple-300">
-                              <MessageSquare className="w-4 h-4 text-purple-400" />
-                              <span>Chat History for @{user.username} ({userMessages.length} messages found)</span>
-                            </div>
-                            <span className="text-[10px] text-zinc-500 font-mono">Real-Time Moderation View</span>
-                          </div>
-
-                          {userMessages.length === 0 ? (
-                            <div className="p-3 rounded-xl bg-zinc-950/60 border border-zinc-800 text-xs text-zinc-500 text-center italic">
-                              No chat messages recorded for this user yet.
-                            </div>
-                          ) : (
-                            <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                              {userMessages.map((msg) => (
-                                <div
-                                  key={msg.id}
-                                  className="p-2.5 rounded-xl bg-zinc-950/80 border border-zinc-800/80 flex items-start justify-between gap-3 text-xs"
-                                >
-                                  <div className="space-y-0.5">
-                                    <div className="flex items-center gap-2">
-                                      <span className="font-bold text-zinc-200">{msg.username}</span>
-                                      <span className="text-[10px] text-zinc-500 font-mono">
-                                        {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                      </span>
-                                      {msg.type && msg.type !== 'chat' && (
-                                        <span className="text-[9px] px-1.5 py-0.2 rounded bg-purple-950 text-purple-300 border border-purple-500/30 uppercase font-bold">
-                                          {msg.type}
-                                        </span>
-                                      )}
-                                    </div>
-                                    <p className="text-zinc-300">{msg.text}</p>
-                                  </div>
-
-                                  <span className="text-[10px] text-zinc-500 font-mono shrink-0">
-                                    ID: {msg.id}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* TAB 2: TOURNAMENT WINNER PAYOUTS REGISTRY */}
+        {/* TAB 1: PAYOUT APPROVALS */}
         {activeTab === 'payouts' && (
           <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
-            {/* Filters */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3.5 rounded-2xl bg-zinc-900/90 border border-zinc-800">
-              <div className="relative flex-1 w-full sm:w-auto">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
-                <input
-                  type="text"
-                  placeholder="Search winners by username, handle, or date..."
-                  value={payoutSearchQuery}
-                  onChange={(e) => setPayoutSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-1.5 rounded-xl bg-zinc-950 border border-zinc-700 text-zinc-200 text-xs placeholder:text-zinc-500 focus:outline-none focus:border-amber-500"
-                />
+            
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-black uppercase tracking-wider text-white">
+                  Real Money Cashout Requests & Approvals
+                </h3>
+                <p className="text-xs text-zinc-400">
+                  Review withdrawal requests from players. Approve and execute payouts or reject and auto-refund chips.
+                </p>
               </div>
 
-              <div className="flex items-center gap-1 bg-zinc-950 p-1 rounded-xl border border-zinc-800 text-xs w-full sm:w-auto justify-center">
-                <button
-                  onClick={() => {
-                    sound.playChip();
-                    setFilterPayoutStatus('pending');
-                  }}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    filterPayoutStatus === 'pending'
-                      ? 'bg-amber-500 text-zinc-950 font-black shadow-md'
-                      : 'text-zinc-400 hover:text-zinc-200'
-                  }`}
-                >
-                  Pending ({dailyWinners.filter(w => w.payoutStatus === 'Pending').length})
-                </button>
-                <button
-                  onClick={() => {
-                    sound.playChip();
-                    setFilterPayoutStatus('paid');
-                  }}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    filterPayoutStatus === 'paid'
-                      ? 'bg-emerald-600 text-white font-black shadow-md'
-                      : 'text-zinc-400 hover:text-zinc-200'
-                  }`}
-                >
-                  Paid Archive
-                </button>
-                <button
-                  onClick={() => {
-                    sound.playChip();
-                    setFilterPayoutStatus('all');
-                  }}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    filterPayoutStatus === 'all'
-                      ? 'bg-purple-600 text-white font-black shadow-md'
-                      : 'text-zinc-400 hover:text-zinc-200'
-                  }`}
-                >
-                  All ({dailyWinners.length})
-                </button>
-              </div>
+              <span className="text-xs font-mono font-bold text-amber-400 px-3 py-1 rounded-xl bg-amber-500/10 border border-amber-500/30">
+                Rate: $1.00 USD = 100 Chips
+              </span>
             </div>
 
-            {/* Winners Records */}
-            {filteredWinners.length === 0 ? (
-              <div className="py-12 text-center rounded-2xl bg-zinc-900/40 border border-zinc-800/60">
-                <Award className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
-                <p className="text-sm font-bold text-zinc-400">No payout records found for this filter.</p>
+            {payoutRequests.length === 0 ? (
+              <div className="p-8 rounded-3xl bg-zinc-900/40 border border-zinc-800 text-center space-y-2">
+                <DollarSign className="w-10 h-10 text-zinc-600 mx-auto" />
+                <span className="text-xs text-zinc-400 block font-bold">No real-money payout requests in queue.</span>
+                <span className="text-[11px] text-zinc-600 block">Players can request cashouts via the Real Money Cashier modal.</span>
               </div>
             ) : (
               <div className="space-y-3">
-                {filteredWinners.map((winner) => (
+                {payoutRequests.map(req => (
                   <div
-                    key={winner.id}
+                    key={req.id}
                     className={`p-4 rounded-2xl border transition-all ${
-                      winner.payoutStatus === 'Pending'
-                        ? 'bg-amber-950/15 border-amber-500/40 shadow-lg shadow-amber-950/20'
-                        : 'bg-zinc-900/60 border-zinc-800/80'
+                      req.status === 'Pending'
+                        ? 'bg-gradient-to-r from-amber-950/30 via-zinc-900 to-zinc-900 border-amber-500/60 shadow-lg'
+                        : req.status === 'Processing'
+                        ? 'bg-zinc-900/90 border-blue-500/50'
+                        : req.status === 'Paid'
+                        ? 'bg-zinc-900/60 border-emerald-500/40 opacity-80'
+                        : 'bg-zinc-900/60 border-rose-500/40 opacity-70'
                     }`}
                   >
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-2xl bg-zinc-950 border border-zinc-700 flex items-center justify-center text-xl shadow-inner shrink-0">
-                          {winner.avatar}
+                        <div className="w-11 h-11 rounded-2xl bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xl shrink-0">
+                          {req.avatar || '👑'}
                         </div>
+
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="font-black text-zinc-100 text-sm">{winner.username}</span>
-                            <span className={`text-[10px] px-2 py-0.2 rounded-full font-black uppercase ${
-                              winner.payoutStatus === 'Pending'
-                                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                                : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                            <span className="text-sm font-black text-white">{req.username}</span>
+                            <span className="text-base font-black font-mono text-emerald-400">
+                              ${req.usdAmount}.00 USD
+                            </span>
+                            <span className="text-xs font-mono text-zinc-400">
+                              ({req.chipsAmount.toLocaleString()} chips)
+                            </span>
+                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase font-mono ${
+                              req.status === 'Paid'
+                                ? 'bg-emerald-500 text-zinc-950'
+                                : req.status === 'Processing'
+                                ? 'bg-blue-500 text-white'
+                                : req.status === 'Rejected'
+                                ? 'bg-rose-500 text-white'
+                                : 'bg-amber-500 text-zinc-950'
                             }`}>
-                              {winner.payoutStatus}
+                              {req.status}
                             </span>
                           </div>
-                          <div className="text-xs text-zinc-400 flex items-center gap-2 mt-0.5">
-                            <span>{winner.formattedDate}</span>
-                            <span>•</span>
-                            <span className="font-mono text-amber-300 font-bold">{winner.formattedScore}</span>
+
+                          <div className="text-xs text-zinc-300 mt-1 flex items-center gap-2">
+                            <span className="uppercase font-bold text-amber-400 text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/30">
+                              {req.method}
+                            </span>
+                            <span className="font-mono text-zinc-300">{req.destination}</span>
                           </div>
+
+                          {req.adminNote && (
+                            <div className="text-[11px] text-zinc-400 mt-1 italic">
+                              Note: {req.adminNote}
+                            </div>
+                          )}
                         </div>
                       </div>
 
-                      {/* Contact Handle Copy & Status Change */}
-                      <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
-                        <button
-                          onClick={() => handleCopyHandle(winner.contactHandle, winner.id)}
-                          className="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-200 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
-                        >
-                          {copiedId === winner.id ? (
-                            <>
-                              <Check className="w-3.5 h-3.5 text-emerald-400" />
-                              <span>Copied!</span>
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="w-3.5 h-3.5 text-zinc-400" />
-                              <span>{winner.contactPlatform === 'discord' ? 'Discord' : 'Telegram'}: {winner.contactHandle}</span>
-                            </>
-                          )}
-                        </button>
+                      {/* Action Controls for Admin/Mod */}
+                      <div className="flex items-center gap-2 w-full sm:w-auto justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-zinc-800">
+                        {req.status !== 'Paid' && req.status !== 'Rejected' && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => handleApprovePayout(req)}
+                              className="px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-emerald-500/20 transition-all cursor-pointer flex items-center gap-1.5 active:scale-98"
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>Approve & Pay</span>
+                            </button>
 
-                        <button
-                          onClick={() => {
-                            sound.playChip();
-                            const newStatus = winner.payoutStatus === 'Pending' ? 'Paid' : 'Pending';
-                            onUpdateWinner(winner.id, { 
-                              payoutStatus: newStatus,
-                              paidAt: newStatus === 'Paid' ? Date.now() : undefined 
-                            });
-                          }}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
-                            winner.payoutStatus === 'Pending'
-                              ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md'
-                              : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-400'
-                          }`}
-                        >
-                          {winner.payoutStatus === 'Pending' ? 'Mark Paid' : 'Revert to Pending'}
-                        </button>
+                            {req.status === 'Pending' && (
+                              <button
+                                type="button"
+                                onClick={() => handleMarkProcessing(req)}
+                                className="px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1"
+                              >
+                                <Clock className="w-3.5 h-3.5" />
+                                <span>Processing</span>
+                              </button>
+                            )}
+
+                            <button
+                              type="button"
+                              onClick={() => setRejectingReqId(req.id)}
+                              className="px-3 py-2 rounded-xl bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-700/60 font-bold text-xs uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1"
+                            >
+                              <Ban className="w-3.5 h-3.5" />
+                              <span>Reject & Refund</span>
+                            </button>
+                          </>
+                        )}
+
+                        {req.status === 'Paid' && (
+                          <div className="text-right text-[10px] font-mono text-emerald-400 font-bold">
+                            ✓ Paid Out & Confirmed
+                          </div>
+                        )}
+                        {req.status === 'Rejected' && (
+                          <div className="text-right text-[10px] font-mono text-rose-400 font-bold">
+                            ✕ Rejected & Refunded
+                          </div>
+                        )}
                       </div>
                     </div>
 
-                    {/* Note editor */}
-                    <div className="mt-3 pt-2.5 border-t border-zinc-800/60 text-xs flex items-center justify-between gap-2">
-                      {editingId === winner.id ? (
-                        <div className="flex items-center gap-2 flex-1">
+                    {/* Rejection Note input drawer */}
+                    {rejectingReqId === req.id && (
+                      <div className="mt-3 p-3 rounded-xl bg-zinc-950 border border-rose-500/50 space-y-2 animate-in fade-in">
+                        <label className="text-[10px] uppercase font-bold text-rose-300 block">
+                          Reason for Rejection (Chips will be immediately returned to {req.username}'s bankroll):
+                        </label>
+                        <div className="flex items-center gap-2">
                           <input
                             type="text"
-                            value={noteText}
-                            onChange={(e) => setNoteText(e.target.value)}
-                            placeholder="Add payout transaction note or ticket link..."
-                            className="flex-1 px-3 py-1 rounded-xl bg-zinc-950 border border-purple-500 text-zinc-200 text-xs focus:outline-none"
-                            autoFocus
+                            value={rejectionNote}
+                            onChange={e => setRejectionNote(e.target.value)}
+                            placeholder="e.g. Account verification required / Incorrect account number"
+                            className="flex-1 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-700 text-xs text-white focus:outline-none focus:border-rose-500"
                           />
                           <button
-                            onClick={() => handleSaveNote(winner.id)}
-                            className="px-3 py-1 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs"
+                            type="button"
+                            onClick={() => handleRejectPayout(req.id)}
+                            className="px-3 py-1.5 rounded-lg bg-rose-600 text-white font-black text-xs uppercase tracking-wider cursor-pointer"
                           >
-                            Save
+                            Confirm Reject
                           </button>
                           <button
-                            onClick={() => setEditingId(null)}
-                            className="px-2 py-1 rounded-xl bg-zinc-800 text-zinc-400 text-xs"
+                            type="button"
+                            onClick={() => setRejectingReqId(null)}
+                            className="px-2 py-1.5 rounded-lg bg-zinc-800 text-zinc-400 text-xs cursor-pointer"
                           >
                             Cancel
                           </button>
                         </div>
-                      ) : (
-                        <div className="flex items-center justify-between w-full text-zinc-400">
-                          <span className="italic">
-                            {winner.payoutNote ? `Note: "${winner.payoutNote}"` : 'No payout note added.'}
-                          </span>
-                          <button
-                            onClick={() => {
-                              sound.playChip();
-                              setEditingId(winner.id);
-                              setNoteText(winner.payoutNote || '');
-                            }}
-                            className="text-purple-400 hover:text-purple-300 font-bold flex items-center gap-1 cursor-pointer"
-                          >
-                            <Edit3 className="w-3 h-3" />
-                            <span>Edit Note</span>
-                          </button>
-                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Daily Tournament Winners Section */}
+            <div className="pt-4 border-t border-zinc-800">
+              <h4 className="text-xs font-black uppercase text-amber-300 mb-2">
+                Daily Tournament Payout Records ({dailyWinners.length})
+              </h4>
+              <div className="space-y-2">
+                {dailyWinners.map(win => (
+                  <div
+                    key={win.id}
+                    className="p-3 rounded-xl bg-zinc-900/60 border border-zinc-800 flex items-center justify-between text-xs"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span>{win.avatar}</span>
+                      <span className="font-bold text-white">{win.username}</span>
+                      <span className="text-amber-300 font-mono font-bold">({win.formattedScore})</span>
+                      <span className="text-[10px] text-zinc-500">{win.formattedDate}</span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className={`text-[9px] px-2 py-0.5 rounded font-black uppercase ${
+                        win.payoutStatus === 'Paid'
+                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                          : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                      }`}>
+                        {win.payoutStatus}
+                      </span>
+                      {win.payoutStatus !== 'Paid' && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            sound.playProfit();
+                            onUpdateDailyWinnerStatus(win.id, 'Paid', 'Manual admin approval');
+                          }}
+                          className="px-2 py-1 rounded-lg bg-emerald-500 text-zinc-950 font-black text-[10px] uppercase cursor-pointer"
+                        >
+                          Mark Paid
+                        </button>
                       )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+          </div>
+        )}
+
+        {/* TAB 2: BALANCE ADJUSTER & MOD TOOLS */}
+        {activeTab === 'balances' && (
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+            
+            {adjustSuccessMsg && (
+              <div className="p-3.5 rounded-2xl bg-emerald-950/80 border border-emerald-500/60 text-emerald-300 text-xs font-bold flex items-center gap-2.5 animate-in fade-in">
+                <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+                <span>{adjustSuccessMsg}</span>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              
+              {/* Left Column: Select Player */}
+              <div className="space-y-3">
+                <label className="text-xs font-bold uppercase text-zinc-300 block">
+                  1. Select Player to Manage
+                </label>
+
+                <div className="relative">
+                  <Search className="w-3.5 h-3.5 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    placeholder="Search player username..."
+                    className="w-full pl-8 pr-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-xs text-white focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                <div className="space-y-1.5 max-h-[360px] overflow-y-auto pr-1">
+                  {filteredUsers.map(user => {
+                    const isSelected = selectedUser?.id === user.id;
+                    return (
+                      <button
+                        key={user.id}
+                        type="button"
+                        onClick={() => {
+                          sound.playChip();
+                          setSelectedUser(user);
+                        }}
+                        className={`w-full p-2.5 rounded-xl border text-left flex items-center justify-between transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-amber-500/20 border-amber-500 text-white font-bold ring-1 ring-amber-500/30'
+                            : 'bg-zinc-900/60 border-zinc-800 text-zinc-300 hover:border-zinc-700'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-base">{user.avatar}</span>
+                          <div>
+                            <span className="text-xs block leading-tight">{user.username}</span>
+                            <span className="text-[10px] text-zinc-500 font-mono block">
+                              {user.vipTier} • {user.userRole || 'player'}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="text-right font-mono text-xs">
+                          <span className="text-amber-300 font-bold">{user.balance.toLocaleString()}c</span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Right 2 Columns: Player Profile & Balance Adjustment Controls */}
+              {selectedUser ? (
+                <div className="md:col-span-2 space-y-4">
+                  
+                  {/* Selected Player Card */}
+                  <div className="p-4 rounded-2xl bg-zinc-900/80 border border-zinc-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-500/20 to-zinc-800 border border-amber-400/40 flex items-center justify-center text-3xl">
+                        {selectedUser.avatar}
+                      </div>
+
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-base font-black text-white">{selectedUser.username}</h3>
+                          {selectedUser.isCurrentUser && (
+                            <span className="px-1.5 py-0.2 rounded text-[8px] font-black uppercase bg-amber-500 text-zinc-950">
+                              YOU
+                            </span>
+                          )}
+                          <span className="px-2 py-0.2 rounded-full text-[9px] font-black uppercase bg-zinc-800 text-zinc-300 border border-zinc-700">
+                            {selectedUser.userRole || 'player'}
+                          </span>
+                        </div>
+
+                        <div className="text-xs text-zinc-400 mt-0.5">
+                          VIP Tier: <strong className="text-amber-300">{selectedUser.vipTier}</strong> • Total Wagered: <span className="font-mono">{formatCompactWager(selectedUser.totalWagered)}c</span>
+                        </div>
+
+                        <div className="text-xs text-zinc-400 mt-0.5 font-mono">
+                          Current Bankroll: <strong className="text-emerald-400 text-sm">{selectedUser.balance.toLocaleString()} Chips</strong> (${(Math.floor(selectedUser.balance / 100)).toLocaleString()}.00 USD)
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Fast Role / Status Toggle */}
+                    <div className="flex flex-col gap-1.5 w-full sm:w-auto">
+                      <div className="flex items-center gap-1">
+                        {(['player', 'moderator', 'admin'] as UserRole[]).map(role => (
+                          <button
+                            key={role}
+                            type="button"
+                            onClick={() => handleUpdateUserRole(selectedUser.id, role)}
+                            className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase transition-all cursor-pointer ${
+                              (selectedUser.userRole || 'player') === role
+                                ? 'bg-amber-500 text-zinc-950 font-black'
+                                : 'bg-zinc-800 text-zinc-400 hover:text-white'
+                            }`}
+                          >
+                            {role}
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="flex items-center gap-1">
+                        {(['active', 'banned'] as AccountStatus[]).map(status => (
+                          <button
+                            key={status}
+                            type="button"
+                            onClick={() => handleUpdateUserStatus(selectedUser.id, status)}
+                            className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase transition-all cursor-pointer ${
+                              selectedUser.accountStatus === status
+                                ? status === 'banned' ? 'bg-rose-600 text-white font-black' : 'bg-emerald-600 text-white font-black'
+                                : 'bg-zinc-800 text-zinc-400 hover:text-white'
+                            }`}
+                          >
+                            {status}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Balance Adjustment Action Box */}
+                  <div className="p-4 rounded-2xl bg-zinc-900/90 border border-amber-500/40 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xs font-black uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
+                        <Coins className="w-4 h-4" />
+                        <span>Execute Balance Modification</span>
+                      </h4>
+
+                      {/* Operation Selector */}
+                      <div className="flex items-center gap-1 bg-zinc-950 p-1 rounded-xl border border-zinc-800">
+                        <button
+                          type="button"
+                          onClick={() => setAdjustmentType('add')}
+                          className={`px-3 py-1 rounded-lg text-xs font-black uppercase flex items-center gap-1 transition-all cursor-pointer ${
+                            adjustmentType === 'add'
+                              ? 'bg-emerald-500 text-zinc-950'
+                              : 'text-zinc-400 hover:text-zinc-200'
+                          }`}
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>Add (+)</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setAdjustmentType('deduct')}
+                          className={`px-3 py-1 rounded-lg text-xs font-black uppercase flex items-center gap-1 transition-all cursor-pointer ${
+                            adjustmentType === 'deduct'
+                              ? 'bg-rose-500 text-white'
+                              : 'text-zinc-400 hover:text-zinc-200'
+                          }`}
+                        >
+                          <Minus className="w-3.5 h-3.5" />
+                          <span>Deduct (-)</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setAdjustmentType('set')}
+                          className={`px-3 py-1 rounded-lg text-xs font-black uppercase flex items-center gap-1 transition-all cursor-pointer ${
+                            adjustmentType === 'set'
+                              ? 'bg-amber-500 text-zinc-950'
+                              : 'text-zinc-400 hover:text-zinc-200'
+                          }`}
+                        >
+                          <Save className="w-3.5 h-3.5" />
+                          <span>Set Exact</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[10px] uppercase font-bold text-zinc-400 block mb-1">
+                          Chip Amount
+                        </label>
+                        <input
+                          type="number"
+                          min={1}
+                          step={1000}
+                          value={adjustAmount}
+                          onChange={e => setAdjustAmount(Math.max(0, parseInt(e.target.value) || 0))}
+                          className="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-700 text-white font-mono font-black text-sm focus:outline-none focus:border-amber-500"
+                        />
+                        <div className="flex items-center gap-1 mt-1.5">
+                          {[1000, 5000, 25000, 100000].map(amt => (
+                            <button
+                              key={amt}
+                              type="button"
+                              onClick={() => setAdjustAmount(amt)}
+                              className="px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-amber-300 text-[10px] font-mono font-bold cursor-pointer"
+                            >
+                              +{formatCompactWager(amt)}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] uppercase font-bold text-zinc-400 block mb-1">
+                          Audit Log Reason
+                        </label>
+                        <select
+                          value={adjustReason}
+                          onChange={e => setAdjustReason(e.target.value)}
+                          className="w-full px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-700 text-white text-xs focus:outline-none focus:border-amber-500"
+                        >
+                          <option value="Promotional Deposit Bonus">Promotional Deposit Bonus</option>
+                          <option value="VIP Cashout Compensation">VIP Cashout Compensation</option>
+                          <option value="Manual Balance Correction">Manual Balance Correction</option>
+                          <option value="Tournament Prize Credited">Tournament Prize Credited</option>
+                          <option value="Administrative Bankroll Reset">Administrative Bankroll Reset</option>
+                          <option value="Security Reversal">Security Reversal</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-zinc-800 flex items-center justify-between">
+                      <span className="text-xs text-zinc-400 font-mono">
+                        New Balance will be:{' '}
+                        <strong className="text-white text-sm">
+                          {(
+                            adjustmentType === 'add'
+                              ? selectedUser.balance + adjustAmount
+                              : adjustmentType === 'deduct'
+                              ? Math.max(0, selectedUser.balance - adjustAmount)
+                              : adjustAmount
+                          ).toLocaleString()} Chips
+                        </strong>
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={handleExecuteBalanceAdjustment}
+                        className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-zinc-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-amber-500/20 transition-all cursor-pointer active:scale-98 flex items-center gap-1.5"
+                      >
+                        <Save className="w-3.5 h-3.5" />
+                        <span>Apply Balance Modification</span>
+                      </button>
+                    </div>
+                  </div>
+
+                </div>
+              ) : (
+                <div className="md:col-span-2 p-8 rounded-2xl bg-zinc-900/40 border border-zinc-800 text-center text-zinc-500 text-xs">
+                  Select a player from the directory to adjust balance or manage credentials.
+                </div>
+              )}
+
+            </div>
+
+          </div>
+        )}
+
+        {/* TAB 3: USER ACCOUNTS DIRECTORY */}
+        {activeTab === 'users' && (
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-black uppercase tracking-wider text-white">
+                Player Directory & VIP Standings ({userList.length})
+              </h3>
+              <span className="text-xs text-zinc-500 font-mono">Real-time local state store</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {userList.map(u => (
+                <div
+                  key={u.id}
+                  className="p-3.5 rounded-2xl bg-zinc-900/80 border border-zinc-800 space-y-2"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl">{u.avatar}</span>
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-black text-white">{u.username}</span>
+                          {u.isCurrentUser && (
+                            <span className="px-1.5 py-0.2 rounded text-[8px] font-black uppercase bg-amber-500 text-zinc-950">
+                              YOU
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-[10px] text-zinc-500 block font-mono">
+                          {u.email || 'No email linked'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase font-mono ${
+                      u.accountStatus === 'banned'
+                        ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
+                        : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                    }`}>
+                      {u.accountStatus}
+                    </span>
+                  </div>
+
+                  <div className="pt-2 border-t border-zinc-800/80 grid grid-cols-2 gap-1 text-[10px] font-mono text-zinc-400">
+                    <div>
+                      <span>Role: </span>
+                      <strong className="text-amber-300 uppercase">{u.userRole || 'player'}</strong>
+                    </div>
+                    <div>
+                      <span>VIP: </span>
+                      <strong className="text-zinc-200">{u.vipTier}</strong>
+                    </div>
+                    <div>
+                      <span>Balance: </span>
+                      <strong className="text-emerald-400">{u.balance.toLocaleString()}c</strong>
+                    </div>
+                    <div>
+                      <span>Wagered: </span>
+                      <strong className="text-zinc-300">{formatCompactWager(u.totalWagered)}c</strong>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 4: FINANCIAL AUDIT LEDGER */}
+        {activeTab === 'ledger' && (
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+            <div>
+              <h3 className="text-sm font-black uppercase tracking-wider text-white mb-1">
+                Financial Audit & Balance Adjustment Log
+              </h3>
+              <p className="text-xs text-zinc-400">
+                Transparent administrative record of all balance modifications, real money deposits, and payout disbursements.
+              </p>
+            </div>
+
+            {balanceAdjustments.length === 0 ? (
+              <div className="p-8 rounded-2xl bg-zinc-900/40 border border-zinc-800 text-center text-xs text-zinc-500">
+                No balance adjustments recorded in this session yet.
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {balanceAdjustments.map(log => (
+                  <div
+                    key={log.id}
+                    className="p-3 rounded-xl bg-zinc-900/80 border border-zinc-800 flex items-center justify-between gap-3 text-xs"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold font-mono ${
+                        log.amountChanged >= 0
+                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                          : 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
+                      }`}>
+                        {log.amountChanged >= 0 ? '+' : '-'}
+                      </div>
+
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-white">{log.username}</span>
+                          <span className={`font-mono font-black ${
+                            log.amountChanged >= 0 ? 'text-emerald-400' : 'text-rose-400'
+                          }`}>
+                            {log.amountChanged >= 0 ? '+' : ''}{log.amountChanged.toLocaleString()} Chips
+                          </span>
+                          <span className="text-[10px] text-zinc-500 font-mono">
+                            ({log.previousBalance.toLocaleString()}c → {log.newBalance.toLocaleString()}c)
+                          </span>
+                        </div>
+
+                        <div className="text-[11px] text-zinc-400 mt-0.5">
+                          Reason: <strong className="text-zinc-200">{log.reason}</strong> • By: <span className="text-amber-300">{log.adjustedBy}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="text-right text-[10px] font-mono text-zinc-500">
+                      {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </div>
                   </div>
                 ))}
@@ -781,6 +901,7 @@ export const ModeratorModal: React.FC<ModeratorModalProps> = ({
             )}
           </div>
         )}
+
       </div>
     </div>
   );

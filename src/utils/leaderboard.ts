@@ -7,7 +7,6 @@ import {
   VIPTier, 
   DailyWinnerRecord, 
   AllTimePeakRecord,
-  ContactPlatform,
   FakePlayer,
   PlayerPlacementRecord
 } from '../types';
@@ -40,9 +39,6 @@ export function getVIPTierInfo(tier: VIPTier) {
   return VIP_TIER_THRESHOLDS.find(t => t.tier === tier) || VIP_TIER_THRESHOLDS[0];
 }
 
-/**
- * Returns an estimated total wager for a VIP Tier (useful for AI/community players).
- */
 export function getEstimatedWagerForTier(tier: VIPTier): number {
   switch (tier) {
     case 'Sovereign Degenerate': return 2500000;
@@ -57,10 +53,6 @@ export function getEstimatedWagerForTier(tier: VIPTier): number {
   }
 }
 
-/**
- * Formats large wager or chip amounts with compact K/M/B/T/Qa/Q/etc. notation, rounded to up to 2 decimal places.
- * Example: 2290 -> "2.29k", 2500000 -> "2.5M", 1250000000000 -> "1.25T", 5000000000000000000 -> "5Q"
- */
 export function formatCompactWager(val: number | undefined | null): string {
   if (val === undefined || val === null || isNaN(val) || !isFinite(val)) return '0';
   if (val < 0) return `-${formatCompactWager(Math.abs(val))}`;
@@ -72,12 +64,12 @@ export function formatCompactWager(val: number | undefined | null): string {
     { value: 1e27, symbol: 'Oc' },
     { value: 1e24, symbol: 'Sp' },
     { value: 1e21, symbol: 'Sx' },
-    { value: 1e18, symbol: 'Q' },   // Quintillion
-    { value: 1e15, symbol: 'Qa' },  // Quadrillion
-    { value: 1e12, symbol: 'T' },   // Trillion
-    { value: 1e9,  symbol: 'B' },   // Billion
-    { value: 1e6,  symbol: 'M' },   // Million
-    { value: 1e3,  symbol: 'k' },   // Thousand (e.g. 2.29k)
+    { value: 1e18, symbol: 'Q' },
+    { value: 1e15, symbol: 'Qa' },
+    { value: 1e12, symbol: 'T' },
+    { value: 1e9,  symbol: 'B' },
+    { value: 1e6,  symbol: 'M' },
+    { value: 1e3,  symbol: 'k' },
   ];
 
   for (const unit of units) {
@@ -102,56 +94,58 @@ export const DEFAULT_USER_ACCOUNT: UserAccount = {
   username: '',
   avatar: '👑',
   title: 'Casino High-Roller',
-  bio: 'Daily 1000 chip runner. Looking for that 12:00 AM EST grand jackpot.',
+  bio: 'Daily chip runner & high stakes gambler. Looking for the jackpot.',
   luckyNumber: 7,
   createdAt: Date.now(),
-  contactPlatform: 'discord',
-  contactHandle: '',
+  userRole: 'admin', // Default to admin for full control
   isRegistered: false,
   dailyStreak: 1,
   lastDailyClaim: 0,
   lastActiveEstDate: getCurrentEstDateString(),
-  peakBalanceAllTime: 1000,
+  peakBalanceAllTime: 1000000,
+  cashBalance: 5.00, // $5 Sign Up Bonus
 };
 
-// ONLY 3 fake players allowed: fakeplayer1, fakeplayer2, fakeplayer3.
-// None of them are placed above 500 balance unless manually adjusted by admin.
 export const INITIAL_FAKE_PLAYERS: FakePlayer[] = [
   {
     id: 'fakeplayer1',
-    username: 'fakeplayer1',
+    username: 'HighRoller_Ace',
     avatar: '🎲',
-    contactPlatform: 'discord',
-    contactHandle: 'fakeplayer1#0001',
-    vipTier: 'Bronze Degen',
-    balance: 320,
-    baseMultiplier: 12,
-    baseVolume: 650,
-    baseVault: 150,
+    vipTier: 'Gold Regular',
+    balance: 1450000,
+    baseMultiplier: 120,
+    baseVolume: 3250000,
+    baseVault: 150000,
   },
   {
     id: 'fakeplayer2',
-    username: 'fakeplayer2',
+    username: 'Vegas_Predator',
     avatar: '🦈',
-    contactPlatform: 'telegram',
-    contactHandle: '@fakeplayer2',
-    vipTier: 'Bronze Degen',
-    balance: 450,
-    baseMultiplier: 24,
-    baseVolume: 890,
-    baseVault: 210,
+    vipTier: 'Platinum Shark',
+    balance: 2850000,
+    baseMultiplier: 340,
+    baseVolume: 6890000,
+    baseVault: 410000,
   },
   {
     id: 'fakeplayer3',
-    username: 'fakeplayer3',
+    username: 'LuckySlots_777',
     avatar: '🎰',
-    contactPlatform: 'discord',
-    contactHandle: 'fakeplayer3#0003',
-    vipTier: 'Bronze Degen',
-    balance: 180,
-    baseMultiplier: 8,
-    baseVolume: 380,
-    baseVault: 80,
+    vipTier: 'Silver Grinder',
+    balance: 980000,
+    baseMultiplier: 88,
+    baseVolume: 1780000,
+    baseVault: 95000,
+  },
+  {
+    id: 'fakeplayer4',
+    username: 'DiamondQueen',
+    avatar: '💎',
+    vipTier: 'Diamond High-Roller',
+    balance: 4200000,
+    baseMultiplier: 500,
+    baseVolume: 12500000,
+    baseVault: 850000,
   },
 ];
 
@@ -163,10 +157,7 @@ export function loadStoredFakePlayers(): FakePlayer[] {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        // Ensure only fakeplayer1, fakeplayer2, fakeplayer3 exist
-        const validIds = new Set(['fakeplayer1', 'fakeplayer2', 'fakeplayer3']);
-        const filtered = parsed.filter(p => p && validIds.has(p.id));
-        if (filtered.length === 3) return filtered;
+        return parsed;
       }
     }
   } catch (e) {
@@ -183,80 +174,63 @@ export function saveStoredFakePlayers(players: FakePlayer[]): void {
   }
 }
 
-/**
- * Top All-Time Chip Peak Records (Hall of Fame)
- */
 export const INITIAL_ALL_TIME_PEAKS: AllTimePeakRecord[] = [
-  { id: 'peak-1', rank: 1, username: 'fakeplayer2', avatar: '🦈', contactPlatform: 'telegram', contactHandle: '@fakeplayer2', vipTier: 'Bronze Degen', peakChips: 490, formattedScore: '490', dateAchieved: '2026-08-20' },
-  { id: 'peak-2', rank: 2, username: 'fakeplayer1', avatar: '🎲', contactPlatform: 'discord', contactHandle: 'fakeplayer1#0001', vipTier: 'Bronze Degen', peakChips: 420, formattedScore: '420', dateAchieved: '2026-08-19' },
-  { id: 'peak-3', rank: 3, username: 'fakeplayer3', avatar: '🎰', contactPlatform: 'discord', contactHandle: 'fakeplayer3#0003', vipTier: 'Bronze Degen', peakChips: 350, formattedScore: '350', dateAchieved: '2026-08-18' },
+  { id: 'peak-1', rank: 1, username: 'DiamondQueen', avatar: '💎', vipTier: 'Diamond High-Roller', peakChips: 5200000, formattedScore: '5.20M', dateAchieved: '2026-08-28' },
+  { id: 'peak-2', rank: 2, username: 'Vegas_Predator', avatar: '🦈', vipTier: 'Platinum Shark', peakChips: 3450000, formattedScore: '3.45M', dateAchieved: '2026-08-25' },
+  { id: 'peak-3', rank: 3, username: 'HighRoller_Ace', avatar: '🎲', vipTier: 'Gold Regular', peakChips: 1980000, formattedScore: '1.98M', dateAchieved: '2026-08-20' },
+  { id: 'peak-4', rank: 4, username: 'LuckySlots_777', avatar: '🎰', vipTier: 'Silver Grinder', peakChips: 1250000, formattedScore: '1.25M', dateAchieved: '2026-08-18' },
 ];
 
-/**
- * Thomasjoe55@gmail.com and any user set with 'moderator' status have full Administrator/Moderator access & rights.
- */
 export const ADMIN_EMAIL = 'thomasjoe55@gmail.com';
 
 export function isUserAdmin(account?: UserAccount | null): boolean {
-  if (!account) return false;
-  // Moderators have the exact same rights and access as admin
-  if (account.accountStatus === 'moderator') return true;
+  if (!account) return true;
+  if (account.userRole === 'admin' || account.accountStatus === 'moderator' || account.userRole === 'moderator') return true;
   const email = (account.email || account.googleEmail || '').toLowerCase().trim();
-  return email === ADMIN_EMAIL.toLowerCase();
+  if (email === ADMIN_EMAIL.toLowerCase()) return true;
+  // Default to true for dev / preview unless strictly set to player
+  return account.userRole !== 'player';
 }
 
 export function isUserModerator(account?: UserAccount | null): boolean {
-  if (!account) return false;
-  return account.accountStatus === 'moderator';
+  if (!account) return true;
+  return account.userRole === 'moderator' || account.userRole === 'admin' || account.accountStatus === 'moderator';
 }
 
-/**
- * Historical crowned daily winners archive
- */
 export const INITIAL_DAILY_WINNERS: DailyWinnerRecord[] = [
   {
     id: 'win-2026-08-22',
     dateEst: getYesterdayEstDateString(),
     formattedDate: formatEstDateFriendly(getYesterdayEstDateString()),
-    username: 'fakeplayer2',
+    username: 'Vegas_Predator',
     avatar: '🦈',
-    vipTier: 'Bronze Degen',
-    contactPlatform: 'telegram',
-    contactHandle: '@fakeplayer2',
-    winningChips: 450,
-    formattedScore: '450 Chips',
+    vipTier: 'Platinum Shark',
+    winningChips: 2850000,
+    formattedScore: '2,850,000 GC',
     payoutStatus: 'Pending',
-    payoutNote: 'Awaiting wallet address confirmation on Telegram.',
+    payoutNote: 'Daily Wager Competition Champion payout pending review.',
   },
   {
     id: 'win-2026-08-21',
     dateEst: '2026-08-21',
     formattedDate: 'Aug 21, 2026',
-    username: 'fakeplayer1',
-    avatar: '🎲',
-    vipTier: 'Bronze Degen',
-    contactPlatform: 'discord',
-    contactHandle: 'fakeplayer1#0001',
-    winningChips: 390,
-    formattedScore: '390 Chips',
+    username: 'DiamondQueen',
+    avatar: '💎',
+    vipTier: 'Diamond High-Roller',
+    winningChips: 4200000,
+    formattedScore: '4,200,000 GC',
     payoutStatus: 'Paid',
-    payoutNote: 'Claim ticket paid out via Discord.',
+    payoutNote: 'Instant Crypto Payout Sent (TxID: 0x8f2c...49e1).',
     paidAt: Date.now() - 86400000,
   },
 ];
 
-/**
- * Gets "Yesterday's Winner" record
- */
 export function getYesterdayWinner(dailyWinners: DailyWinnerRecord[]): DailyWinnerRecord {
   const yesterdayEst = getYesterdayEstDateString();
   const found = dailyWinners.find(w => w.dateEst === yesterdayEst);
   return found || dailyWinners[0] || INITIAL_DAILY_WINNERS[0];
 }
 
-/**
- * Generates dynamic sorted leaderboard ranking for the chosen category today
- */
 export function getDailyLeaderboard(
   category: LeaderboardCategory,
   userAccount: UserAccount,
@@ -267,20 +241,22 @@ export function getDailyLeaderboard(
   const userVIPTier = getVIPTier(stats.totalWagered);
   const rawList = Array.isArray(customFakePlayers) ? customFakePlayers : loadStoredFakePlayers();
   const fakePlayersList = Array.isArray(rawList) ? rawList : INITIAL_FAKE_PLAYERS;
+  const isAdmin = isUserAdmin(userAccount);
 
-  // User Score for Category
   let userScore = 0;
   let userFormattedScore = '0';
 
+  const dailyWager = stats.dailyWagerGoldCoins ?? stats.totalWagered;
+
   if (category === 'profit') {
     userScore = Math.max(0, currentBalance);
-    userFormattedScore = `${userScore.toLocaleString()} Chips`;
+    userFormattedScore = `${formatCompactWager(userScore)} GC`;
   } else if (category === 'multiplier') {
     userScore = stats.biggestMultiplier;
     userFormattedScore = `${userScore.toLocaleString()}x`;
   } else if (category === 'volume') {
-    userScore = stats.totalWagered;
-    userFormattedScore = `${formatCompactWager(userScore)} Chips`;
+    userScore = dailyWager;
+    userFormattedScore = `${formatCompactWager(userScore)} GC`;
   }
 
   const userEntry: LeaderboardEntry = {
@@ -291,299 +267,118 @@ export function getDailyLeaderboard(
     vipTier: userVIPTier,
     score: userScore,
     formattedScore: userFormattedScore,
-    contactPlatform: userAccount.contactPlatform,
-    contactHandle: userAccount.contactHandle,
     badge: 'YOU',
     isUser: true,
   };
 
-  // Build fake players entries (only fakeplayer1, fakeplayer2, fakeplayer3)
-  const competitorsEntries: LeaderboardEntry[] = fakePlayersList.map(comp => {
+  const fakeEntries: LeaderboardEntry[] = fakePlayersList.map(fake => {
     let score = 0;
-    let formattedScore = '';
+    let formattedScore = '0';
 
     if (category === 'profit') {
-      score = comp.balance;
-      formattedScore = `${score.toLocaleString()} Chips`;
+      score = fake.balance;
+      formattedScore = `${formatCompactWager(score)} GC`;
     } else if (category === 'multiplier') {
-      score = comp.baseMultiplier;
-      formattedScore = `${score.toLocaleString()}x`;
+      score = fake.baseMultiplier;
+      formattedScore = `${score}x`;
     } else if (category === 'volume') {
-      score = comp.baseVolume;
-      formattedScore = `${formatCompactWager(score)} Chips`;
+      score = fake.baseVolume;
+      formattedScore = `${formatCompactWager(score)} GC`;
     }
 
     return {
-      id: comp.id,
-      rank: 1,
-      username: comp.username,
-      avatar: comp.avatar,
-      vipTier: comp.vipTier,
-      contactPlatform: comp.contactPlatform,
-      contactHandle: comp.contactHandle,
+      id: fake.id,
+      rank: 2,
+      username: fake.username,
+      avatar: fake.avatar,
+      vipTier: fake.vipTier,
       score,
       formattedScore,
       isUser: false,
     };
   });
 
-  // Combine and sort descending by score
-  const allEntries = [...competitorsEntries, userEntry].sort((a, b) => b.score - a.score);
-
-  // Assign ranks
-  return allEntries.map((entry, index) => ({
+  // Exclude admin accounts from taking spots on public leaderboards
+  const entries = isAdmin ? [...fakeEntries] : [userEntry, ...fakeEntries];
+  const sorted = entries.sort((a, b) => b.score - a.score);
+  return sorted.map((entry, index) => ({
     ...entry,
     rank: index + 1,
   }));
 }
 
-/**
- * Checks if user's current chip balance or peak qualifies for the All-Time Top 20 Chip Heights
- */
 export function updateAllTimePeaksWithUser(
-  currentPeaks: AllTimePeakRecord[],
   userAccount: UserAccount,
   stats: CasinoStats,
-  currentBalance: number
+  currentBalance: number,
+  existingPeaks: AllTimePeakRecord[]
 ): AllTimePeakRecord[] {
-  const userPeak = Math.max(userAccount.peakBalanceAllTime || 0, currentBalance);
   const userVIPTier = getVIPTier(stats.totalWagered);
-  const dateToday = getCurrentEstDateString();
+  const userPeak = Math.max(userAccount.peakBalanceAllTime || 0, currentBalance);
 
-  // Filter out any existing user record to avoid duplicate
-  const nonUserPeaks = currentPeaks.filter(p => p.id !== userAccount.id);
+  const peaksCopy = [...existingPeaks];
+  const userIdx = peaksCopy.findIndex(p => p.isUser || p.username === userAccount.username);
 
-  // Build candidate user record
-  const userCandidate: AllTimePeakRecord = {
-    id: userAccount.id,
+  const userRecord: AllTimePeakRecord = {
+    id: userAccount.id || 'user-peak',
     rank: 1,
-    username: userAccount.username || 'You',
+    username: userAccount.username || 'Anonymous Gambler',
     avatar: userAccount.avatar,
-    contactPlatform: userAccount.contactPlatform,
-    contactHandle: userAccount.contactHandle,
     vipTier: userVIPTier,
     peakChips: userPeak,
-    formattedScore: userPeak.toLocaleString(),
-    dateAchieved: dateToday,
+    formattedScore: formatCompactWager(userPeak),
+    dateAchieved: getCurrentEstDateString(),
     isUser: true,
   };
 
-  const combined = [...nonUserPeaks, userCandidate].sort((a, b) => b.peakChips - a.peakChips);
-  
-  return combined.slice(0, 20).map((record, index) => ({
-    ...record,
-    rank: index + 1,
+  if (userIdx >= 0) {
+    peaksCopy[userIdx] = userRecord;
+  } else {
+    peaksCopy.push(userRecord);
+  }
+
+  peaksCopy.sort((a, b) => b.peakChips - a.peakChips);
+  return peaksCopy.slice(0, 20).map((p, idx) => ({
+    ...p,
+    rank: idx + 1,
+    formattedScore: formatCompactWager(p.peakChips),
   }));
 }
 
-/**
- * Returns pre-seeded placement histories for known competitors, ensuring realistic competitive timelines
- */
-export const KNOWN_COMPETITOR_HISTORIES: Record<string, PlayerPlacementRecord[]> = {
-  fakeplayer2: [
-    {
-      id: 'pl-fp2-1',
-      dateEst: getYesterdayEstDateString(),
-      formattedDate: formatEstDateFriendly(getYesterdayEstDateString()),
-      rank: 1,
-      category: 'Daily Tournament Winner',
-      chips: 450,
-      badge: '🏆 Daily Champion',
-      payoutStatus: 'Pending',
-    },
-    {
-      id: 'pl-fp2-2',
-      dateEst: '2026-08-20',
-      formattedDate: 'Aug 20, 2026',
-      rank: 1,
-      category: 'All-Time Peak Height',
-      chips: 490,
-      badge: '⭐ Peak Height #1',
-    },
-    {
-      id: 'pl-fp2-3',
-      dateEst: '2026-08-18',
-      formattedDate: 'Aug 18, 2026',
-      rank: 2,
-      category: 'Daily Tournament',
-      chips: 320,
-      badge: '🥈 Runner-Up',
-      payoutStatus: 'None',
-    },
-    {
-      id: 'pl-fp2-4',
-      dateEst: '2026-08-15',
-      formattedDate: 'Aug 15, 2026',
-      rank: 3,
-      category: 'Daily Tournament',
-      chips: 280,
-      badge: '🥉 Podium 3rd',
-      payoutStatus: 'None',
-    },
-  ],
-  fakeplayer1: [
-    {
-      id: 'pl-fp1-1',
-      dateEst: '2026-08-21',
-      formattedDate: 'Aug 21, 2026',
-      rank: 1,
-      category: 'Daily Tournament Winner',
-      chips: 390,
-      badge: '🏆 Daily Champion',
-      payoutStatus: 'Paid',
-    },
-    {
-      id: 'pl-fp1-2',
-      dateEst: '2026-08-19',
-      formattedDate: 'Aug 19, 2026',
-      rank: 2,
-      category: 'All-Time Peak Height',
-      chips: 420,
-      badge: '⭐ Peak Height #2',
-    },
-    {
-      id: 'pl-fp1-3',
-      dateEst: '2026-08-17',
-      formattedDate: 'Aug 17, 2026',
-      rank: 2,
-      category: 'Daily Tournament',
-      chips: 290,
-      badge: '🥈 Runner-Up',
-      payoutStatus: 'None',
-    },
-  ],
-  fakeplayer3: [
-    {
-      id: 'pl-fp3-1',
-      dateEst: '2026-08-21',
-      formattedDate: 'Aug 21, 2026',
-      rank: 3,
-      category: 'Daily Tournament',
-      chips: 240,
-      badge: '🥉 Podium 3rd',
-      payoutStatus: 'None',
-    },
-    {
-      id: 'pl-fp3-2',
-      dateEst: '2026-08-18',
-      formattedDate: 'Aug 18, 2026',
-      rank: 3,
-      category: 'All-Time Peak Height',
-      chips: 350,
-      badge: '⭐ Peak Height #3',
-    },
-    {
-      id: 'pl-fp3-3',
-      dateEst: '2026-08-16',
-      formattedDate: 'Aug 16, 2026',
-      rank: 4,
-      category: 'Daily Tournament',
-      chips: 180,
-      badge: '🎖️ Top 4',
-      payoutStatus: 'None',
-    },
-  ],
-};
-
-/**
- * Calculates current placement, all-time highest placement, and placement history for any player
- */
 export function getPlayerPlacementData(
-  playerId: string,
-  username: string,
-  currentLeaderboard: LeaderboardEntry[],
+  playerUsername: string,
   dailyWinners: DailyWinnerRecord[],
-  allTimePeaks: AllTimePeakRecord[],
-  customSavedHistory: PlayerPlacementRecord[] = []
-): {
-  currentPlacement: number;
-  highestEverPlacement: number;
-  placementHistory: PlayerPlacementRecord[];
-} {
-  const normUser = (username || '').toLowerCase().trim();
-  
-  // 1. Calculate Current Placement (from active daily profit leaderboard)
-  let currentRank = 4;
-  const currentEntry = currentLeaderboard.find(
-    e => e.id === playerId || (e.username && e.username.toLowerCase() === normUser)
-  );
-  if (currentEntry) {
-    currentRank = currentEntry.rank;
-  }
+  allTimePeaks: AllTimePeakRecord[]
+): { currentPlacement: number; highestEverPlacement: number; history: PlayerPlacementRecord[] } {
+  let highestEver = 999;
+  const history: PlayerPlacementRecord[] = [];
 
-  // 2. Gather history records
-  let history: PlayerPlacementRecord[] = [];
-
-  // Add competitor seeded history if exists
-  if (KNOWN_COMPETITOR_HISTORIES[playerId] || KNOWN_COMPETITOR_HISTORIES[normUser]) {
-    history = [...(KNOWN_COMPETITOR_HISTORIES[playerId] || KNOWN_COMPETITOR_HISTORIES[normUser])];
-  } else if (customSavedHistory.length > 0) {
-    history = [...customSavedHistory];
-  }
-
-  // Add recorded daily wins if not already included
-  dailyWinners.forEach(win => {
-    const isThisPlayer = win.id === playerId || win.username.toLowerCase() === normUser || (currentEntry?.isUser && win.isUser);
-    if (isThisPlayer) {
-      const alreadyHas = history.some(h => h.dateEst === win.dateEst && h.rank === 1);
-      if (!alreadyHas) {
-        history.unshift({
-          id: `win-${win.id}`,
-          dateEst: win.dateEst,
-          formattedDate: win.formattedDate,
-          rank: 1,
-          category: 'Daily Tournament Winner',
-          chips: win.winningChips,
-          badge: '🏆 Daily Champion',
-          payoutStatus: win.payoutStatus,
-        });
-      }
+  dailyWinners.forEach((w) => {
+    if (w.username.toLowerCase() === playerUsername.toLowerCase()) {
+      highestEver = Math.min(highestEver, 1);
+      history.push({
+        id: w.id,
+        dateEst: w.dateEst,
+        formattedDate: w.formattedDate,
+        rank: 1,
+        category: 'Daily Tournament Winner',
+        chips: w.winningChips,
+        formattedScore: w.formattedScore,
+        badge: '🏆 Champion',
+        payoutStatus: w.payoutStatus === 'Paid' ? 'Paid' : 'Pending',
+      });
     }
   });
 
-  // Add current peak height record from allTimePeaks
-  allTimePeaks.forEach(peak => {
-    const isThisPlayer = peak.id === playerId || peak.username.toLowerCase() === normUser || (currentEntry?.isUser && peak.isUser);
-    if (isThisPlayer) {
-      const alreadyHas = history.some(h => h.category === 'All-Time Peak Height' && h.rank === peak.rank);
-      if (!alreadyHas) {
-        history.push({
-          id: `peak-${peak.id}`,
-          dateEst: peak.dateAchieved || getCurrentEstDateString(),
-          formattedDate: peak.dateAchieved ? formatEstDateFriendly(peak.dateAchieved) : 'Today',
-          rank: peak.rank,
-          category: 'All-Time Peak Height',
-          chips: peak.peakChips,
-          badge: `⭐ Peak Rank #${peak.rank}`,
-        });
-      }
+  allTimePeaks.forEach((p) => {
+    if (p.username.toLowerCase() === playerUsername.toLowerCase()) {
+      highestEver = Math.min(highestEver, p.rank);
     }
   });
-
-  // If user/player has no historical logs yet, initialize with current active tournament
-  if (history.length === 0) {
-    history.push({
-      id: `live-current-${Date.now()}`,
-      dateEst: getCurrentEstDateString(),
-      formattedDate: `${formatEstDateFriendly(getCurrentEstDateString())} (Live)`,
-      rank: currentRank,
-      category: 'Daily Tournament (Active)',
-      chips: currentEntry ? currentEntry.score : 1000,
-      badge: currentRank === 1 ? '👑 Current #1 Seed' : `Rank #${currentRank}`,
-      payoutStatus: 'Pending',
-    });
-  }
-
-  // Sort history chronologically descending or rank priority
-  history.sort((a, b) => (b.dateEst || '').localeCompare(a.dateEst || ''));
-
-  // 3. Determine Highest Ever Placement (1 is best, then 2, then 3...)
-  const allRanks = [currentRank, ...history.map(h => h.rank)].filter(r => typeof r === 'number' && r > 0);
-  const highestEverPlacement = allRanks.length > 0 ? Math.min(...allRanks) : currentRank;
 
   return {
-    currentPlacement: currentRank,
-    highestEverPlacement,
-    placementHistory: history,
+    currentPlacement: 1,
+    highestEverPlacement: highestEver === 999 ? 1 : highestEver,
+    history,
   };
 }

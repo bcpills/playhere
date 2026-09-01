@@ -1,5 +1,6 @@
 export type GameTab = 
   | 'home' 
+  | 'slots'
   | 'blackjack' 
   | 'keno' 
   | 'unboxer' 
@@ -108,10 +109,10 @@ export interface CrateBattle {
   title: string;
   mode: BattleMode;
   maxPlayers: number;
-  crates: LootCrate[]; // Ordered from least expensive to most expensive
+  crates: LootCrate[];
   seats: (BattleSeat | null)[];
   status: 'waiting' | 'in-progress' | 'completed';
-  currentRound: number; // 0 to crates.length - 1
+  currentRound: number;
   createdAt: number;
   createdBy: string;
   winnerTeam?: 1 | 2;
@@ -136,7 +137,12 @@ export interface CasinoStats {
   cratesOpened: number;
   roundsPlayedMines?: number;
   roundsPlayedDice?: number;
+  roundsPlayedDiceDuels?: number;
   roundsPlayedCoinflip?: number;
+  roundsPlayedSlots?: number;
+  dailyWagerGoldCoins?: number;
+  dailyWagerCash?: number;
+  lastDailyWagerDateEst?: string;
   biggestWin: number;
   biggestMultiplier: number;
   sideBetWinsBlackjack: number;
@@ -152,8 +158,7 @@ export type VIPTier =
   | 'Whale of the Lounge' 
   | 'Sovereign Degenerate';
 
-export type ContactPlatform = 'discord' | 'telegram';
-
+export type UserRole = 'player' | 'moderator' | 'admin';
 export type AccountStatus = 'active' | 'moderator' | 'banned' | 'closed';
 export type AccountType = 'free' | 'paid';
 
@@ -165,13 +170,14 @@ export interface UserAccount {
   bio: string;
   luckyNumber: number;
   createdAt: number;
-  contactPlatform: ContactPlatform;
-  contactHandle: string;
+  userRole?: UserRole;
   isRegistered: boolean;
   dailyStreak: number;
   lastDailyClaim: number;
   lastActiveEstDate: string; // YYYY-MM-DD in EST
   peakBalanceAllTime: number; // Highest chip count reached
+  cashBalance?: number; // Real Money / Sweeps Cash in $USD (Starts with $5.00 Sign Up Bonus)
+  lastDailyDollarClaimEstDate?: string; // YYYY-MM-DD for Daily Dollar Reload ($1.00 + 100k GC at Midnight EST)
   unclaimedRakeback?: number; // Accumulated instant rakeback
   totalRakebackClaimed?: number; // Total rakeback redeemed all-time
   claimedMilestoneCrates?: string[]; // IDs of claimed VIP milestone crates
@@ -194,10 +200,10 @@ export interface PlayerPlacementRecord {
   dateEst: string; // YYYY-MM-DD
   formattedDate: string;
   rank: number; // 1, 2, 3, etc.
-  category: string; // 'Daily Race' | 'Peak All-Time' | 'Tournament Winner'
+  category: string;
   chips: number;
   formattedScore?: string;
-  badge?: string; // '🏆 Daily Champion' | '🥈 Runner-Up' | '🥉 Bronze' | '⭐ Top 5'
+  badge?: string;
   payoutStatus?: 'Paid' | 'Pending' | 'Processing' | 'None';
 }
 
@@ -211,8 +217,6 @@ export interface LeaderboardEntry {
   vipTier: VIPTier;
   score: number;
   formattedScore: string;
-  contactPlatform?: ContactPlatform;
-  contactHandle?: string;
   badge?: string;
   isUser?: boolean;
 }
@@ -224,11 +228,9 @@ export interface DailyWinnerRecord {
   username: string;
   avatar: string;
   vipTier: VIPTier;
-  contactPlatform: ContactPlatform;
-  contactHandle: string;
   winningChips: number;
   formattedScore: string;
-  payoutStatus: 'Pending' | 'Paid' | 'Processing';
+  payoutStatus: 'Pending' | 'Paid' | 'Processing' | 'Rejected';
   payoutNote?: string;
   paidAt?: number;
   isUser?: boolean;
@@ -238,8 +240,6 @@ export interface FakePlayer {
   id: string;
   username: string;
   avatar: string;
-  contactPlatform: ContactPlatform;
-  contactHandle: string;
   vipTier: VIPTier;
   balance: number;
   baseMultiplier: number;
@@ -252,8 +252,6 @@ export interface AllTimePeakRecord {
   rank: number;
   username: string;
   avatar: string;
-  contactPlatform: ContactPlatform;
-  contactHandle: string;
   vipTier: VIPTier;
   peakChips: number;
   formattedScore: string;
@@ -271,8 +269,6 @@ export interface ChatMessage {
   timestamp: number;
   badge?: string;
   type?: 'chat' | 'system' | 'jackpot' | 'mod_action' | 'rain';
-  contactPlatform?: ContactPlatform;
-  contactHandle?: string;
   balance?: number;
   totalWagered?: number;
   isUser?: boolean;
@@ -287,8 +283,6 @@ export interface PlayerProfileData {
   username: string;
   avatar: string;
   vipTier: VIPTier;
-  contactPlatform?: ContactPlatform;
-  contactHandle?: string;
   balance: number;
   peakBalance?: number;
   bio?: string;
@@ -311,17 +305,70 @@ export interface AdminManagedUser {
   username: string;
   avatar: string;
   email?: string;
-  contactPlatform: ContactPlatform;
-  contactHandle: string;
   vipTier: VIPTier;
   balance: number;
   peakBalance: number;
   totalWagered: number;
   accountStatus: AccountStatus;
   accountType: AccountType;
+  userRole?: UserRole;
   isAdFree: boolean;
   createdAt: number;
   lastActive: string;
   isCurrentUser?: boolean;
   chatCount?: number;
+}
+
+// REAL MONEY & CASHIER SYSTEM TYPES
+export type PayoutStatus = 'Pending' | 'Processing' | 'Paid' | 'Rejected';
+export type PaymentMethod = 'card' | 'crypto' | 'paypal' | 'apple_pay' | 'cashapp' | 'bank_wire';
+
+export interface PayoutRequest {
+  id: string;
+  userId: string;
+  username: string;
+  avatar: string;
+  chipsAmount: number;
+  usdAmount: number;
+  method: 'bank_wire' | 'crypto' | 'paypal' | 'cashapp';
+  destination: string; // Account # / routing, wallet address, paypal email, $cashtag
+  destinationDetails?: {
+    accountHolder?: string;
+    bankName?: string;
+    routingNumber?: string;
+    cryptoNetwork?: string;
+    walletAddress?: string;
+    tagOrEmail?: string;
+  };
+  requestedAt: number;
+  status: PayoutStatus;
+  adminNote?: string;
+  processedAt?: number;
+  processedBy?: string;
+  transactionRef?: string;
+}
+
+export interface DepositTransaction {
+  id: string;
+  userId: string;
+  username: string;
+  usdAmount: number;
+  chipsCredited: number;
+  method: PaymentMethod;
+  timestamp: number;
+  status: 'Completed' | 'Failed';
+  transactionRef: string;
+  methodDetails?: string;
+}
+
+export interface BalanceAdjustmentLog {
+  id: string;
+  userId: string;
+  username: string;
+  amountChanged: number; // e.g. +5000 or -2000
+  previousBalance: number;
+  newBalance: number;
+  reason: string;
+  adjustedBy: string;
+  timestamp: number;
 }

@@ -12,10 +12,17 @@ import {
   Volume2, 
   VolumeX, 
   ExternalLink,
-  ShieldCheck
+  ShieldCheck,
+  Flame,
+  DollarSign,
+  Gift,
+  Zap,
+  ArrowRight
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { sound } from '../utils/audio';
+import { UserAccount } from '../types';
+import { getTimeUntilEstMidnight } from '../utils/estTime';
 
 interface BailoutModalProps {
   isOpen: boolean;
@@ -24,6 +31,10 @@ interface BailoutModalProps {
   currentBalance: number;
   atmHistory: number[];
   isAdFree?: boolean;
+  userAccount?: UserAccount;
+  onClaimRakeback?: () => void;
+  onClaimDailyDollar?: () => void;
+  canClaimDailyDollar?: boolean;
   onOpenPayForAdFree?: () => void;
 }
 
@@ -80,11 +91,19 @@ export const BailoutModal: React.FC<BailoutModalProps> = ({
   currentBalance,
   atmHistory,
   isAdFree = false,
+  userAccount,
+  onClaimRakeback,
+  onClaimDailyDollar,
+  canClaimDailyDollar = true,
   onOpenPayForAdFree,
 }) => {
+  const [activeTab, setActiveTab] = useState<'rewards' | 'bailout'>('rewards');
   const [claimed, setClaimed] = useState<boolean>(false);
+  const [dailyDollarClaimed, setDailyDollarClaimed] = useState<boolean>(false);
+  const [rakebackClaimed, setRakebackClaimed] = useState<boolean>(false);
   const [activeRoast] = useState<string>(() => SHAME_ROASTS[Math.floor(Math.random() * SHAME_ROASTS.length)]);
   const [now, setNow] = useState<number>(Date.now());
+  const [countdown, setCountdown] = useState<string>('');
   
   // Video Ad Watching State
   const [isWatchingAd, setIsWatchingAd] = useState<boolean>(false);
@@ -92,13 +111,16 @@ export const BailoutModal: React.FC<BailoutModalProps> = ({
   const [adCompleted, setAdCompleted] = useState<boolean>(false);
   const [activeSponsorIndex, setActiveSponsorIndex] = useState<number>(0);
 
-  // Live timer tick for cooldown
+  // Live timer tick for cooldown & midnight countdown
   useEffect(() => {
     if (!isOpen) return;
-    setNow(Date.now());
-    const interval = setInterval(() => {
+    const update = () => {
       setNow(Date.now());
-    }, 1000);
+      const { formatted } = getTimeUntilEstMidnight();
+      setCountdown(formatted);
+    };
+    update();
+    const interval = setInterval(update, 1000);
     return () => clearInterval(interval);
   }, [isOpen]);
 
@@ -133,6 +155,8 @@ export const BailoutModal: React.FC<BailoutModalProps> = ({
   if (!isOpen) return null;
 
   const bailoutAmount = ATM_CONSTANTS.AMOUNT;
+  const unclaimedRakeback = userAccount?.unclaimedRakeback || 0;
+  const totalRakebackClaimed = userAccount?.totalRakebackClaimed || 0;
 
   // Calculate daily pulls (within last 24h)
   const pullsInLast24h = atmHistory.filter(ts => now - ts < ATM_CONSTANTS.ONE_DAY_MS);
@@ -152,13 +176,12 @@ export const BailoutModal: React.FC<BailoutModalProps> = ({
   const cooldownSecs = cooldownRemainingSeconds % 60;
   const formattedCooldown = `${cooldownMinutes.toString().padStart(2, '0')}:${cooldownSecs.toString().padStart(2, '0')}`;
 
-  const canClaim = !claimed && !isDailyLimitReached && !isOnCooldown;
+  const canClaimBailoutNow = !claimed && !isDailyLimitReached && !isOnCooldown;
 
-  const handleInitiateClaim = () => {
-    if (!canClaim) return;
+  const handleInitiateBailoutClaim = () => {
+    if (!canClaimBailoutNow) return;
 
     if (isAdFree) {
-      // VIP Ad-Free users bypass the video ad
       sound.playWin(true);
       confetti({ particleCount: 70, spread: 50, origin: { y: 0.6 } });
       onClaimBailout(bailoutAmount);
@@ -168,7 +191,6 @@ export const BailoutModal: React.FC<BailoutModalProps> = ({
         onClose();
       }, 1200);
     } else {
-      // Free users watch a 5-second sponsor ad
       sound.playChip();
       setActiveSponsorIndex(Math.floor(Math.random() * SPONSOR_ADS.length));
       setAdSecondsRemaining(5);
@@ -177,17 +199,41 @@ export const BailoutModal: React.FC<BailoutModalProps> = ({
     }
   };
 
+  const handleClaimDailyDollarAction = () => {
+    if (!canClaimDailyDollar || dailyDollarClaimed || !onClaimDailyDollar) return;
+    sound.playWin(true);
+    confetti({ particleCount: 120, spread: 80, origin: { y: 0.5 } });
+    setDailyDollarClaimed(true);
+    onClaimDailyDollar();
+    setTimeout(() => {
+      setDailyDollarClaimed(false);
+    }, 2000);
+  };
+
+  const handleClaimRakebackAction = () => {
+    if (unclaimedRakeback <= 0 || rakebackClaimed || !onClaimRakeback) return;
+    sound.playProfit();
+    confetti({ particleCount: 70, spread: 50, origin: { y: 0.6 } });
+    setRakebackClaimed(true);
+    onClaimRakeback();
+    setTimeout(() => {
+      setRakebackClaimed(false);
+    }, 2000);
+  };
+
   const sponsor = SPONSOR_ADS[activeSponsorIndex];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in">
-      <div className="w-full max-w-md bg-zinc-950 border-2 border-red-500 rounded-3xl p-6 sm:p-7 shadow-2xl text-center relative overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in">
+      <div className="w-full max-w-lg bg-zinc-950 border-2 border-purple-500/50 rounded-3xl p-5 sm:p-7 shadow-2xl relative overflow-hidden flex flex-col max-h-[92vh]">
+        
         {/* Glow accent */}
-        <div className="absolute inset-0 bg-gradient-to-b from-red-600/10 via-transparent to-transparent pointer-events-none" />
+        <div className="absolute top-0 right-0 w-64 h-64 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
 
         {/* SCREEN 1: VIDEO AD WATCHING SCREEN */}
         {isWatchingAd ? (
-          <div className="space-y-4 py-2 animate-in fade-in">
+          <div className="space-y-4 py-2 animate-in fade-in text-center">
             {/* Header with progress */}
             <div className="flex items-center justify-between text-xs text-zinc-400">
               <span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/40 text-[10px] font-black uppercase">
@@ -253,157 +299,348 @@ export const BailoutModal: React.FC<BailoutModalProps> = ({
             )}
           </div>
         ) : (
-          /* SCREEN 2: REGULAR ATM SCREEN */
-          <>
-            <div className="w-16 h-16 rounded-2xl bg-red-950 border-2 border-red-500/60 flex items-center justify-center mx-auto mb-3 text-3xl shadow-lg shadow-red-900/40">
-              💸
-            </div>
-
-            <div className="flex items-center justify-center gap-1.5 text-xs font-black uppercase tracking-widest text-red-400">
-              <ShieldAlert className="w-4 h-4" />
-              <span>The ATM of Shame</span>
-            </div>
-
-            <h3 className="text-xl sm:text-2xl font-black text-zinc-100 mt-1">
-              Emergency Casino Bailout
-            </h3>
-
-            <div className="my-3 p-3 rounded-2xl bg-zinc-900/80 border border-zinc-800 text-xs text-zinc-300 italic">
-              "{activeRoast}"
-            </div>
-
-            {/* Grant Pill */}
-            <div className="p-3 rounded-2xl bg-gradient-to-r from-amber-950/60 to-red-950/60 border border-amber-500/40 my-3">
-              <div className="text-[10px] uppercase font-bold text-zinc-400">Stimulus Grant</div>
-              <div className="text-2xl font-black text-amber-300 font-mono">
-                +{bailoutAmount.toLocaleString()} CHIPS
-              </div>
-              {isAdFree ? (
-                <div className="text-[11px] text-purple-300 font-bold mt-1 flex items-center justify-center gap-1">
-                  <Crown className="w-3 h-3 text-amber-400" />
-                  <span>VIP Perk: Instant Claim (No Video Ad)</span>
+          /* SCREEN 2: ATM VAULT & DAILY REWARDS SCREEN */
+          <div className="space-y-4 flex flex-col overflow-y-auto pr-1">
+            
+            {/* Header with Close */}
+            <div className="flex items-center justify-between border-b border-purple-900/40 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-600 to-amber-500 flex items-center justify-center text-xl shadow-md shadow-purple-500/20">
+                  🏧
                 </div>
-              ) : (
-                <div className="text-[11px] text-zinc-400 mt-1 flex items-center justify-center gap-1">
-                  <Play className="w-3 h-3 text-amber-400" />
-                  <span>Requires watching a quick 5-second sponsor ad</span>
-                </div>
-              )}
-            </div>
-
-            {/* Limits & Rules Dashboard */}
-            <div className="grid grid-cols-2 gap-2 my-3 text-left">
-              {/* Daily Pulls Counter */}
-              <div className="p-2.5 rounded-xl bg-zinc-900/90 border border-zinc-800 flex flex-col justify-between">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] uppercase font-bold text-zinc-400">Daily Pulls</span>
-                  <span className={`text-[10px] font-black uppercase px-1.5 py-0.2 rounded-md ${
-                    isDailyLimitReached ? 'bg-red-500/20 text-red-400' : 'bg-emerald-500/20 text-emerald-400'
-                  }`}>
-                    {pullsUsed} / {ATM_CONSTANTS.DAILY_LIMIT}
+                <div>
+                  <h3 className="text-base sm:text-lg font-black uppercase text-zinc-100 flex items-center gap-2">
+                    <span>ATM Rewards & Stimulus Vault</span>
+                  </h3>
+                  <span className="text-[11px] text-zinc-400 block">
+                    Daily Dollar Reload, Rakeback Vault, and Emergency Stimulus
                   </span>
                 </div>
-                <div className="flex gap-1 mt-2">
-                  {Array.from({ length: ATM_CONSTANTS.DAILY_LIMIT }).map((_, i) => (
-                    <div
-                      key={i}
-                      className={`h-1.5 flex-1 rounded-full ${
-                        i < pullsUsed ? 'bg-red-500' : 'bg-zinc-800'
-                      }`}
-                    />
-                  ))}
-                </div>
-                <span className="text-[10px] text-zinc-400 mt-1.5 font-medium">
-                  {isDailyLimitReached ? 'Max 5 reached for today' : `${pullsRemaining} pull${pullsRemaining === 1 ? '' : 's'} remaining`}
-                </span>
               </div>
 
-              {/* Cooldown Status */}
-              <div className="p-2.5 rounded-xl bg-zinc-900/90 border border-zinc-800 flex flex-col justify-between">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] uppercase font-bold text-zinc-400">Cooldown</span>
-                  <Clock className="w-3.5 h-3.5 text-zinc-400" />
-                </div>
-                <div className="mt-1">
-                  {isOnCooldown ? (
-                    <div className="text-sm font-black font-mono text-amber-400">
-                      ⏳ {formattedCooldown}
-                    </div>
-                  ) : (
-                    <div className="text-sm font-black text-emerald-400 flex items-center gap-1">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span>Ready</span>
-                    </div>
-                  )}
-                </div>
-                <span className="text-[10px] text-zinc-500 mt-1 font-medium">
-                  10-min cooldown
-                </span>
-              </div>
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-2.5 py-1 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800 text-xs cursor-pointer"
+              >
+                Close
+              </button>
             </div>
 
-            {/* Error / Status Notices */}
-            {isDailyLimitReached && (
-              <div className="p-2.5 rounded-xl bg-red-950/60 border border-red-500/40 text-xs text-red-300 flex items-center gap-2 mb-3 text-left">
-                <AlertTriangle className="w-4 h-4 shrink-0 text-red-400" />
-                <span>Daily ATM limit of 5 pulls reached. Come back tomorrow!</span>
-              </div>
-            )}
-
-            {!isDailyLimitReached && isOnCooldown && (
-              <div className="p-2.5 rounded-xl bg-amber-950/50 border border-amber-500/40 text-xs text-amber-300 flex items-center gap-2 mb-3 text-left">
-                <Clock className="w-4 h-4 shrink-0 text-amber-400 animate-pulse" />
-                <span>ATM cooling down. Next pull unlocked in <strong>{formattedCooldown}</strong>.</span>
-              </div>
-            )}
-
-            <div className="flex flex-col gap-2 mt-4">
+            {/* Navigation Tabs (Rewards vs ATM Bailout) */}
+            <div className="flex items-center p-1 bg-zinc-900/90 rounded-2xl border border-zinc-800">
               <button
-                id="claim-bailout-btn"
-                disabled={!canClaim}
-                onClick={handleInitiateClaim}
-                className={`w-full py-3.5 rounded-2xl font-black text-sm uppercase tracking-wider shadow-xl transition-all transform flex items-center justify-center gap-2 ${
-                  canClaim
-                    ? 'bg-gradient-to-r from-red-600 via-rose-600 to-red-600 hover:from-red-500 hover:to-rose-500 text-white shadow-red-600/30 hover:scale-102 cursor-pointer'
-                    : 'bg-zinc-800 text-zinc-500 border border-zinc-700 cursor-not-allowed'
+                type="button"
+                onClick={() => {
+                  sound.playChip();
+                  setActiveTab('rewards');
+                }}
+                className={`flex-1 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  activeTab === 'rewards'
+                    ? 'bg-amber-500 text-zinc-950 shadow-md shadow-amber-500/20'
+                    : 'text-zinc-400 hover:text-zinc-200'
                 }`}
               >
-                {claimed ? (
-                  <>
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                    <span>✓ 100 Chips Deposited!</span>
-                  </>
-                ) : isDailyLimitReached ? (
-                  <>
-                    <Lock className="w-4 h-4" />
-                    <span>Daily Limit Reached (5/5)</span>
-                  </>
-                ) : isOnCooldown ? (
-                  <>
-                    <Clock className="w-4 h-4" />
-                    <span>Cooldown Active ({formattedCooldown})</span>
-                  </>
-                ) : isAdFree ? (
-                  <>
-                    <Coins className="w-4 h-4" />
-                    <span>Claim Emergency {bailoutAmount} Chips (VIP)</span>
-                  </>
-                ) : (
-                  <>
-                    <Play className="w-4 h-4 text-amber-300 fill-amber-300" />
-                    <span>Watch Ad for {bailoutAmount} Free Chips</span>
-                  </>
+                <Gift className="w-3.5 h-3.5" />
+                <span>Daily Dollar & Vault</span>
+                {unclaimedRakeback > 0 && (
+                  <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
                 )}
               </button>
 
               <button
-                onClick={onClose}
-                className="text-xs text-zinc-500 hover:text-zinc-300 py-1 cursor-pointer"
+                type="button"
+                onClick={() => {
+                  sound.playChip();
+                  setActiveTab('bailout');
+                }}
+                className={`flex-1 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  activeTab === 'bailout'
+                    ? 'bg-red-600 text-white shadow-md shadow-red-600/30'
+                    : 'text-zinc-400 hover:text-zinc-200'
+                }`}
               >
-                Close ATM
+                <ShieldAlert className="w-3.5 h-3.5" />
+                <span>Emergency ATM</span>
               </button>
             </div>
-          </>
+
+            {/* TAB 1: DAILY DOLLAR & RAKEBACK VAULT */}
+            {activeTab === 'rewards' && (
+              <div className="space-y-3.5 pt-1">
+                
+                {/* SECTION 1: DAILY DOLLAR + 100K COINS RELOAD */}
+                <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-emerald-950/40 via-zinc-900 to-amber-950/40 border-2 border-emerald-500/50 shadow-lg relative overflow-hidden">
+                  <div className="flex items-start justify-between gap-3 mb-2.5">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/50 text-emerald-300 flex items-center justify-center font-black text-xl">
+                        💵
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 block">
+                          Midnight EST Reload
+                        </span>
+                        <h4 className="text-sm sm:text-base font-black text-white">
+                          Daily Dollar + 100,000 Coins
+                        </h4>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col items-end">
+                      <span className="text-[9px] uppercase font-bold text-zinc-400 flex items-center gap-1">
+                        <Clock className="w-2.5 h-2.5 text-amber-400" />
+                        <span>12 AM EST Reset</span>
+                      </span>
+                      <span className="text-xs font-mono font-bold text-amber-400">
+                        {canClaimDailyDollar ? 'Available Now' : countdown || 'Active'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-zinc-300 mb-3 leading-relaxed">
+                    Claim <strong>$1.00 USD Real Cash</strong> + <strong className="text-amber-300">100,000 Gold Coins</strong> every single day at Midnight EST. No deposit required!
+                  </p>
+
+                  <button
+                    id="claim-daily-dollar-btn"
+                    type="button"
+                    disabled={!canClaimDailyDollar || dailyDollarClaimed}
+                    onClick={handleClaimDailyDollarAction}
+                    className={`w-full py-3 rounded-xl font-black text-xs uppercase tracking-wider shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                      canClaimDailyDollar && !dailyDollarClaimed
+                        ? 'bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 hover:from-emerald-400 hover:to-teal-300 text-zinc-950 shadow-emerald-500/30 active:scale-98'
+                        : 'bg-zinc-900 border border-zinc-800 text-zinc-500 cursor-not-allowed'
+                    }`}
+                  >
+                    {dailyDollarClaimed ? (
+                      <>
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                        <span>✓ Claimed ($1.00 + 100k GC Added!)</span>
+                      </>
+                    ) : canClaimDailyDollar ? (
+                      <>
+                        <Sparkles className="w-4 h-4" />
+                        <span>Claim Daily Dollar ($1.00 + 100,000 GC)</span>
+                      </>
+                    ) : (
+                      <>
+                        <Clock className="w-4 h-4" />
+                        <span>Claimed Today (Next in {countdown})</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {/* SECTION 2: INSTANT RAKEBACK VAULT */}
+                <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-purple-950/40 via-zinc-900 to-indigo-950/40 border-2 border-purple-500/50 shadow-lg relative overflow-hidden">
+                  <div className="flex items-start justify-between gap-3 mb-2.5">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/50 text-purple-300 flex items-center justify-center font-black text-xl">
+                        🔥
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-purple-400 block">
+                          Instant VIP Cashback
+                        </span>
+                        <h4 className="text-sm sm:text-base font-black text-white">
+                          Rakeback Rewards Vault
+                        </h4>
+                      </div>
+                    </div>
+
+                    <div className="text-right">
+                      <span className="text-[9px] uppercase font-bold text-zinc-400 block">Rate</span>
+                      <span className="text-xs font-mono font-bold text-purple-300">10% Every Wager</span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 my-2.5">
+                    <div className="p-2.5 rounded-xl bg-zinc-950/80 border border-zinc-800">
+                      <span className="text-[9px] uppercase font-bold text-zinc-400 block">Available Vault</span>
+                      <span className="text-base font-black font-mono text-amber-300">
+                        {unclaimedRakeback.toLocaleString()} <span className="text-xs text-amber-500 font-normal">GC</span>
+                      </span>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-zinc-950/80 border border-zinc-800">
+                      <span className="text-[9px] uppercase font-bold text-zinc-400 block">Total Claimed</span>
+                      <span className="text-base font-black font-mono text-emerald-400">
+                        {totalRakebackClaimed.toLocaleString()} <span className="text-xs text-emerald-600 font-normal">GC</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  <button
+                    id="atm-claim-rakeback-btn"
+                    type="button"
+                    disabled={unclaimedRakeback <= 0 || rakebackClaimed}
+                    onClick={handleClaimRakebackAction}
+                    className={`w-full py-3 rounded-xl font-black text-xs uppercase tracking-wider shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                      unclaimedRakeback > 0 && !rakebackClaimed
+                        ? 'bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-purple-950/60 active:scale-98'
+                        : 'bg-zinc-900 border border-zinc-800 text-zinc-500 cursor-not-allowed'
+                    }`}
+                  >
+                    {rakebackClaimed ? (
+                      <>
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                        <span>✓ Rakeback Deposited!</span>
+                      </>
+                    ) : unclaimedRakeback > 0 ? (
+                      <>
+                        <Flame className="w-4 h-4 text-amber-300" />
+                        <span>Claim +{unclaimedRakeback.toLocaleString()} GC Rakeback</span>
+                      </>
+                    ) : (
+                      <span>No Pending Rakeback (Wager to earn 10%)</span>
+                    )}
+                  </button>
+                </div>
+
+              </div>
+            )}
+
+            {/* TAB 2: EMERGENCY ATM BAILOUT */}
+            {activeTab === 'bailout' && (
+              <div className="space-y-3 pt-1 text-center">
+                <div className="w-14 h-14 rounded-2xl bg-red-950 border-2 border-red-500/60 flex items-center justify-center mx-auto text-2xl shadow-lg shadow-red-900/40">
+                  💸
+                </div>
+
+                <div className="flex items-center justify-center gap-1.5 text-xs font-black uppercase tracking-widest text-red-400">
+                  <ShieldAlert className="w-4 h-4" />
+                  <span>The ATM of Shame</span>
+                </div>
+
+                <div className="p-3 rounded-2xl bg-zinc-900/80 border border-zinc-800 text-xs text-zinc-300 italic">
+                  "{activeRoast}"
+                </div>
+
+                {/* Grant Pill */}
+                <div className="p-3 rounded-2xl bg-gradient-to-r from-amber-950/60 to-red-950/60 border border-amber-500/40">
+                  <div className="text-[10px] uppercase font-bold text-zinc-400">Emergency Stimulus Grant</div>
+                  <div className="text-2xl font-black text-amber-300 font-mono">
+                    +{bailoutAmount.toLocaleString()} CHIPS
+                  </div>
+                  {isAdFree ? (
+                    <div className="text-[11px] text-purple-300 font-bold mt-1 flex items-center justify-center gap-1">
+                      <Crown className="w-3 h-3 text-amber-400" />
+                      <span>VIP Perk: Instant Claim (No Video Ad)</span>
+                    </div>
+                  ) : (
+                    <div className="text-[11px] text-zinc-400 mt-1 flex items-center justify-center gap-1">
+                      <Play className="w-3 h-3 text-amber-400" />
+                      <span>Requires watching a quick 5-second sponsor ad</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Limits & Rules Dashboard */}
+                <div className="grid grid-cols-2 gap-2 text-left">
+                  {/* Daily Pulls Counter */}
+                  <div className="p-2.5 rounded-xl bg-zinc-900/90 border border-zinc-800 flex flex-col justify-between">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] uppercase font-bold text-zinc-400">Daily Pulls</span>
+                      <span className={`text-[10px] font-black uppercase px-1.5 py-0.2 rounded-md ${
+                        isDailyLimitReached ? 'bg-red-500/20 text-red-400' : 'bg-emerald-500/20 text-emerald-400'
+                      }`}>
+                        {pullsUsed} / {ATM_CONSTANTS.DAILY_LIMIT}
+                      </span>
+                    </div>
+                    <div className="flex gap-1 mt-2">
+                      {Array.from({ length: ATM_CONSTANTS.DAILY_LIMIT }).map((_, i) => (
+                        <div
+                          key={i}
+                          className={`h-1.5 flex-1 rounded-full ${
+                            i < pullsUsed ? 'bg-red-500' : 'bg-zinc-800'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <span className="text-[10px] text-zinc-400 mt-1.5 font-medium">
+                      {isDailyLimitReached ? 'Max 5 reached for today' : `${pullsRemaining} pull${pullsRemaining === 1 ? '' : 's'} remaining`}
+                    </span>
+                  </div>
+
+                  {/* Cooldown Status */}
+                  <div className="p-2.5 rounded-xl bg-zinc-900/90 border border-zinc-800 flex flex-col justify-between">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] uppercase font-bold text-zinc-400">Cooldown</span>
+                      <Clock className="w-3.5 h-3.5 text-zinc-400" />
+                    </div>
+                    <div className="mt-1">
+                      {isOnCooldown ? (
+                        <div className="text-sm font-black font-mono text-amber-400">
+                          ⏳ {formattedCooldown}
+                        </div>
+                      ) : (
+                        <div className="text-sm font-black text-emerald-400 flex items-center gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>Ready</span>
+                        </div>
+                      )}
+                    </div>
+                    <span className="text-[10px] text-zinc-500 mt-1 font-medium">
+                      10-min cooldown
+                    </span>
+                  </div>
+                </div>
+
+                {/* Error / Status Notices */}
+                {isDailyLimitReached && (
+                  <div className="p-2.5 rounded-xl bg-red-950/60 border border-red-500/40 text-xs text-red-300 flex items-center gap-2 text-left">
+                    <AlertTriangle className="w-4 h-4 shrink-0 text-red-400" />
+                    <span>Daily ATM limit of 5 pulls reached. Come back tomorrow!</span>
+                  </div>
+                )}
+
+                {!isDailyLimitReached && isOnCooldown && (
+                  <div className="p-2.5 rounded-xl bg-amber-950/50 border border-amber-500/40 text-xs text-amber-300 flex items-center gap-2 text-left">
+                    <Clock className="w-4 h-4 shrink-0 text-amber-400 animate-pulse" />
+                    <span>ATM cooling down. Next pull unlocked in <strong>{formattedCooldown}</strong>.</span>
+                  </div>
+                )}
+
+                <button
+                  id="claim-bailout-btn"
+                  disabled={!canClaimBailoutNow}
+                  onClick={handleInitiateBailoutClaim}
+                  className={`w-full py-3.5 rounded-2xl font-black text-sm uppercase tracking-wider shadow-xl transition-all transform flex items-center justify-center gap-2 cursor-pointer ${
+                    canClaimBailoutNow
+                      ? 'bg-gradient-to-r from-red-600 via-rose-600 to-red-600 hover:from-red-500 hover:to-rose-500 text-white shadow-red-600/30 hover:scale-101'
+                      : 'bg-zinc-800 text-zinc-500 border border-zinc-700 cursor-not-allowed'
+                  }`}
+                >
+                  {claimed ? (
+                    <>
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                      <span>✓ 100 Chips Deposited!</span>
+                    </>
+                  ) : isDailyLimitReached ? (
+                    <>
+                      <Lock className="w-4 h-4" />
+                      <span>Daily Limit Reached (5/5)</span>
+                    </>
+                  ) : isOnCooldown ? (
+                    <>
+                      <Clock className="w-4 h-4" />
+                      <span>Cooldown Active ({formattedCooldown})</span>
+                    </>
+                  ) : isAdFree ? (
+                    <>
+                      <Coins className="w-4 h-4" />
+                      <span>Claim Emergency {bailoutAmount} Chips (VIP)</span>
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-4 h-4 text-amber-300 fill-amber-300" />
+                      <span>Watch Ad for {bailoutAmount} Free Chips</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+
+          </div>
         )}
       </div>
     </div>

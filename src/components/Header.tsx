@@ -1,5 +1,5 @@
 import React from 'react';
-import { GameTab, UserAccount } from '../types';
+import { GameTab, UserAccount, UserRole } from '../types';
 import { GoogleIcon } from './GoogleIcon';
 import { 
   Home,
@@ -22,14 +22,18 @@ import {
   Coins,
   Gift,
   Flame,
-  Zap
+  Zap,
+  DollarSign,
+  Wallet,
+  Sparkles
 } from 'lucide-react';
 import { sound } from '../utils/audio';
-import { isUserAdmin, formatCompactWager } from '../utils/leaderboard';
+import { isUserAdmin, isUserModerator, formatCompactWager } from '../utils/leaderboard';
 import { getUnclaimedMilestoneCount } from '../utils/milestones';
 
 interface HeaderProps {
   balance: number;
+  cashBalance?: number;
   netProfit: number;
   totalWagered: number;
   currentTab: GameTab;
@@ -40,18 +44,21 @@ interface HeaderProps {
   onOpenRules: () => void;
   onOpenAccount: () => void;
   onOpenMilestones: () => void;
-  onClaimRakeback: () => void;
+  onClaimRakeback?: () => void;
   onToggleChat: () => void;
   onOpenPendingPayouts: () => void;
+  onOpenCashier: () => void;
   onOpenPayForAdFree?: () => void;
   soundEnabled: boolean;
   onToggleSound: () => void;
   pendingPayoutsCount: number;
   isChatOpen: boolean;
+  onSwitchRole?: (role: UserRole) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   balance,
+  cashBalance = 5.00,
   netProfit,
   totalWagered,
   currentTab,
@@ -65,18 +72,22 @@ export const Header: React.FC<HeaderProps> = ({
   onClaimRakeback,
   onToggleChat,
   onOpenPendingPayouts,
+  onOpenCashier,
   onOpenPayForAdFree,
   soundEnabled,
   onToggleSound,
   pendingPayoutsCount,
   isChatOpen,
+  onSwitchRole,
 }) => {
   const isAdmin = isUserAdmin(userAccount);
+  const isMod = isUserModerator(userAccount);
   const unclaimedMilestones = getUnclaimedMilestoneCount(totalWagered, userAccount.claimedMilestoneCrates);
   const pendingRakeback = userAccount.unclaimedRakeback || 0;
 
   const tabs = [
     { id: 'home' as GameTab, label: 'Lobby', icon: Home },
+    { id: 'slots' as GameTab, label: 'Slots', icon: Sparkles },
     { id: 'blackjack' as GameTab, label: 'Blackjack', icon: Spade },
     { id: 'mines' as GameTab, label: 'Mines', icon: Bomb },
     { id: 'dice-duels' as GameTab, label: 'Dice', icon: Swords },
@@ -97,7 +108,7 @@ export const Header: React.FC<HeaderProps> = ({
               sound.playChip();
               onTabChange('home');
             }}
-            className="flex items-center gap-2 cursor-pointer group"
+            className="flex items-center gap-2 cursor-pointer group shrink-0"
           >
             <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-purple-600 via-amber-500 to-yellow-400 p-0.5 shadow-md shadow-purple-500/30 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
               <div className="w-full h-full bg-[#0d091a] rounded-[9px] flex items-center justify-center text-base font-black text-amber-400">
@@ -115,34 +126,21 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* Actions & Balance (Scrollable by swiping on mobile) */}
-          <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar shrink-0 max-w-[70%] sm:max-w-none py-0.5">
-            {/* INSTANT RAKEBACK CLAIM BUTTON */}
-            {(pendingRakeback || 0) > 0 ? (
-              <button
-                id="header-rakeback-btn"
-                onClick={() => {
-                  sound.playWin();
-                  onClaimRakeback();
-                }}
-                title={`Claim ${(isNaN(pendingRakeback) ? 0 : pendingRakeback).toLocaleString()}c accumulated instant rakeback (10% standard, 2% Blackjack)`}
-                className="shrink-0 flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-black uppercase tracking-wider shadow-md shadow-purple-950/60 border border-purple-400/50 cursor-pointer animate-pulse"
-              >
-                <Flame className="w-3.5 h-3.5 text-amber-300 shrink-0" />
-                <span className="text-[11px] font-mono">+{(isNaN(pendingRakeback) ? 0 : pendingRakeback).toLocaleString()}c Rakeback</span>
-              </button>
-            ) : (
-              <button
-                onClick={() => {
-                  sound.playChip();
-                  onOpenAccount();
-                }}
-                title="10% Standard Rakeback (2% Blackjack) automatically accrued on every wager!"
-                className="shrink-0 hidden md:flex items-center gap-1 px-2 py-1 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-400 text-[10px] font-bold"
-              >
-                <Flame className="w-3 h-3 text-purple-400" />
-                <span>10% Rakeback</span>
-              </button>
-            )}
+          <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar shrink-0 max-w-[75%] sm:max-w-none py-0.5">
+            
+            {/* REAL MONEY CASHIER / BANKING BUTTON */}
+            <button
+              id="header-cashier-btn"
+              onClick={() => {
+                sound.playChip();
+                onOpenCashier();
+              }}
+              title="Real Money Cashier: Crypto Deposits & Real Cashouts"
+              className="shrink-0 flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-zinc-950 font-black text-xs uppercase tracking-wider shadow-md shadow-emerald-500/30 border border-emerald-300/50 cursor-pointer active:scale-98 transition-all"
+            >
+              <DollarSign className="w-3.5 h-3.5 stroke-[3]" />
+              <span className="text-[11px]">Cashier</span>
+            </button>
 
             {/* LEVELING MILESTONE CRATES BUTTON */}
             <button
@@ -151,8 +149,8 @@ export const Header: React.FC<HeaderProps> = ({
                 sound.playChip();
                 onOpenMilestones();
               }}
-              title="Unlock free VIP Milestone Crates with guaranteed bonus chips and items!"
-              className={`shrink-0 flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-xl text-xs font-black uppercase tracking-wider transition-all border cursor-pointer ${
+              title="Unlock free VIP Milestone Crates!"
+              className={`shrink-0 flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all border cursor-pointer ${
                 unclaimedMilestones > 0
                   ? 'bg-amber-500 text-zinc-950 border-amber-300 shadow-md shadow-amber-500/30 animate-bounce'
                   : 'bg-zinc-900 hover:bg-zinc-800 border-zinc-700 text-amber-300'
@@ -167,16 +165,16 @@ export const Header: React.FC<HeaderProps> = ({
               )}
             </button>
 
-            {/* ADMIN-ONLY PENDING PAYOUTS BUTTON */}
-            {isAdmin && (
+            {/* ADMIN / MOD PORTAL BUTTON */}
+            {(isAdmin || isMod) && (
               <button
                 id="header-admin-payouts-btn"
                 onClick={() => {
                   sound.playChip();
                   onOpenPendingPayouts();
                 }}
-                title="Admin & Moderator Portal"
-                className="shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-purple-950/90 hover:bg-purple-900 border border-purple-500/60 text-purple-200 text-xs font-black uppercase tracking-wider transition-all shadow-md animate-in fade-in"
+                title="Admin & Moderator Command Center"
+                className="shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-purple-950/90 hover:bg-purple-900 border border-purple-500/60 text-purple-200 text-xs font-black uppercase tracking-wider transition-all shadow-md animate-in fade-in cursor-pointer"
               >
                 <ShieldCheck className="w-3.5 h-3.5 text-purple-400 shrink-0" />
                 <span className="hidden md:inline text-[11px]">Admin / Mod</span>
@@ -196,7 +194,7 @@ export const Header: React.FC<HeaderProps> = ({
                 onToggleChat();
               }}
               title="Open Casino Lounge Chat"
-              className={`shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-xs font-black uppercase transition-all cursor-pointer ${
+              className={`shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-black uppercase transition-all cursor-pointer ${
                 isChatOpen
                   ? 'bg-amber-500 text-zinc-950 border-amber-400 shadow-md'
                   : 'bg-zinc-900 hover:bg-zinc-800 border-zinc-700 text-zinc-200 shadow-inner'
@@ -216,7 +214,7 @@ export const Header: React.FC<HeaderProps> = ({
                 onOpenAccount();
               }}
               title="Gambler VIP Profile & Account"
-              className="shrink-0 flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-200 transition-colors text-xs font-bold shadow-inner cursor-pointer"
+              className="shrink-0 flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-200 transition-colors text-xs font-bold shadow-inner cursor-pointer"
             >
               <div className="relative">
                 <span className="text-sm">{userAccount.avatar}</span>
@@ -231,31 +229,40 @@ export const Header: React.FC<HeaderProps> = ({
               </span>
             </button>
 
-            {/* Balance Pill */}
-            <div className="shrink-0 flex items-center gap-1.5 px-2 sm:px-3 py-1 rounded-xl bg-zinc-900 border border-zinc-700 shadow-inner">
-              <span className="text-xs">🪙</span>
+            {/* Dual Balance Pill (Gold Coins + Real Cash) */}
+            <div 
+              onClick={() => {
+                sound.playChip();
+                onOpenCashier();
+              }}
+              title="Click to open Real Money Cashier"
+              className="shrink-0 flex items-center gap-2 px-2.5 sm:px-3 py-1 rounded-xl bg-zinc-900 hover:bg-zinc-850 border border-amber-500/40 shadow-inner cursor-pointer group"
+            >
               <div className="flex flex-col text-right">
-                <span className="text-[8px] uppercase font-bold text-zinc-400 tracking-wider hidden sm:block">
-                  Bankroll
+                <span className="text-[8px] uppercase font-black text-amber-400 tracking-wider">
+                  {(isNaN(balance) ? 1000000 : balance).toLocaleString()} GC
                 </span>
-                <span className="text-xs sm:text-sm font-black text-amber-300 font-mono leading-none">
-                  {(isNaN(balance) ? 1000 : balance).toLocaleString()}
+                <span className="text-xs sm:text-sm font-black text-emerald-400 font-mono leading-none">
+                  ${(typeof cashBalance === 'number' ? cashBalance : 5.00).toFixed(2)}
                 </span>
               </div>
             </div>
 
-            {/* ATM Bailout Button */}
+            {/* ATM & Rewards Vault Button (Clean, Non-Flashing) */}
             <button
               id="header-bailout-btn"
               onClick={() => {
                 sound.playChip();
                 onOpenBailout();
               }}
-              title="Emergency ATM Bailout"
-              className="shrink-0 p-1.5 sm:px-2.5 sm:py-1 rounded-xl bg-red-950/70 hover:bg-red-900 border border-red-500/50 text-red-300 text-xs font-bold flex items-center gap-1 transition-all shadow-sm cursor-pointer"
+              title="ATM Rewards & Stimulus Vault: Daily Dollar ($1.00 + 100k GC), 10% Rakeback Vault, Emergency Bailouts"
+              className="shrink-0 px-2 sm:px-2.5 py-1.5 rounded-xl bg-purple-950/80 hover:bg-purple-900 border border-purple-500/50 text-purple-300 text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer relative"
             >
-              <ShieldAlert className="w-3.5 h-3.5 text-red-400 shrink-0" />
-              <span className="hidden sm:inline text-[11px]">ATM</span>
+              <ShieldAlert className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+              <span className="text-[11px] font-black uppercase">ATM & Vault</span>
+              {pendingRakeback > 0 && (
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping absolute -top-0.5 -right-0.5" />
+              )}
             </button>
 
             {/* Stats Button */}
@@ -310,7 +317,7 @@ export const Header: React.FC<HeaderProps> = ({
                   sound.playChip();
                   onTabChange(tab.id);
                 }}
-                className={`flex-1 min-w-[55px] sm:min-w-[75px] flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all relative cursor-pointer ${
+                className={`flex-1 min-w-[50px] sm:min-w-[70px] flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all relative cursor-pointer ${
                   isActive
                     ? 'bg-amber-500 text-zinc-950 shadow-md shadow-amber-500/20 font-black'
                     : 'bg-zinc-900/90 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/90 border border-zinc-800'
@@ -326,4 +333,3 @@ export const Header: React.FC<HeaderProps> = ({
     </header>
   );
 };
-

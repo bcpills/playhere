@@ -213,7 +213,7 @@ export const DailyLeaderboard: React.FC<DailyLeaderboardProps> = ({
                   </span>
                   {isAdmin && (
                     <span className="text-[10px] text-zinc-400 font-mono">
-                      ({yesterdayWinner.contactPlatform}: {yesterdayWinner.contactHandle})
+                      (Gambler ID: {yesterdayWinner.username})
                     </span>
                   )}
                 </div>
@@ -620,7 +620,7 @@ export const DailyLeaderboard: React.FC<DailyLeaderboardProps> = ({
         <div className="flex items-center gap-2 text-center sm:text-left">
           <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
           <span className="text-[11px]">
-            The tournament resets every night at <strong>12:00 AM EST</strong>. Yesterday's winner is archived and paid out manually via Discord or Telegram.
+            The tournament resets every night at <strong>12:00 AM EST</strong>. Yesterday's winner is archived and eligible for cashout via the Real Money Cashier.
           </span>
         </div>
       </div>
