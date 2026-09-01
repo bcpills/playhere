@@ -103,7 +103,7 @@ export const DEFAULT_USER_ACCOUNT: UserAccount = {
   lastDailyClaim: 0,
   lastActiveEstDate: getCurrentEstDateString(),
   peakBalanceAllTime: 1000000,
-  cashBalance: 5.00, // $5 Sign Up Bonus
+  cashBalance: 2.00, // $2 Sign Up Bonus
 };
 
 export const INITIAL_FAKE_PLAYERS: FakePlayer[] = [

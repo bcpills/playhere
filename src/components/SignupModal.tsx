@@ -148,7 +148,7 @@ export const SignupModal: React.FC<SignupModalProps> = ({
       googleEmail: googleLinked ? googleEmail : undefined,
       googleName: googleLinked ? googleName : undefined,
       googlePicture: googleLinked ? googlePicture : undefined,
-      cashBalance: 5.00, // $5 Sign up bonus
+      cashBalance: 2.00, // $2 Sign up bonus
     });
   };
 
@@ -181,7 +181,7 @@ export const SignupModal: React.FC<SignupModalProps> = ({
                 New Player Welcome Package
               </span>
               <div className="text-sm sm:text-base font-black text-white flex items-center justify-center gap-2">
-                <span className="text-emerald-300 font-mono">$5.00 Real Cash</span>
+                <span className="text-emerald-300 font-mono">$2.00 Real Cash</span>
                 <span className="text-zinc-500">+</span>
                 <span className="text-amber-300 font-mono">1,000,000 Gold Coins</span>
               </div>
@@ -235,7 +235,7 @@ export const SignupModal: React.FC<SignupModalProps> = ({
                       Create VIP Account
                     </span>
                     <span className="text-[11px] text-emerald-300 font-bold block">
-                      Instant $5.00 Cash + 1,000,000 Coins Bonus
+                      Instant $2.00 Cash + 1,000,000 Coins Bonus
                     </span>
                   </div>
                 </div>
@@ -426,7 +426,7 @@ export const SignupModal: React.FC<SignupModalProps> = ({
                 type="submit"
                 className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 via-amber-500 to-yellow-400 hover:from-emerald-400 hover:to-yellow-300 text-zinc-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-amber-500/20 transition-all cursor-pointer mt-2"
               >
-                Complete Registration (Get $5 + 1,000,000 GC)
+                Complete Registration (Get $2.00 Cash + 1,000,000 GC)
               </button>
             </form>
           </div>

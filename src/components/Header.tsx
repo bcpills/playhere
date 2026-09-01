@@ -58,7 +58,7 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({
   balance,
-  cashBalance = 5.00,
+  cashBalance = 2.00,
   netProfit,
   totalWagered,
   currentTab,
@@ -229,21 +229,24 @@ export const Header: React.FC<HeaderProps> = ({
               </span>
             </button>
 
-            {/* Dual Balance Pill (Gold Coins + Real Cash) */}
+            {/* Dual Balance Pill (Real Cash Primary, Gold Coins Secondary) */}
             <div 
               onClick={() => {
                 sound.playChip();
                 onOpenCashier();
               }}
-              title="Click to open Real Money Cashier"
-              className="shrink-0 flex items-center gap-2 px-2.5 sm:px-3 py-1 rounded-xl bg-zinc-900 hover:bg-zinc-850 border border-amber-500/40 shadow-inner cursor-pointer group"
+              title="Real Cash Balance (Click to open Cashier)"
+              className="shrink-0 flex items-center gap-2 px-2.5 sm:px-3.5 py-1 rounded-xl bg-zinc-900/90 hover:bg-zinc-850 border border-emerald-500/40 hover:border-emerald-400 shadow-inner cursor-pointer group transition-all"
             >
               <div className="flex flex-col text-right">
-                <span className="text-[8px] uppercase font-black text-amber-400 tracking-wider">
+                <div className="flex items-center justify-end gap-1">
+                  <span className="text-xs sm:text-sm font-black text-emerald-400 font-mono leading-none">
+                    ${(typeof cashBalance === 'number' ? cashBalance : 2.00).toFixed(2)}
+                  </span>
+                  <span className="text-[9px] font-bold text-emerald-400/90 font-mono">USD</span>
+                </div>
+                <span className="text-[8px] font-mono text-zinc-500 group-hover:text-amber-300/80 transition-colors">
                   {(isNaN(balance) ? 1000000 : balance).toLocaleString()} GC
-                </span>
-                <span className="text-xs sm:text-sm font-black text-emerald-400 font-mono leading-none">
-                  ${(typeof cashBalance === 'number' ? cashBalance : 5.00).toFixed(2)}
                 </span>
               </div>
             </div>

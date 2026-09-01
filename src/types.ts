@@ -176,7 +176,7 @@ export interface UserAccount {
   lastDailyClaim: number;
   lastActiveEstDate: string; // YYYY-MM-DD in EST
   peakBalanceAllTime: number; // Highest chip count reached
-  cashBalance?: number; // Real Money / Sweeps Cash in $USD (Starts with $5.00 Sign Up Bonus)
+  cashBalance?: number; // Real Money / Sweeps Cash in $USD (Starts with $2.00 Sign Up Bonus)
   lastDailyDollarClaimEstDate?: string; // YYYY-MM-DD for Daily Dollar Reload ($1.00 + 100k GC at Midnight EST)
   unclaimedRakeback?: number; // Accumulated instant rakeback
   totalRakebackClaimed?: number; // Total rakeback redeemed all-time

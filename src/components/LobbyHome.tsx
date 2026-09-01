@@ -21,7 +21,9 @@ import {
   Flame, 
   Zap,
   MessageSquare,
-  Gift
+  Gift,
+  ArrowUpRight,
+  Wallet
 } from 'lucide-react';
 import { sound } from '../utils/audio';
 import { getVIPTier, getVIPTierInfo, getYesterdayWinner, isUserAdmin, formatCompactWager } from '../utils/leaderboard';
@@ -52,7 +54,7 @@ interface LobbyHomeProps {
 
 export const LobbyHome: React.FC<LobbyHomeProps> = ({
   balance,
-  cashBalance = 5.00,
+  cashBalance = 2.00,
   netProfit,
   stats,
   userAccount,
@@ -91,52 +93,26 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
   const yesterdayWinner = getYesterdayWinner(dailyWinners);
 
   return (
-    <div className="w-full max-w-5xl mx-auto space-y-4 sm:space-y-6 pb-6">
-      {/* VIP Lounge Hero Banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-950/50 via-zinc-950 to-[#0c0817] border-2 border-purple-500/40 p-5 sm:p-7 shadow-2xl shadow-purple-950/40">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-purple-600/15 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-1/4 w-72 h-72 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+    <div className="w-full max-w-5xl mx-auto space-y-4 sm:space-y-5 pb-8">
+      
+      {/* VIP LOUNGE HERO HEADER (REAL MONEY PRIMARY, GOLD COINS SECONDARY) */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#120b24] via-zinc-950 to-[#0a0714] border border-purple-500/30 p-4 sm:p-6 shadow-2xl shadow-purple-950/30">
+        <div className="absolute -top-12 -right-12 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-12 -left-12 w-64 h-64 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
         
-        {/* Top Lounge Bar Header */}
-        <div className="relative z-10 flex items-center justify-between pb-3 mb-4 border-b border-purple-500/20">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-            <span className="text-[10px] sm:text-xs font-black tracking-widest uppercase text-purple-300">
-              CHIPZONE VIP CASINO & SPORTSBOOK
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-mono text-zinc-400 bg-purple-950/60 border border-purple-500/30 px-2 py-0.5 rounded-full">
-              DUAL CURRENCY: GC & USD
-            </span>
-            {onOpenCashier && (
-              <button
-                type="button"
-                onClick={() => {
-                  sound.playChip();
-                  onOpenCashier();
-                }}
-                className="px-2.5 py-0.5 rounded-full bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black text-[10px] uppercase tracking-wider flex items-center gap-1 shadow-md shadow-emerald-500/20 cursor-pointer transition-all"
-              >
-                <DollarSign className="w-3 h-3" />
-                <span>Real Money Cashier</span>
-              </button>
-            )}
-          </div>
-        </div>
-
-        <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5">
-          <div className="flex items-start sm:items-center gap-4">
-            {/* Clickable Profile Avatar */}
+        <div className="relative z-10 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 sm:gap-6">
+          
+          {/* User Profile & VIP Info */}
+          <div className="flex items-center gap-3.5">
             <div 
               onClick={() => {
                 sound.playChip();
                 onOpenAccount();
               }}
-              className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-purple-600 via-amber-600 to-yellow-400 p-0.5 shadow-xl shadow-purple-950/50 shrink-0 cursor-pointer hover:scale-105 transition-all group"
+              className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-tr from-purple-600 via-amber-500 to-emerald-400 p-0.5 shadow-lg shadow-purple-950/50 shrink-0 cursor-pointer hover:scale-105 transition-all group"
               title="Click to edit VIP Profile & Settings"
             >
-              <div className="w-full h-full bg-zinc-950 rounded-[14px] flex items-center justify-center text-3xl">
+              <div className="w-full h-full bg-zinc-950 rounded-[14px] flex items-center justify-center text-2xl sm:text-3xl">
                 {userAccount.avatar}
               </div>
             </div>
@@ -148,645 +124,574 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
                     sound.playChip();
                     onOpenAccount();
                   }}
-                  className="text-lg sm:text-2xl font-black tracking-wide text-zinc-100 uppercase hover:text-purple-300 transition-colors cursor-pointer"
+                  className="text-base sm:text-xl font-black tracking-wide text-zinc-100 uppercase hover:text-emerald-300 transition-colors cursor-pointer"
                 >
                   {userAccount.username || 'Gambler'}
                 </h2>
-                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase border font-mono ${tierInfo.badgeBg}`}>
+                <span className={`px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase border font-mono ${tierInfo.badgeBg}`}>
                   {tierInfo.tier}
                 </span>
               </div>
               
-              <div className="flex flex-wrap items-center gap-2 mt-1 text-xs text-zinc-400">
-                <span>Wager Volume: <strong className="text-zinc-200 font-mono">{formatCompactWager(stats.totalWagered)} GC</strong></span>
+              <div className="flex flex-wrap items-center gap-2 mt-1 text-[11px] text-zinc-400">
+                <span>VIP Perk: <strong className="text-emerald-400 font-bold">{tierInfo.perk}</strong></span>
                 <span>•</span>
-                <span className="text-emerald-400 font-bold">{tierInfo.perk}</span>
+                <span>Vol: <strong className="text-zinc-300 font-mono">{formatCompactWager(stats.totalWagered)} GC</strong></span>
               </div>
             </div>
           </div>
 
-          {/* Quick Bankroll Overview Box */}
-          <div className="flex flex-row sm:flex-row items-center gap-3 w-full lg:w-auto">
-            <div className="flex-1 sm:flex-none p-3 px-4 rounded-2xl bg-zinc-900/90 border border-purple-500/30 text-left min-w-[140px]">
-              <span className="text-[10px] uppercase font-bold text-zinc-400 block">Gold Coins</span>
-              <span className="text-lg sm:text-xl font-black font-mono text-amber-300">
-                {(isNaN(balance) ? 1000000 : balance).toLocaleString()}
+          {/* Primary Real Cash & Secondary GC Bankroll */}
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5">
+            
+            {/* Primary: Real Cash Balance Box */}
+            <div className="flex-1 sm:flex-none p-3 px-4 rounded-2xl bg-gradient-to-br from-emerald-950/60 via-zinc-900/90 to-zinc-900 border-2 border-emerald-500/50 text-left min-w-[150px] shadow-lg shadow-emerald-950/40 flex flex-col justify-between">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[10px] uppercase font-black tracking-wider text-emerald-400">
+                  Real Cash
+                </span>
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              </div>
+              <div className="text-xl sm:text-2xl font-black font-mono text-emerald-300 my-0.5">
+                ${cashBalance.toFixed(2)} <span className="text-xs font-normal text-emerald-400/80">USD</span>
+              </div>
+              {onOpenCashier && (
+                <div className="flex items-center gap-2 pt-1 border-t border-emerald-500/20">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      sound.playChip();
+                      onOpenCashier();
+                    }}
+                    className="text-[10px] font-black uppercase text-emerald-400 hover:text-emerald-200 flex items-center gap-0.5 cursor-pointer"
+                  >
+                    <span>Deposit</span>
+                    <ArrowUpRight className="w-3 h-3" />
+                  </button>
+                  <span className="text-zinc-600">|</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      sound.playChip();
+                      onOpenCashier();
+                    }}
+                    className="text-[10px] font-black uppercase text-zinc-400 hover:text-zinc-200 cursor-pointer"
+                  >
+                    Cashout
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Secondary: Gold Coins (Subtle Practice / Fun Balance) */}
+            <div className="flex-1 sm:flex-none p-3 px-3.5 rounded-2xl bg-zinc-900/80 border border-zinc-800 text-left min-w-[130px] flex flex-col justify-between">
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-[9px] uppercase font-bold text-zinc-500">
+                  Gold Coins
+                </span>
+                <span className="text-[8px] font-mono text-zinc-500 bg-zinc-800 px-1.5 py-0.2 rounded">
+                  Free Play
+                </span>
+              </div>
+              <div className="text-base sm:text-lg font-bold font-mono text-zinc-300 my-0.5">
+                {(isNaN(balance) ? 1000000 : balance).toLocaleString()} <span className="text-[10px] text-zinc-500">GC</span>
+              </div>
+              <span className="text-[9px] text-zinc-500">
+                Comp & Wager Races
               </span>
             </div>
 
-            <div className="flex-1 sm:flex-none p-3 px-4 rounded-2xl bg-zinc-900/90 border border-emerald-500/30 text-left min-w-[140px]">
-              <span className="text-[10px] uppercase font-bold text-zinc-400 block">Real Cash Balance</span>
-              <span className="text-lg sm:text-xl font-black font-mono text-emerald-400">
-                ${cashBalance.toFixed(2)} USD
-              </span>
-            </div>
-
-            {/* Quick ATM / Vault Launch */}
+            {/* Quick ATM / Daily Reload Button */}
             <button
               type="button"
               onClick={() => {
                 sound.playChip();
                 onOpenBailout();
               }}
-              className="p-3 px-4 rounded-2xl bg-gradient-to-r from-purple-900/80 to-amber-900/80 hover:from-purple-800 hover:to-amber-800 border border-amber-500/50 text-white font-black text-xs uppercase tracking-wider flex flex-col justify-center items-center gap-0.5 cursor-pointer transition-all shadow-lg shrink-0"
+              className="p-3 px-4 rounded-2xl bg-zinc-900 hover:bg-zinc-850 border border-purple-500/40 hover:border-purple-400 text-white font-black text-xs uppercase tracking-wider flex flex-col justify-center items-center gap-0.5 cursor-pointer transition-all shadow-md shrink-0 w-full sm:w-auto"
             >
-              <div className="flex items-center gap-1 text-amber-300">
-                <Gift className="w-4 h-4" />
-                <span>Daily Dollar</span>
+              <div className="flex items-center gap-1.5 text-amber-300">
+                <Gift className="w-3.5 h-3.5" />
+                <span className="text-[11px]">Daily Reload</span>
               </div>
-              <span className="text-[9px] text-zinc-300 font-mono">{countdown || 'Midnight EST'}</span>
+              <span className="text-[9px] text-zinc-400 font-mono">{countdown || 'Midnight EST'}</span>
             </button>
+
           </div>
         </div>
       </div>
 
-      {/* DAILY DOLLAR & MIDNIGHT EST RELOAD BANNER */}
-      <div 
-        onClick={() => {
-          sound.playChip();
-          onOpenBailout();
-        }}
-        className="p-3.5 sm:px-5 rounded-2xl bg-gradient-to-r from-emerald-950/50 via-zinc-900 to-amber-950/50 border-2 border-emerald-500/40 hover:border-emerald-400 cursor-pointer transition-all flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shadow-lg shadow-emerald-950/30 group"
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/50 flex items-center justify-center text-xl shrink-0 group-hover:scale-105 transition-transform">
-            💵
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs sm:text-sm font-black uppercase text-zinc-100 group-hover:text-emerald-300 transition-colors">
-                Claim Daily Dollar + 100,000 Coins Reload
-              </span>
-              <span className="px-2 py-0.2 rounded-full text-[9px] font-black uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono">
-                12:00 AM EST Daily
-              </span>
-            </div>
-            <p className="text-[11px] text-zinc-400">
-              Free $1.00 USD cash balance & 100k Gold Coins added to your bankroll every single day.
-            </p>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          className="px-4 py-2 rounded-xl bg-emerald-500 group-hover:bg-emerald-400 text-zinc-950 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1 shadow-md shadow-emerald-500/20 shrink-0"
+      {/* CLEAN 2-COLUMN PROMO STRIP (DAILY DOLLAR & DAILY WAGER RACE) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        
+        {/* PROMO 1: DAILY DOLLAR + 100K GC */}
+        <div 
+          onClick={() => {
+            sound.playChip();
+            onOpenBailout();
+          }}
+          className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-950/40 via-zinc-900 to-zinc-900 border border-emerald-500/40 hover:border-emerald-400 cursor-pointer transition-all flex items-center justify-between gap-3 shadow-md group"
         >
-          <span>Claim in ATM Vault</span>
-          <ChevronRight className="w-3.5 h-3.5" />
-        </button>
-      </div>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-xl shrink-0 group-hover:scale-105 transition-transform">
+              💵
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-black uppercase text-zinc-100 group-hover:text-emerald-300 transition-colors">
+                  Daily Dollar ($1.00 USD)
+                </span>
+                <span className="px-1.5 py-0.2 rounded text-[8px] font-black uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono">
+                  12:00 AM EST
+                </span>
+              </div>
+              <p className="text-[10px] text-zinc-400 mt-0.5">
+                Free $1.00 cash + 100k GC added to your bankroll every midnight.
+              </p>
+            </div>
+          </div>
 
-      {/* Yesterday's Winner Mini-Banner */}
-      {yesterdayWinner && (
+          <div className="text-emerald-400 text-xs font-bold shrink-0 flex items-center gap-0.5">
+            <span>Claim</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+          </div>
+        </div>
+
+        {/* PROMO 2: DAILY WAGER RACE WINNER */}
         <div 
           onClick={() => {
             sound.playChip();
             onNavigate('leaderboard');
           }}
-          className="p-3 sm:px-4 rounded-2xl bg-gradient-to-r from-amber-950/30 via-zinc-900 to-zinc-950 border border-amber-500/30 hover:border-amber-500/60 cursor-pointer transition-all flex items-center justify-between gap-3 text-xs"
+          className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-950/40 via-zinc-900 to-zinc-900 border border-amber-500/40 hover:border-amber-400 cursor-pointer transition-all flex items-center justify-between gap-3 shadow-md group"
         >
-          <div className="flex items-center gap-2.5">
-            <span className="text-xl shrink-0">👑</span>
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className="font-bold text-zinc-400">Yesterday's Crowned Wager Winner:</span>
-              <strong className="text-zinc-100 font-black">{yesterdayWinner.username}</strong>
-              <span className="text-amber-300 font-mono font-bold">({yesterdayWinner.formattedScore})</span>
-              <span className={`text-[9px] px-2 py-0.2 rounded font-black uppercase ${
-                yesterdayWinner.payoutStatus === 'Paid'
-                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                  : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-              }`}>
-                {yesterdayWinner.payoutStatus === 'Paid' ? '✓ Payout Sent' : '⏳ Payout Pending'}
-              </span>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-xl shrink-0 group-hover:scale-105 transition-transform">
+              👑
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-black uppercase text-zinc-100 group-hover:text-amber-300 transition-colors">
+                  Daily Wager Race
+                </span>
+                <span className="px-1.5 py-0.2 rounded text-[8px] font-black uppercase bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono">
+                  Cash Prizes
+                </span>
+              </div>
+              <p className="text-[10px] text-zinc-400 mt-0.5 truncate max-w-[220px]">
+                {yesterdayWinner ? `Crown: ${yesterdayWinner.username} (${yesterdayWinner.formattedScore})` : 'Climb rankings with daily wager volume!'}
+              </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-1 text-amber-400 font-bold text-xs shrink-0">
-            <span>Daily Wager Comp</span>
+          <div className="text-amber-400 text-xs font-bold shrink-0 flex items-center gap-0.5">
+            <span>Standings</span>
             <ChevronRight className="w-3.5 h-3.5" />
           </div>
         </div>
-      )}
 
-      {/* CASINO FLOOR: 7 GAMES LIVE */}
-      <div className="space-y-3">
+      </div>
+
+      {/* CASINO FLOOR: 8 DISTINCT GAMES */}
+      <div className="space-y-3 pt-1">
         <div className="flex items-center justify-between px-1">
           <div className="flex items-center gap-2">
-            <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-zinc-300 flex items-center gap-2">
-              <span>Casino Floor</span>
+            <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-zinc-200 flex items-center gap-2">
+              <span>Casino Games Floor</span>
             </h3>
-            <span className="text-[10px] px-2 py-0.5 rounded-md bg-zinc-900 border border-zinc-800 text-zinc-400 font-mono">
-              7 Games Live
+            <span className="text-[10px] px-2 py-0.5 rounded-md bg-zinc-900 border border-zinc-800 text-emerald-400 font-mono font-bold">
+              Real Money & Free Play
             </span>
           </div>
           <span className="text-[10px] text-zinc-500 hidden sm:inline font-mono">
-            Original games with dual Gold Coin and Real Cash modes
+            Instant Real Cash Payouts • Low Min Bets
           </span>
         </div>
 
-        {/* CASINO FLOOR GAMES GRID (2-COL MOBILE, 3-COL DESKTOP) */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-4">
+        {/* CASINO GAMES GRID */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3.5">
           
-          {/* GAME 1: LUCKY NEON 777 SLOTS */}
-          <div 
-            id="portal-slots"
-            onClick={() => {
-              sound.playChip();
-              onNavigate('slots');
-            }}
-            className="group relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-amber-950/40 via-zinc-900/90 to-purple-950/40 border-2 border-amber-500/50 hover:border-amber-400 p-3.5 sm:p-5 cursor-pointer transition-all duration-200 hover:shadow-2xl hover:shadow-amber-500/20 flex flex-col justify-between"
-          >
-            <div>
-              <div className="flex items-start justify-between gap-2 mb-2 sm:mb-3">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-br from-amber-400 to-yellow-600 border border-yellow-300/50 flex items-center justify-center text-zinc-950 shadow-lg shadow-amber-500/30 group-hover:scale-105 transition-transform shrink-0 font-black text-xl">
-                  🎰
-                </div>
-                <div className="flex items-center gap-1">
-                  <span className="text-[9px] sm:text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono">
-                    20 Lines
-                  </span>
-                  <span className="text-[9px] sm:text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/40 font-mono">
-                    3× Bonus
-                  </span>
-                </div>
-              </div>
-
-              <div>
-                <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-amber-400 block">
-                  Vegas Video Slots (Min $0.20)
-                </span>
-                <h4 className="text-sm sm:text-lg font-black uppercase text-zinc-100 group-hover:text-amber-300 transition-colors">
-                  Lucky Neon 777
-                </h4>
-              </div>
-
-              <p className="text-[10px] sm:text-xs text-zinc-400 mt-1 leading-snug line-clamp-2">
-                Animated reels, auto-spinning 3× multiplier Free Spins, and $20.00 Feature Bonus Buy!
-              </p>
-
-              <div className="flex flex-wrap gap-1 mt-2 sm:mt-3">
-                <span className="text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded bg-zinc-950 text-amber-300 border border-zinc-800">
-                  ⚡ 10 Free Spins
-                </span>
-                <span className="text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded bg-zinc-950 text-emerald-300 border border-zinc-800">
-                  💎 100× Feature Buy
-                </span>
-              </div>
-            </div>
-
-            <div className="mt-3 pt-2.5 sm:mt-4 sm:pt-3.5 border-t border-amber-950/60 flex items-center justify-between gap-2">
-              <span className="text-[9px] sm:text-xs font-mono text-zinc-400 truncate">
-                {stats.roundsPlayedSlots || 0} Spins
-              </span>
-              <button
-                type="button"
-                className="px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black text-[10px] sm:text-xs uppercase tracking-wider flex items-center gap-1 shadow-md shadow-amber-500/20 group-hover:translate-x-0.5 transition-all cursor-pointer whitespace-nowrap"
-              >
-                <span>Play ($0.20)</span>
-                <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
-              </button>
-            </div>
-          </div>
-
-          {/* GAME 1B: SOLAR INFERNO HOLD & WIN */}
+          {/* GAME 1: SOLAR INFERNO HOLD & WIN */}
           <div 
             id="portal-slots-holdwin"
             onClick={() => {
               sound.playChip();
               onNavigate('slots');
             }}
-            className="group relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-red-950/40 via-zinc-900/90 to-amber-950/40 border-2 border-red-500/50 hover:border-amber-400 p-3.5 sm:p-5 cursor-pointer transition-all duration-200 hover:shadow-2xl hover:shadow-red-500/20 flex flex-col justify-between"
+            className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-red-950/40 via-zinc-900/90 to-zinc-950 border border-red-500/40 hover:border-red-400 p-3.5 cursor-pointer transition-all duration-200 hover:shadow-xl hover:shadow-red-500/10 flex flex-col justify-between"
           >
             <div>
-              <div className="flex items-start justify-between gap-2 mb-2 sm:mb-3">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-br from-red-600 to-amber-500 border border-yellow-300/50 flex items-center justify-center text-zinc-950 shadow-lg shadow-red-500/30 group-hover:scale-105 transition-transform shrink-0 font-black text-xl">
+              <div className="flex items-start justify-between gap-1.5 mb-2">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-red-600 to-amber-500 flex items-center justify-center text-zinc-950 shadow-md font-black text-lg shrink-0">
                   🔥
                 </div>
-                <div className="flex items-center gap-1">
-                  <span className="text-[9px] sm:text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/40 font-mono">
+                <div className="flex flex-col items-end">
+                  <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/40 font-mono">
                     Hold & Win
-                  </span>
-                  <span className="text-[9px] sm:text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono">
-                    1,000× Grand
                   </span>
                 </div>
               </div>
 
               <div>
-                <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-amber-400 block">
-                  New Slot Game (Min $0.10)
+                <span className="text-[9px] font-black uppercase tracking-wider text-red-400 block">
+                  1,000× Grand
                 </span>
-                <h4 className="text-sm sm:text-lg font-black uppercase text-zinc-100 group-hover:text-amber-300 transition-colors">
-                  Solar Inferno: Hold & Win
+                <h4 className="text-xs sm:text-sm font-black uppercase text-zinc-100 group-hover:text-red-300 transition-colors">
+                  Solar Inferno
                 </h4>
               </div>
 
-              <p className="text-[10px] sm:text-xs text-zinc-400 mt-1 leading-snug line-clamp-2">
-                Lock 6+ Fiery Solar Orbs, auto-play 3 Respins, win Mini/Minor/Major & 1,000× Grand Jackpots!
+              <p className="text-[10px] text-zinc-400 mt-1 leading-snug line-clamp-2">
+                Lock 6+ Fiery Solar Orbs, 3-Respins bonus, & Major/Grand Jackpots!
               </p>
-
-              <div className="flex flex-wrap gap-1 mt-2 sm:mt-3">
-                <span className="text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded bg-zinc-950 text-red-300 border border-zinc-800">
-                  ☀️ 3-Respins Reset
-                </span>
-                <span className="text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded bg-zinc-950 text-amber-300 border border-zinc-800">
-                  🔥 $12 Bonus Buy
-                </span>
-              </div>
             </div>
 
-            <div className="mt-3 pt-2.5 sm:mt-4 sm:pt-3.5 border-t border-red-950/60 flex items-center justify-between gap-2">
-              <span className="text-[9px] sm:text-xs font-mono text-zinc-400 truncate">
-                Jackpots up to 1,000×
+            <div className="mt-3 pt-2 border-t border-zinc-800/80 flex items-center justify-between gap-1">
+              <span className="text-[9px] font-mono text-emerald-400 font-bold">
+                Min $0.10
               </span>
               <button
                 type="button"
-                className="px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-gradient-to-r from-red-600 to-amber-500 hover:from-red-500 hover:to-amber-400 text-zinc-950 font-black text-[10px] sm:text-xs uppercase tracking-wider flex items-center gap-1 shadow-md shadow-red-500/20 group-hover:translate-x-0.5 transition-all cursor-pointer whitespace-nowrap"
+                className="px-2.5 py-1 rounded-lg bg-red-500 hover:bg-red-400 text-zinc-950 font-black text-[10px] uppercase tracking-wider flex items-center gap-0.5 cursor-pointer transition-all"
               >
-                <span>Play ($0.10)</span>
-                <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span>Play</span>
+                <ChevronRight className="w-3 h-3" />
               </button>
             </div>
           </div>
 
-          {/* GAME 2: MINES */}
+          {/* GAME 2: LUCKY NEON 777 SLOTS */}
+          <div 
+            id="portal-slots"
+            onClick={() => {
+              sound.playChip();
+              onNavigate('slots');
+            }}
+            className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-950/40 via-zinc-900/90 to-zinc-950 border border-amber-500/40 hover:border-amber-400 p-3.5 cursor-pointer transition-all duration-200 hover:shadow-xl hover:shadow-amber-500/10 flex flex-col justify-between"
+          >
+            <div>
+              <div className="flex items-start justify-between gap-1.5 mb-2">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 to-yellow-600 flex items-center justify-center text-zinc-950 shadow-md font-black text-lg shrink-0">
+                  🎰
+                </div>
+                <div className="flex flex-col items-end">
+                  <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono">
+                    10 Free Spins
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <span className="text-[9px] font-black uppercase tracking-wider text-amber-400 block">
+                  3× Multiplier
+                </span>
+                <h4 className="text-xs sm:text-sm font-black uppercase text-zinc-100 group-hover:text-amber-300 transition-colors">
+                  Lucky Neon 777
+                </h4>
+              </div>
+
+              <p className="text-[10px] text-zinc-400 mt-1 leading-snug line-clamp-2">
+                20-line classic video slot, Scatter bonus round, & feature buy!
+              </p>
+            </div>
+
+            <div className="mt-3 pt-2 border-t border-zinc-800/80 flex items-center justify-between gap-1">
+              <span className="text-[9px] font-mono text-emerald-400 font-bold">
+                Min $0.20
+              </span>
+              <button
+                type="button"
+                className="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black text-[10px] uppercase tracking-wider flex items-center gap-0.5 cursor-pointer transition-all"
+              >
+                <span>Play</span>
+                <ChevronRight className="w-3 h-3" />
+              </button>
+            </div>
+          </div>
+
+          {/* GAME 3: MINES */}
           <div 
             id="portal-mines"
             onClick={() => {
               sound.playChip();
               onNavigate('mines');
             }}
-            className="group relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-rose-950/30 via-zinc-900/90 to-zinc-950 border-2 border-rose-500/40 hover:border-rose-400 p-3 sm:p-5 cursor-pointer transition-all duration-200 hover:shadow-2xl hover:shadow-rose-500/20 flex flex-col justify-between"
+            className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-rose-950/30 via-zinc-900/90 to-zinc-950 border border-rose-500/40 hover:border-rose-400 p-3.5 cursor-pointer transition-all duration-200 hover:shadow-xl hover:shadow-rose-500/10 flex flex-col justify-between"
           >
             <div>
-              <div className="flex items-start justify-between gap-2 mb-2 sm:mb-3">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-br from-rose-500 to-red-700 border border-rose-300/50 flex items-center justify-center text-white shadow-lg shadow-rose-500/30 group-hover:scale-105 transition-transform shrink-0">
-                  <Bomb className="w-5 h-5 sm:w-6 sm:h-6" />
+              <div className="flex items-start justify-between gap-1.5 mb-2">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-rose-500 to-red-700 flex items-center justify-center text-white shadow-md shrink-0">
+                  <Bomb className="w-4 h-4" />
                 </div>
-                <span className="text-[9px] sm:text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-rose-950/80 text-rose-300 border border-rose-500/50 font-mono whitespace-nowrap">
+                <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-rose-950/80 text-rose-300 border border-rose-500/50 font-mono">
                   5x5 Grid
                 </span>
               </div>
 
               <div>
-                <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-rose-400 block">
-                  Multipliers
+                <span className="text-[9px] font-black uppercase tracking-wider text-rose-400 block">
+                  5,000,000× Max
                 </span>
-                <h4 className="text-sm sm:text-lg font-black uppercase text-zinc-100 group-hover:text-rose-300 transition-colors">
+                <h4 className="text-xs sm:text-sm font-black uppercase text-zinc-100 group-hover:text-rose-300 transition-colors">
                   Mines
                 </h4>
               </div>
 
-              <p className="text-[10px] sm:text-xs text-zinc-400 mt-1 leading-snug line-clamp-2">
-                Uncover hidden diamonds, dodge the bombs, and cash out massive multipliers at any step!
+              <p className="text-[10px] text-zinc-400 mt-1 leading-snug line-clamp-2">
+                Uncover diamonds, dodge bombs, and cash out multipliers anytime!
               </p>
-
-              <div className="flex flex-wrap gap-1 mt-2 sm:mt-3">
-                <span className="text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded bg-zinc-950 text-rose-300 border border-zinc-800">
-                  💣 1-24 Mines
-                </span>
-                <span className="text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded bg-zinc-950 text-emerald-300 border border-zinc-800">
-                  💎 5,000,000×
-                </span>
-              </div>
             </div>
 
-            <div className="mt-3 pt-2.5 sm:mt-4 sm:pt-3.5 border-t border-rose-950/60 flex items-center justify-between gap-2">
-              <span className="text-[9px] sm:text-xs font-mono text-zinc-400 truncate">
-                {stats.roundsPlayedMines || 0} Runs
+            <div className="mt-3 pt-2 border-t border-zinc-800/80 flex items-center justify-between gap-1">
+              <span className="text-[9px] font-mono text-emerald-400 font-bold">
+                Min $0.10
               </span>
               <button
                 type="button"
-                className="px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-rose-500 hover:bg-rose-400 text-zinc-950 font-black text-[10px] sm:text-xs uppercase tracking-wider flex items-center gap-1 shadow-md shadow-rose-500/20 group-hover:translate-x-0.5 transition-all cursor-pointer whitespace-nowrap"
+                className="px-2.5 py-1 rounded-lg bg-rose-500 hover:bg-rose-400 text-zinc-950 font-black text-[10px] uppercase tracking-wider flex items-center gap-0.5 cursor-pointer transition-all"
               >
                 <span>Play</span>
-                <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
+                <ChevronRight className="w-3 h-3" />
               </button>
             </div>
           </div>
 
-          {/* GAME 3: BLACKJACK */}
+          {/* GAME 4: BLACKJACK */}
           <div 
             id="portal-blackjack"
             onClick={() => {
               sound.playChip();
               onNavigate('blackjack');
             }}
-            className="group relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-emerald-950/30 via-zinc-900/90 to-zinc-950 border-2 border-emerald-500/40 hover:border-emerald-400 p-3 sm:p-5 cursor-pointer transition-all duration-200 hover:shadow-2xl hover:shadow-emerald-500/20 flex flex-col justify-between"
+            className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-950/30 via-zinc-900/90 to-zinc-950 border border-emerald-500/40 hover:border-emerald-400 p-3.5 cursor-pointer transition-all duration-200 hover:shadow-xl hover:shadow-emerald-500/10 flex flex-col justify-between"
           >
             <div>
-              <div className="flex items-start justify-between gap-2 mb-2 sm:mb-3">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-br from-emerald-400 to-emerald-700 border border-emerald-300/50 flex items-center justify-center text-zinc-950 shadow-lg shadow-emerald-500/30 group-hover:scale-105 transition-transform shrink-0">
-                  <Spade className="w-5 h-5 sm:w-6 sm:h-6" />
+              <div className="flex items-start justify-between gap-1.5 mb-2">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-700 flex items-center justify-center text-zinc-950 shadow-md shrink-0">
+                  <Spade className="w-4 h-4" />
                 </div>
-                <span className="text-[9px] sm:text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-500/50 font-mono whitespace-nowrap">
+                <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-500/50 font-mono">
                   Pays 3:2
                 </span>
               </div>
 
               <div>
-                <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-emerald-400 block">
+                <span className="text-[9px] font-black uppercase tracking-wider text-emerald-400 block">
                   Vegas Felt
                 </span>
-                <h4 className="text-sm sm:text-lg font-black uppercase text-zinc-100 group-hover:text-emerald-300 transition-colors">
+                <h4 className="text-xs sm:text-sm font-black uppercase text-zinc-100 group-hover:text-emerald-300 transition-colors">
                   Blackjack
                 </h4>
               </div>
 
-              <p className="text-[10px] sm:text-xs text-zinc-400 mt-1 leading-snug line-clamp-2">
-                6-deck shoe with splits, doubles, 21+3 Poker (100:1), & 1000:1 Queens side bets.
+              <p className="text-[10px] text-zinc-400 mt-1 leading-snug line-clamp-2">
+                6-deck shoe with splits, doubles, 21+3, & 1000:1 Queens side bets.
               </p>
-
-              <div className="flex flex-wrap gap-1 mt-2 sm:mt-3">
-                <span className="text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded bg-zinc-950 text-amber-300 border border-zinc-800">
-                  🃏 21+3 Poker
-                </span>
-                <span className="text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded bg-zinc-950 text-purple-300 border border-zinc-800">
-                  👸 1000:1 Queens
-                </span>
-              </div>
             </div>
 
-            <div className="mt-3 pt-2.5 sm:mt-4 sm:pt-3.5 border-t border-emerald-950/60 flex items-center justify-between gap-2">
-              <span className="text-[9px] sm:text-xs font-mono text-zinc-400 truncate">
-                {stats.handsPlayedBlackjack} Hands
+            <div className="mt-3 pt-2 border-t border-zinc-800/80 flex items-center justify-between gap-1">
+              <span className="text-[9px] font-mono text-emerald-400 font-bold">
+                Min $1.00
               </span>
               <button
                 type="button"
-                className="px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black text-[10px] sm:text-xs uppercase tracking-wider flex items-center gap-1 shadow-md shadow-emerald-500/20 group-hover:translate-x-0.5 transition-all cursor-pointer whitespace-nowrap"
+                className="px-2.5 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black text-[10px] uppercase tracking-wider flex items-center gap-0.5 cursor-pointer transition-all"
               >
                 <span>Deal</span>
-                <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
+                <ChevronRight className="w-3 h-3" />
               </button>
             </div>
           </div>
 
-          {/* GAME 4: COINFLIP */}
+          {/* GAME 5: COINFLIP */}
           <div 
             id="portal-coinflip"
             onClick={() => {
               sound.playChip();
               onNavigate('coinflip');
             }}
-            className="group relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-yellow-950/30 via-zinc-900/90 to-zinc-950 border-2 border-yellow-500/40 hover:border-yellow-400 p-3 sm:p-5 cursor-pointer transition-all duration-200 hover:shadow-2xl hover:shadow-yellow-500/20 flex flex-col justify-between"
+            className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-yellow-950/30 via-zinc-900/90 to-zinc-950 border border-yellow-500/40 hover:border-yellow-400 p-3.5 cursor-pointer transition-all duration-200 hover:shadow-xl hover:shadow-yellow-500/10 flex flex-col justify-between"
           >
             <div>
-              <div className="flex items-start justify-between gap-2 mb-2 sm:mb-3">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-br from-amber-400 to-yellow-600 border border-yellow-300/50 flex items-center justify-center text-zinc-950 shadow-lg shadow-yellow-500/30 group-hover:scale-105 transition-transform shrink-0">
-                  <Coins className="w-5 h-5 sm:w-6 sm:h-6" />
+              <div className="flex items-start justify-between gap-1.5 mb-2">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 to-yellow-600 flex items-center justify-center text-zinc-950 shadow-md shrink-0">
+                  <Coins className="w-4 h-4" />
                 </div>
-                <span className="text-[9px] sm:text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-yellow-950/80 text-yellow-300 border border-yellow-500/50 font-mono whitespace-nowrap">
+                <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-yellow-950/80 text-yellow-300 border border-yellow-500/50 font-mono">
                   50/50 Instant
                 </span>
               </div>
 
               <div>
-                <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-yellow-400 block">
+                <span className="text-[9px] font-black uppercase tracking-wider text-yellow-400 block">
                   Streak Double-Up
                 </span>
-                <h4 className="text-sm sm:text-lg font-black uppercase text-zinc-100 group-hover:text-yellow-300 transition-colors">
-                  Classic Coinflip
+                <h4 className="text-xs sm:text-sm font-black uppercase text-zinc-100 group-hover:text-yellow-300 transition-colors">
+                  Coinflip
                 </h4>
               </div>
 
-              <p className="text-[10px] sm:text-xs text-zinc-400 mt-1 leading-snug line-clamp-2">
-                Pick Heads or Tails. 3D coin toss with consecutive streak multipliers and instant collect options!
+              <p className="text-[10px] text-zinc-400 mt-1 leading-snug line-clamp-2">
+                Pick Heads or Tails. Consecutive streak multipliers & instant cashout!
               </p>
-
-              <div className="flex flex-wrap gap-1 mt-2 sm:mt-3">
-                <span className="text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded bg-zinc-950 text-amber-300 border border-zinc-800">
-                  👑 Heads
-                </span>
-                <span className="text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded bg-zinc-950 text-purple-300 border border-zinc-800">
-                  ⚡ Tails
-                </span>
-              </div>
             </div>
 
-            <div className="mt-3 pt-2.5 sm:mt-4 sm:pt-3.5 border-t border-yellow-950/60 flex items-center justify-between gap-2">
-              <span className="text-[9px] sm:text-xs font-mono text-zinc-400 truncate">
-                {stats.roundsPlayedCoinflip || 0} Flips
+            <div className="mt-3 pt-2 border-t border-zinc-800/80 flex items-center justify-between gap-1">
+              <span className="text-[9px] font-mono text-emerald-400 font-bold">
+                Min $0.10
               </span>
               <button
                 type="button"
-                className="px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-yellow-500 hover:bg-yellow-400 text-zinc-950 font-black text-[10px] sm:text-xs uppercase tracking-wider flex items-center gap-1 shadow-md shadow-yellow-500/20 group-hover:translate-x-0.5 transition-all cursor-pointer whitespace-nowrap"
+                className="px-2.5 py-1 rounded-lg bg-yellow-500 hover:bg-yellow-400 text-zinc-950 font-black text-[10px] uppercase tracking-wider flex items-center gap-0.5 cursor-pointer transition-all"
               >
                 <span>Flip</span>
-                <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
+                <ChevronRight className="w-3 h-3" />
               </button>
             </div>
           </div>
 
-          {/* GAME 5: DICE DUELS */}
+          {/* GAME 6: DICE DUELS */}
           <div 
             id="portal-dice-duels"
             onClick={() => {
               sound.playChip();
               onNavigate('dice-duels');
             }}
-            className="group relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-indigo-950/30 via-zinc-900/90 to-zinc-950 border-2 border-indigo-500/40 hover:border-indigo-400 p-3 sm:p-5 cursor-pointer transition-all duration-200 hover:shadow-2xl hover:shadow-indigo-500/20 flex flex-col justify-between"
+            className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-950/30 via-zinc-900/90 to-zinc-950 border border-indigo-500/40 hover:border-indigo-400 p-3.5 cursor-pointer transition-all duration-200 hover:shadow-xl hover:shadow-indigo-500/10 flex flex-col justify-between"
           >
             <div>
-              <div className="flex items-start justify-between gap-2 mb-2 sm:mb-3">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-700 border border-indigo-300/50 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30 group-hover:scale-105 transition-transform shrink-0">
-                  <Swords className="w-5 h-5 sm:w-6 sm:h-6" />
+              <div className="flex items-start justify-between gap-1.5 mb-2">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-700 flex items-center justify-center text-white shadow-md shrink-0">
+                  <Swords className="w-4 h-4" />
                 </div>
-                <span className="text-[9px] sm:text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-indigo-950/80 text-indigo-300 border border-indigo-500/50 font-mono whitespace-nowrap">
-                  PvP Arena
+                <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-indigo-950/80 text-indigo-300 border border-indigo-500/50 font-mono">
+                  Arena Clash
                 </span>
               </div>
 
               <div>
-                <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-indigo-400 block">
-                  Dice Battles
+                <span className="text-[9px] font-black uppercase tracking-wider text-indigo-400 block">
+                  PvP Duels
                 </span>
-                <h4 className="text-sm sm:text-lg font-black uppercase text-zinc-100 group-hover:text-indigo-300 transition-colors">
+                <h4 className="text-xs sm:text-sm font-black uppercase text-zinc-100 group-hover:text-indigo-300 transition-colors">
                   Dice Duels
                 </h4>
               </div>
 
-              <p className="text-[10px] sm:text-xs text-zinc-400 mt-1 leading-snug line-clamp-2">
-                Challenge opponents to 1v1 rollouts or Best-of-3 arena clashes with consecutive win multipliers!
+              <p className="text-[10px] text-zinc-400 mt-1 leading-snug line-clamp-2">
+                1v1 rollouts or Best-of-3 arena clashes with streak multipliers!
               </p>
-
-              <div className="flex flex-wrap gap-1 mt-2 sm:mt-3">
-                <span className="text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded bg-zinc-950 text-indigo-300 border border-zinc-800">
-                  🎲 2-Dice Clash
-                </span>
-                <span className="text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded bg-zinc-950 text-amber-300 border border-zinc-800">
-                  ⚔️ Streak Multiplier
-                </span>
-              </div>
             </div>
 
-            <div className="mt-3 pt-2.5 sm:mt-4 sm:pt-3.5 border-t border-indigo-950/60 flex items-center justify-between gap-2">
-              <span className="text-[9px] sm:text-xs font-mono text-zinc-400 truncate">
-                {stats.roundsPlayedDiceDuels || 0} Clashes
+            <div className="mt-3 pt-2 border-t border-zinc-800/80 flex items-center justify-between gap-1">
+              <span className="text-[9px] font-mono text-emerald-400 font-bold">
+                Min $0.50
               </span>
               <button
                 type="button"
-                className="px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-zinc-950 font-black text-[10px] sm:text-xs uppercase tracking-wider flex items-center gap-1 shadow-md shadow-indigo-500/20 group-hover:translate-x-0.5 transition-all cursor-pointer whitespace-nowrap"
+                className="px-2.5 py-1 rounded-lg bg-indigo-500 hover:bg-indigo-400 text-zinc-950 font-black text-[10px] uppercase tracking-wider flex items-center gap-0.5 cursor-pointer transition-all"
               >
                 <span>Play</span>
-                <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
+                <ChevronRight className="w-3 h-3" />
               </button>
             </div>
           </div>
 
-          {/* GAME 6: KENO */}
+          {/* GAME 7: KENO */}
           <div 
             id="portal-keno"
             onClick={() => {
               sound.playChip();
               onNavigate('keno');
             }}
-            className="group relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-teal-950/30 via-zinc-900/90 to-zinc-950 border-2 border-teal-500/40 hover:border-teal-400 p-3 sm:p-5 cursor-pointer transition-all duration-200 hover:shadow-2xl hover:shadow-teal-500/20 flex flex-col justify-between"
+            className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-teal-950/30 via-zinc-900/90 to-zinc-950 border border-teal-500/40 hover:border-teal-400 p-3.5 cursor-pointer transition-all duration-200 hover:shadow-xl hover:shadow-teal-500/10 flex flex-col justify-between"
           >
             <div>
-              <div className="flex items-start justify-between gap-2 mb-2 sm:mb-3">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-br from-teal-400 to-emerald-700 border border-teal-300/50 flex items-center justify-center text-zinc-950 shadow-lg shadow-teal-500/30 group-hover:scale-105 transition-transform shrink-0">
-                  <Dices className="w-5 h-5 sm:w-6 sm:h-6" />
+              <div className="flex items-start justify-between gap-1.5 mb-2">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-400 to-emerald-700 flex items-center justify-center text-zinc-950 shadow-md shrink-0">
+                  <Dices className="w-4 h-4" />
                 </div>
-                <span className="text-[9px] sm:text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-teal-950/80 text-teal-300 border border-teal-500/50 font-mono whitespace-nowrap">
+                <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-teal-950/80 text-teal-300 border border-teal-500/50 font-mono">
                   10-Ball Draw
                 </span>
               </div>
 
               <div>
-                <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-teal-400 block">
-                  Lottery Draw
+                <span className="text-[9px] font-black uppercase tracking-wider text-teal-400 block">
+                  3,000,000× Max
                 </span>
-                <h4 className="text-sm sm:text-lg font-black uppercase text-zinc-100 group-hover:text-teal-300 transition-colors">
+                <h4 className="text-xs sm:text-sm font-black uppercase text-zinc-100 group-hover:text-teal-300 transition-colors">
                   Keno
                 </h4>
               </div>
 
-              <p className="text-[10px] sm:text-xs text-zinc-400 mt-1 leading-snug line-clamp-2">
-                40-ball board with 10 drawn balls. Safe Grinder, Vegas 95% RTP, or Degen (3,000,000x jackpot).
+              <p className="text-[10px] text-zinc-400 mt-1 leading-snug line-clamp-2">
+                40-ball lottery board with Safe, Vegas 95% RTP, or Degen mode!
               </p>
-
-              <div className="flex flex-wrap gap-1 mt-2 sm:mt-3">
-                <span className="text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded bg-zinc-950 text-emerald-400 border border-zinc-800">
-                  🛡️ Safe
-                </span>
-                <span className="text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded bg-zinc-950 text-amber-300 border border-zinc-800">
-                  ⚖️ Vegas
-                </span>
-                <span className="text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded bg-zinc-950 text-rose-400 border border-zinc-800">
-                  🔥 3,000,000x
-                </span>
-              </div>
             </div>
 
-            <div className="mt-3 pt-2.5 sm:mt-4 sm:pt-3.5 border-t border-teal-950/60 flex items-center justify-between gap-2">
-              <span className="text-[9px] sm:text-xs font-mono text-zinc-400 truncate">
-                {stats.roundsPlayedKeno} Draws
+            <div className="mt-3 pt-2 border-t border-zinc-800/80 flex items-center justify-between gap-1">
+              <span className="text-[9px] font-mono text-emerald-400 font-bold">
+                Min $0.10
               </span>
               <button
                 type="button"
-                className="px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-zinc-950 font-black text-[10px] sm:text-xs uppercase tracking-wider flex items-center gap-1 shadow-md shadow-teal-500/20 group-hover:translate-x-0.5 transition-all cursor-pointer whitespace-nowrap"
+                className="px-2.5 py-1 rounded-lg bg-teal-500 hover:bg-teal-400 text-zinc-950 font-black text-[10px] uppercase tracking-wider flex items-center gap-0.5 cursor-pointer transition-all"
               >
                 <span>Play</span>
-                <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
+                <ChevronRight className="w-3 h-3" />
               </button>
             </div>
           </div>
 
-          {/* GAME 7: LOOT CRATES */}
+          {/* GAME 8: LOOT CRATES */}
           <div 
             id="portal-unboxer"
             onClick={() => {
               sound.playChip();
               onNavigate('unboxer');
             }}
-            className="group relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-purple-950/30 via-zinc-900/90 to-zinc-950 border-2 border-purple-500/40 hover:border-purple-400 p-3 sm:p-5 cursor-pointer transition-all duration-200 hover:shadow-2xl hover:shadow-purple-500/20 flex flex-col justify-between"
+            className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-950/30 via-zinc-900/90 to-zinc-950 border border-purple-500/40 hover:border-purple-400 p-3.5 cursor-pointer transition-all duration-200 hover:shadow-xl hover:shadow-purple-500/10 flex flex-col justify-between"
           >
             <div>
-              <div className="flex items-start justify-between gap-2 mb-2 sm:mb-3">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-700 border border-purple-300/50 flex items-center justify-center text-zinc-950 shadow-lg shadow-purple-500/30 group-hover:scale-105 transition-transform shrink-0">
-                  <Package className="w-5 h-5 sm:w-6 sm:h-6" />
+              <div className="flex items-start justify-between gap-1.5 mb-2">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-700 flex items-center justify-center text-zinc-950 shadow-md shrink-0">
+                  <Package className="w-4 h-4" />
                 </div>
-                <span className="text-[9px] sm:text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-purple-950/80 text-purple-300 border border-purple-500/50 font-mono whitespace-nowrap">
+                <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-purple-950/80 text-purple-300 border border-purple-500/50 font-mono">
                   Instant Drops
                 </span>
               </div>
 
               <div>
-                <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-purple-400 block">
-                  Case Openings
+                <span className="text-[9px] font-black uppercase tracking-wider text-purple-400 block">
+                  Case Unboxing
                 </span>
-                <h4 className="text-sm sm:text-lg font-black uppercase text-zinc-100 group-hover:text-purple-300 transition-colors">
+                <h4 className="text-xs sm:text-sm font-black uppercase text-zinc-100 group-hover:text-purple-300 transition-colors">
                   Loot Crates
                 </h4>
               </div>
 
-              <p className="text-[10px] sm:text-xs text-zinc-400 mt-1 leading-snug line-clamp-2">
-                Solo multi-open up to 10× at once, or join 1v1 and 2v2 Crate Battles with auto chip payouts.
+              <p className="text-[10px] text-zinc-400 mt-1 leading-snug line-clamp-2">
+                Solo 1x-10x multi-openings, or 1v1 and 2v2 high-roller crate battles!
               </p>
-
-              <div className="flex flex-wrap gap-1 mt-2 sm:mt-3">
-                <span className="text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded bg-zinc-950 text-amber-300 border border-zinc-800">
-                  ⚡ Multi 1x-10x
-                </span>
-                <span className="text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded bg-zinc-950 text-purple-300 border border-zinc-800">
-                  ⚔️ Crate Battles
-                </span>
-              </div>
             </div>
 
-            <div className="mt-3 pt-2.5 sm:mt-4 sm:pt-3.5 border-t border-purple-950/60 flex items-center justify-between gap-2">
-              <span className="text-[9px] sm:text-xs font-mono text-zinc-400 truncate">
-                {stats.cratesOpened} Crates
+            <div className="mt-3 pt-2 border-t border-zinc-800/80 flex items-center justify-between gap-1">
+              <span className="text-[9px] font-mono text-emerald-400 font-bold">
+                Min $0.50
               </span>
-
               <button
                 type="button"
-                className="px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-black text-[10px] sm:text-xs uppercase tracking-wider flex items-center gap-1 shadow-md shadow-purple-600/20 group-hover:translate-x-0.5 transition-all cursor-pointer whitespace-nowrap"
+                className="px-2.5 py-1 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-black text-[10px] uppercase tracking-wider flex items-center gap-0.5 cursor-pointer transition-all"
               >
                 <span>Open</span>
-                <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
+                <ChevronRight className="w-3 h-3" />
               </button>
             </div>
           </div>
 
         </div>
-      </div>
-
-      {/* DAILY WAGER TOURNAMENT & LEADERBOARD PROMO */}
-      <div 
-        id="portal-leaderboard"
-        onClick={() => {
-          sound.playChip();
-          onNavigate('leaderboard');
-        }}
-        className="group relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-950/40 via-zinc-900 to-zinc-950 border border-amber-500/40 hover:border-amber-400 p-3.5 sm:p-4 cursor-pointer transition-all duration-200 hover:shadow-xl hover:shadow-amber-500/10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3"
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-yellow-600 flex items-center justify-center text-zinc-950 shadow-md shrink-0">
-            <Crown className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h4 className="text-xs sm:text-sm font-black uppercase text-zinc-100 group-hover:text-amber-300 transition-colors">
-                Daily Wager Race & Top 20 Hall of Fame
-              </h4>
-              <span className="text-[9px] font-black uppercase px-2 py-0.2 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                12:00 AM EST Winner Crown
-              </span>
-            </div>
-            <p className="text-[11px] text-zinc-400">
-              Wager Gold Coins to climb the leaderboard! Top wagerers receive real money cashout payouts at midnight EST. (Admins excluded).
-            </p>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          className="px-3.5 py-1.5 rounded-xl bg-amber-500 group-hover:bg-amber-400 text-zinc-950 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1 shadow-md shadow-amber-500/20 shrink-0 cursor-pointer"
-        >
-          <span>View Wager Race</span>
-          <ChevronRight className="w-3.5 h-3.5" />
-        </button>
       </div>
 
       {/* Ad Banner placement */}
@@ -796,11 +701,11 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
         onGoAdFree={onOpenPayForAdFree} 
       />
 
-      {/* Bottom Hub Actions */}
+      {/* Clean Bottom Navigation Hub */}
       <div className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-2xl bg-zinc-900/40 border border-zinc-800/60 text-xs">
         <div className="flex items-center gap-2 text-zinc-400">
-          <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
-          <span className="text-[11px]">No daily balance wiping. Reload $1.00 USD + 100k GC every Midnight EST. Real Money Cashier active.</span>
+          <Sparkles className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span className="text-[11px]">Daily Reload: $1.00 USD + 100k GC every Midnight EST. Real Cashier active.</span>
         </div>
 
         <div className="flex items-center gap-2">
@@ -810,7 +715,7 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
                 sound.playChip();
                 onToggleChat();
               }}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold text-[11px] cursor-pointer"
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-700 font-bold text-[11px] cursor-pointer"
             >
               <MessageSquare className="w-3.5 h-3.5 text-amber-400" />
               <span>Lounge Chat</span>
@@ -826,7 +731,7 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
               className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-purple-950/80 hover:bg-purple-900 text-purple-200 border border-purple-500/60 font-black text-[11px] shadow-sm animate-in fade-in cursor-pointer"
             >
               <ShieldCheck className="w-3.5 h-3.5 text-purple-400" />
-              <span>Admin Approvals & Balance Adjuster</span>
+              <span>Admin Approvals</span>
             </button>
           )}
 

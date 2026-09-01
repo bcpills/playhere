@@ -205,14 +205,14 @@ export default function App() {
     return 1000000;
   });
 
-  // Real Money USD Cash Balance State (Starts with $5.00 sign-up bonus)
+  // Real Money USD Cash Balance State (Starts with $2.00 sign-up bonus)
   const [cashBalance, setCashBalance] = useState<number>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.CASH_BALANCE);
     if (saved !== null) {
       const parsed = parseFloat(saved);
-      return !isNaN(parsed) && isFinite(parsed) ? Math.max(0, parsed) : 5.00;
+      return !isNaN(parsed) && isFinite(parsed) ? Math.max(0, parsed) : 2.00;
     }
-    return 5.00;
+    return 2.00;
   });
 
   const [stats, setStats] = useState<CasinoStats>(() => {
@@ -437,7 +437,7 @@ export default function App() {
     if (typeof deltaOrUpdater === 'function') {
       setCashBalance(prev => {
         const calculated = deltaOrUpdater(prev);
-        const next = isNaN(calculated) || !isFinite(calculated) ? 5.00 : Math.max(0, Math.round(calculated * 100) / 100);
+        const next = isNaN(calculated) || !isFinite(calculated) ? 2.00 : Math.max(0, Math.round(calculated * 100) / 100);
         return next;
       });
       return;
@@ -446,9 +446,9 @@ export default function App() {
     const delta = deltaOrUpdater;
     if (isNaN(delta) || !isFinite(delta)) return;
     setCashBalance(prev => {
-      const safePrev = isNaN(prev) || !isFinite(prev) ? 5.00 : prev;
+      const safePrev = isNaN(prev) || !isFinite(prev) ? 2.00 : prev;
       const next = Math.max(0, Math.round((safePrev + delta) * 100) / 100);
-      return isNaN(next) ? 5.00 : next;
+      return isNaN(next) ? 2.00 : next;
     });
   };
 
@@ -532,7 +532,7 @@ export default function App() {
     }));
   };
 
-  // Signup Completion Handler (awards $5.00 Cash + 1,000,000 Gold Coins)
+  // Signup Completion Handler (awards $2.00 Cash + 1,000,000 Gold Coins)
   const handleCompleteSignup = (signupData: Partial<UserAccount>) => {
     setUserAccount(prev => ({
       ...prev,
@@ -555,7 +555,7 @@ export default function App() {
       email: undefined,
     }));
     setBalance(1000000);
-    setCashBalance(5.00);
+    setCashBalance(2.00);
     setAtmHistory([]);
     sound.playChip();
   };
