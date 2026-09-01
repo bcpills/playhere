@@ -326,6 +326,79 @@ class SoundEngine {
     osc.stop(t + 0.09);
   }
 
+  playReelStop(pitchOffset = 0) {
+    if (!this.enabled) return;
+    this.initCtx();
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(320 + pitchOffset * 40, t);
+    osc.frequency.exponentialRampToValueAtTime(110, t + 0.05);
+
+    gain.gain.setValueAtTime(0.22, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+
+    osc.start(t);
+    osc.stop(t + 0.06);
+  }
+
+  playCoinLock(isJackpot = false) {
+    if (!this.enabled) return;
+    this.initCtx();
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    const freqs = isJackpot ? [659, 880, 1174, 1567] : [523, 783, 1046];
+
+    freqs.forEach((f, i) => {
+      if (!this.ctx) return;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(f, t + i * 0.03);
+      osc.frequency.exponentialRampToValueAtTime(f * 1.2, t + i * 0.03 + 0.12);
+
+      gain.gain.setValueAtTime(0.18, t + i * 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.03 + 0.15);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(t + i * 0.03);
+      osc.stop(t + i * 0.03 + 0.16);
+    });
+  }
+
+  playBonusTrigger() {
+    if (!this.enabled) return;
+    this.initCtx();
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    const chord = [440, 554, 659, 880, 1108, 1318];
+    chord.forEach((freq, idx) => {
+      if (!this.ctx) return;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, t + idx * 0.05);
+      osc.frequency.exponentialRampToValueAtTime(freq * 1.5, t + idx * 0.05 + 0.4);
+
+      gain.gain.setValueAtTime(0.2, t + idx * 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + idx * 0.05 + 0.5);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(t + idx * 0.05);
+      osc.stop(t + idx * 0.05 + 0.55);
+    });
+  }
+
   playExplosion() {
     if (!this.enabled) return;
     this.initCtx();

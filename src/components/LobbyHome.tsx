@@ -287,14 +287,14 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
         {/* CASINO FLOOR GAMES GRID (2-COL MOBILE, 3-COL DESKTOP) */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-4">
           
-          {/* GAME 1: ORIGINAL SLOTS (FEATURED) */}
+          {/* GAME 1: LUCKY NEON 777 SLOTS */}
           <div 
             id="portal-slots"
             onClick={() => {
               sound.playChip();
               onNavigate('slots');
             }}
-            className="col-span-2 md:col-span-1 group relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-amber-950/40 via-zinc-900/90 to-purple-950/40 border-2 border-amber-500/50 hover:border-amber-400 p-3.5 sm:p-5 cursor-pointer transition-all duration-200 hover:shadow-2xl hover:shadow-amber-500/20 flex flex-col justify-between"
+            className="group relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-amber-950/40 via-zinc-900/90 to-purple-950/40 border-2 border-amber-500/50 hover:border-amber-400 p-3.5 sm:p-5 cursor-pointer transition-all duration-200 hover:shadow-2xl hover:shadow-amber-500/20 flex flex-col justify-between"
           >
             <div>
               <div className="flex items-start justify-between gap-2 mb-2 sm:mb-3">
@@ -303,33 +303,33 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
                 </div>
                 <div className="flex items-center gap-1">
                   <span className="text-[9px] sm:text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono">
-                    20 Paylines
+                    20 Lines
                   </span>
-                  <span className="text-[9px] sm:text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono">
-                    Real Cash
+                  <span className="text-[9px] sm:text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/40 font-mono">
+                    3× Bonus
                   </span>
                 </div>
               </div>
 
               <div>
                 <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-amber-400 block">
-                  Original Vegas Video Slots
+                  Vegas Video Slots (Min $0.20)
                 </span>
                 <h4 className="text-sm sm:text-lg font-black uppercase text-zinc-100 group-hover:text-amber-300 transition-colors">
-                  VIP Original Slots
+                  Lucky Neon 777
                 </h4>
               </div>
 
               <p className="text-[10px] sm:text-xs text-zinc-400 mt-1 leading-snug line-clamp-2">
-                5-Reel classic video slot machine with 3x Scatter Free Spins, Wild 7s, and 500x Diamond Jackpot!
+                Animated reels, auto-spinning 3× multiplier Free Spins, and $20.00 Feature Bonus Buy!
               </p>
 
               <div className="flex flex-wrap gap-1 mt-2 sm:mt-3">
                 <span className="text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded bg-zinc-950 text-amber-300 border border-zinc-800">
-                  💎 500x Jackpot
+                  ⚡ 10 Free Spins
                 </span>
-                <span className="text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded bg-zinc-950 text-purple-300 border border-zinc-800">
-                  ⚡ Free Spins Round
+                <span className="text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded bg-zinc-950 text-emerald-300 border border-zinc-800">
+                  💎 100× Feature Buy
                 </span>
               </div>
             </div>
@@ -342,7 +342,68 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
                 type="button"
                 className="px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black text-[10px] sm:text-xs uppercase tracking-wider flex items-center gap-1 shadow-md shadow-amber-500/20 group-hover:translate-x-0.5 transition-all cursor-pointer whitespace-nowrap"
               >
-                <span>Spin</span>
+                <span>Play ($0.20)</span>
+                <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* GAME 1B: SOLAR INFERNO HOLD & WIN */}
+          <div 
+            id="portal-slots-holdwin"
+            onClick={() => {
+              sound.playChip();
+              onNavigate('slots');
+            }}
+            className="group relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-red-950/40 via-zinc-900/90 to-amber-950/40 border-2 border-red-500/50 hover:border-amber-400 p-3.5 sm:p-5 cursor-pointer transition-all duration-200 hover:shadow-2xl hover:shadow-red-500/20 flex flex-col justify-between"
+          >
+            <div>
+              <div className="flex items-start justify-between gap-2 mb-2 sm:mb-3">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-br from-red-600 to-amber-500 border border-yellow-300/50 flex items-center justify-center text-zinc-950 shadow-lg shadow-red-500/30 group-hover:scale-105 transition-transform shrink-0 font-black text-xl">
+                  🔥
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="text-[9px] sm:text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/40 font-mono">
+                    Hold & Win
+                  </span>
+                  <span className="text-[9px] sm:text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono">
+                    1,000× Grand
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-amber-400 block">
+                  New Slot Game (Min $0.10)
+                </span>
+                <h4 className="text-sm sm:text-lg font-black uppercase text-zinc-100 group-hover:text-amber-300 transition-colors">
+                  Solar Inferno: Hold & Win
+                </h4>
+              </div>
+
+              <p className="text-[10px] sm:text-xs text-zinc-400 mt-1 leading-snug line-clamp-2">
+                Lock 6+ Fiery Solar Orbs, auto-play 3 Respins, win Mini/Minor/Major & 1,000× Grand Jackpots!
+              </p>
+
+              <div className="flex flex-wrap gap-1 mt-2 sm:mt-3">
+                <span className="text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded bg-zinc-950 text-red-300 border border-zinc-800">
+                  ☀️ 3-Respins Reset
+                </span>
+                <span className="text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded bg-zinc-950 text-amber-300 border border-zinc-800">
+                  🔥 $12 Bonus Buy
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-3 pt-2.5 sm:mt-4 sm:pt-3.5 border-t border-red-950/60 flex items-center justify-between gap-2">
+              <span className="text-[9px] sm:text-xs font-mono text-zinc-400 truncate">
+                Jackpots up to 1,000×
+              </span>
+              <button
+                type="button"
+                className="px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-gradient-to-r from-red-600 to-amber-500 hover:from-red-500 hover:to-amber-400 text-zinc-950 font-black text-[10px] sm:text-xs uppercase tracking-wider flex items-center gap-1 shadow-md shadow-red-500/20 group-hover:translate-x-0.5 transition-all cursor-pointer whitespace-nowrap"
+              >
+                <span>Play ($0.10)</span>
                 <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
               </button>
             </div>
