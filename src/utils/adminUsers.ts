@@ -100,12 +100,15 @@ export const INITIAL_MOCK_USERS: AdminManagedUser[] = [
   },
 ];
 
-export function getAdminUserDirectory(currentUser: UserAccount, currentBalance: number, totalWagered: number): AdminManagedUser[] {
+export function getAdminUserDirectory(currentUser?: UserAccount | null, currentBalance: number = 1000000, totalWagered: number = 0): AdminManagedUser[] {
   let stored: AdminManagedUser[] = [];
   try {
     const raw = localStorage.getItem(ADMIN_USER_DIRECTORY_KEY);
     if (raw) {
-      stored = JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        stored = parsed.filter((u): u is AdminManagedUser => !!u && typeof u === 'object' && !!u.id);
+      }
     }
   } catch (e) {
     console.error('Failed to parse admin users directory:', e);
@@ -116,54 +119,75 @@ export function getAdminUserDirectory(currentUser: UserAccount, currentBalance: 
   }
 
   // Update current user entry
-  const userTier = getVIPTier(totalWagered);
-  const currentUserIndex = stored.findIndex(u => u.isCurrentUser || u.id === currentUser.id);
+  const safeCurrentBalance = typeof currentBalance === 'number' && !isNaN(currentBalance) ? currentBalance : 1000000;
+  const safeTotalWagered = typeof totalWagered === 'number' && !isNaN(totalWagered) ? totalWagered : 0;
+  const userTier = getVIPTier(safeTotalWagered);
+  const currentUserId = currentUser?.id || 'usr-admin-thomas';
+  const currentUserIndex = stored.findIndex(u => u && (u.isCurrentUser || u.id === currentUserId));
   
   const currentUserEntry: AdminManagedUser = {
-    id: currentUser.id,
-    username: currentUser.username || 'Thomas J',
-    avatar: currentUser.avatar || '👑',
-    email: currentUser.email || currentUser.googleEmail || 'thomasjoe55@gmail.com',
+    id: currentUserId,
+    username: currentUser?.username || 'Thomas J',
+    avatar: currentUser?.avatar || '👑',
+    email: currentUser?.email || currentUser?.googleEmail || 'thomasjoe55@gmail.com',
     vipTier: userTier,
-    balance: currentBalance,
-    peakBalance: Math.max(currentUser.peakBalanceAllTime || 0, currentBalance),
-    totalWagered: totalWagered,
-    accountStatus: currentUser.accountStatus || 'active',
-    accountType: currentUser.accountType || (currentUser.isAdFree ? 'paid' : 'free'),
-    userRole: currentUser.userRole || 'admin',
-    isAdFree: !!currentUser.isAdFree,
-    createdAt: currentUser.createdAt || Date.now(),
+    balance: safeCurrentBalance,
+    peakBalance: Math.max(currentUser?.peakBalanceAllTime || 0, safeCurrentBalance),
+    totalWagered: safeTotalWagered,
+    accountStatus: currentUser?.accountStatus || 'active',
+    accountType: currentUser?.accountType || (currentUser?.isAdFree ? 'paid' : 'free'),
+    userRole: currentUser?.userRole || 'admin',
+    isAdFree: !!currentUser?.isAdFree,
+    createdAt: currentUser?.createdAt || Date.now(),
     lastActive: 'Active now',
     isCurrentUser: true,
   };
 
   if (currentUserIndex >= 0) {
-    stored[currentUserIndex] = currentUserEntry;
+    stored[currentUserIndex] = { ...stored[currentUserIndex], ...currentUserEntry };
   } else {
     stored.unshift(currentUserEntry);
   }
 
   // Sync fake players
-  const fakePlayers = loadStoredFakePlayers();
-  fakePlayers.forEach(fp => {
-    const idx = stored.findIndex(u => u.id === fp.id);
-    if (idx >= 0) {
-      stored[idx] = {
-        ...stored[idx],
-        username: fp.username,
-        avatar: fp.avatar,
-        balance: fp.balance,
-        vipTier: fp.vipTier,
-      };
+  try {
+    const fakePlayers = loadStoredFakePlayers();
+    if (Array.isArray(fakePlayers)) {
+      fakePlayers.forEach(fp => {
+        if (!fp || !fp.id) return;
+        const idx = stored.findIndex(u => u && u.id === fp.id);
+        if (idx >= 0 && stored[idx]) {
+          stored[idx] = {
+            ...stored[idx],
+            username: fp.username || stored[idx].username || 'Player',
+            avatar: fp.avatar || stored[idx].avatar || '🎲',
+            balance: typeof fp.balance === 'number' ? fp.balance : (stored[idx].balance || 0),
+            vipTier: fp.vipTier || stored[idx].vipTier || 'Bronze Degen',
+          };
+        }
+      });
     }
-  });
+  } catch (err) {
+    console.error('Error syncing fake players in admin directory:', err);
+  }
 
-  return stored;
+  return stored.map(u => ({
+    ...u,
+    username: u.username || 'Gambler',
+    avatar: u.avatar || '🎲',
+    balance: typeof u.balance === 'number' && !isNaN(u.balance) ? u.balance : 0,
+    totalWagered: typeof u.totalWagered === 'number' && !isNaN(u.totalWagered) ? u.totalWagered : 0,
+    vipTier: u.vipTier || 'Bronze Degen',
+    accountStatus: u.accountStatus || 'active',
+    accountType: u.accountType || 'free',
+  }));
 }
 
 export function saveAdminUserDirectory(users: AdminManagedUser[]): void {
   try {
-    localStorage.setItem(ADMIN_USER_DIRECTORY_KEY, JSON.stringify(users));
+    if (Array.isArray(users)) {
+      localStorage.setItem(ADMIN_USER_DIRECTORY_KEY, JSON.stringify(users));
+    }
   } catch (e) {
     console.error('Failed to save admin user directory:', e);
   }
@@ -172,10 +196,19 @@ export function saveAdminUserDirectory(users: AdminManagedUser[]): void {
 export function updateUserInAdminDirectory(userId: string, updates: Partial<AdminManagedUser>): AdminManagedUser[] {
   try {
     const raw = localStorage.getItem(ADMIN_USER_DIRECTORY_KEY);
-    let users: AdminManagedUser[] = raw ? JSON.parse(raw) : [...INITIAL_MOCK_USERS];
+    let users: AdminManagedUser[] = [];
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        users = parsed;
+      }
+    }
+    if (users.length === 0) {
+      users = [...INITIAL_MOCK_USERS];
+    }
     
     users = users.map(u => {
-      if (u.id === userId) {
+      if (u && u.id === userId) {
         return { ...u, ...updates };
       }
       return u;

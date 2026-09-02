@@ -248,18 +248,42 @@ export default function App() {
 
   // Real Money Cashier & Ledger States
   const [payoutRequests, setPayoutRequests] = useState<PayoutRequest[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.PAYOUT_REQUESTS);
-    return saved ? JSON.parse(saved) : INITIAL_PAYOUT_REQUESTS;
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.PAYOUT_REQUESTS);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) {
+      console.error('Failed to parse payout requests:', e);
+    }
+    return INITIAL_PAYOUT_REQUESTS;
   });
 
   const [depositHistory, setDepositHistory] = useState<DepositTransaction[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.DEPOSIT_HISTORY);
-    return saved ? JSON.parse(saved) : INITIAL_DEPOSIT_HISTORY;
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.DEPOSIT_HISTORY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) {
+      console.error('Failed to parse deposit history:', e);
+    }
+    return INITIAL_DEPOSIT_HISTORY;
   });
 
   const [balanceAdjustments, setBalanceAdjustments] = useState<BalanceAdjustmentLog[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.BALANCE_ADJUSTMENTS);
-    return saved ? JSON.parse(saved) : INITIAL_BALANCE_ADJUSTMENTS;
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.BALANCE_ADJUSTMENTS);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) {
+      console.error('Failed to parse balance adjustments:', e);
+    }
+    return INITIAL_BALANCE_ADJUSTMENTS;
   });
 
   // Navigation & Modals

@@ -12,10 +12,9 @@ import {
 } from '../types';
 import { 
   getAdminUserDirectory, 
-  updateUserInAdminDirectory, 
-  saveAdminUserDirectory 
+  updateUserInAdminDirectory 
 } from '../utils/adminUsers';
-import { isUserAdmin, isUserModerator, getVIPTier, getVIPTierInfo, formatCompactWager } from '../utils/leaderboard';
+import { isUserAdmin, isUserModerator, formatCompactWager } from '../utils/leaderboard';
 import { sound } from '../utils/audio';
 import confetti from 'canvas-confetti';
 import { 
@@ -25,25 +24,11 @@ import {
   UserCheck, 
   Ban, 
   Coins, 
-  Trophy, 
   CheckCircle2, 
-  AlertCircle, 
   Clock, 
-  UserX, 
-  RotateCcw, 
   DollarSign, 
   Save, 
-  Sparkles,
-  ArrowUpRight,
-  TrendingUp,
   FileText,
-  Lock,
-  Eye,
-  CreditCard,
-  Building2,
-  QrCode,
-  Shield,
-  Activity,
   Plus,
   Minus
 } from 'lucide-react';
@@ -51,16 +36,16 @@ import {
 interface ModeratorModalProps {
   isOpen: boolean;
   onClose: () => void;
-  currentUser: UserAccount;
-  currentBalance: number;
-  totalWagered: number;
-  dailyWinners: DailyWinnerRecord[];
-  onUpdateDailyWinnerStatus: (winnerId: string, status: 'Pending' | 'Paid' | 'Processing', note?: string) => void;
-  onAdminAdjustBalance: (userId: string, username: string, deltaAmount: number, reason: string) => void;
-  payoutRequests: PayoutRequest[];
-  onUpdatePayoutRequest: (requestId: string, status: 'Pending' | 'Processing' | 'Paid' | 'Rejected', adminNote?: string) => void;
-  balanceAdjustments: BalanceAdjustmentLog[];
-  depositHistory: DepositTransaction[];
+  currentUser?: UserAccount | null;
+  currentBalance?: number;
+  totalWagered?: number;
+  dailyWinners?: DailyWinnerRecord[];
+  onUpdateDailyWinnerStatus?: (winnerId: string, status: 'Pending' | 'Paid' | 'Processing', note?: string) => void;
+  onAdminAdjustBalance?: (userId: string, username: string, deltaAmount: number, reason: string) => void;
+  payoutRequests?: PayoutRequest[];
+  onUpdatePayoutRequest?: (requestId: string, status: 'Pending' | 'Processing' | 'Paid' | 'Rejected', adminNote?: string) => void;
+  balanceAdjustments?: BalanceAdjustmentLog[];
+  depositHistory?: DepositTransaction[];
   onUpdateUserAccount?: (updater: (prev: UserAccount) => UserAccount) => void;
 }
 
@@ -70,15 +55,15 @@ export const ModeratorModal: React.FC<ModeratorModalProps> = ({
   isOpen,
   onClose,
   currentUser,
-  currentBalance,
-  totalWagered,
-  dailyWinners,
+  currentBalance = 1000000,
+  totalWagered = 0,
+  dailyWinners = [],
   onUpdateDailyWinnerStatus,
   onAdminAdjustBalance,
-  payoutRequests,
+  payoutRequests = [],
   onUpdatePayoutRequest,
-  balanceAdjustments,
-  depositHistory,
+  balanceAdjustments = [],
+  depositHistory = [],
   onUpdateUserAccount,
 }) => {
   const [activeTab, setActiveTab] = useState<ModTab>('payouts');
@@ -98,23 +83,38 @@ export const ModeratorModal: React.FC<ModeratorModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      const users = getAdminUserDirectory(currentUser, currentBalance, totalWagered);
-      setUserList(users);
-      if (!selectedUser && users.length > 0) {
-        setSelectedUser(users[0]);
+      try {
+        const users = getAdminUserDirectory(currentUser, currentBalance, totalWagered);
+        setUserList(users);
+        if (users && users.length > 0) {
+          setSelectedUser(prev => {
+            if (prev && users.some(u => u.id === prev.id)) {
+              return users.find(u => u.id === prev.id) || users[0];
+            }
+            return users[0];
+          });
+        }
+      } catch (err) {
+        console.error('Error loading admin user directory:', err);
       }
     }
   }, [isOpen, currentUser, currentBalance, totalWagered]);
 
   if (!isOpen) return null;
 
-  const isAdmin = isUserAdmin(currentUser);
-  const isMod = isUserModerator(currentUser);
+  const safeUserList = Array.isArray(userList) ? userList : [];
+  const safePayoutRequests = Array.isArray(payoutRequests) ? payoutRequests : [];
+  const safeDailyWinners = Array.isArray(dailyWinners) ? dailyWinners : [];
+  const safeBalanceAdjustments = Array.isArray(balanceAdjustments) ? balanceAdjustments : [];
+  const safeCurrentUsername = currentUser?.username || 'Thomas J';
 
-  const filteredUsers = userList.filter(u => 
-    u.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (u.email && u.email.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const filteredUsers = safeUserList.filter(u => {
+    if (!u) return false;
+    const q = (searchQuery || '').toLowerCase();
+    const uname = (u.username || '').toLowerCase();
+    const uemail = (u.email || '').toLowerCase();
+    return uname.includes(q) || uemail.includes(q);
+  });
 
   // Handle Balance Adjustment
   const handleExecuteBalanceAdjustment = () => {
@@ -124,55 +124,74 @@ export const ModeratorModal: React.FC<ModeratorModalProps> = ({
       return;
     }
 
-    sound.playWin();
-    confetti({ particleCount: 50, spread: 45, origin: { y: 0.6 } });
+    try {
+      sound.playWin();
+      confetti({ particleCount: 50, spread: 45, origin: { y: 0.6 } });
+    } catch {}
 
+    const curBal = typeof selectedUser.balance === 'number' && !isNaN(selectedUser.balance) ? selectedUser.balance : 0;
     let delta = adjustAmount;
     if (adjustmentType === 'deduct') {
       delta = -adjustAmount;
     } else if (adjustmentType === 'set') {
-      delta = adjustAmount - selectedUser.balance;
+      delta = adjustAmount - curBal;
     }
 
-    onAdminAdjustBalance(selectedUser.id, selectedUser.username, delta, adjustReason);
+    if (onAdminAdjustBalance) {
+      onAdminAdjustBalance(selectedUser.id, selectedUser.username || 'Gambler', delta, adjustReason);
+    }
 
     // Update local list
     const updatedUsers = updateUserInAdminDirectory(selectedUser.id, {
-      balance: Math.max(0, selectedUser.balance + delta),
+      balance: Math.max(0, curBal + delta),
     });
     setUserList(updatedUsers);
     
-    const refreshed = updatedUsers.find(u => u.id === selectedUser.id);
+    const refreshed = updatedUsers.find(u => u && u.id === selectedUser.id);
     if (refreshed) setSelectedUser(refreshed);
 
-    setAdjustSuccessMsg(`Successfully updated ${selectedUser.username}'s balance (${delta >= 0 ? '+' : ''}${delta.toLocaleString()} chips)!`);
+    setAdjustSuccessMsg(`Successfully updated ${selectedUser.username || 'Gambler'}'s balance (${delta >= 0 ? '+' : ''}${delta.toLocaleString()} chips)!`);
     setTimeout(() => setAdjustSuccessMsg(null), 4000);
   };
 
   // Handle Payout Status Update
   const handleApprovePayout = (req: PayoutRequest) => {
-    sound.playProfit();
-    confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } });
+    try {
+      sound.playProfit();
+      confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } });
+    } catch {}
     const txHash = '0x' + Array.from({length: 32}, () => Math.floor(Math.random()*16).toString(16)).join('');
-    onUpdatePayoutRequest(req.id, 'Paid', `Approved by Admin ${currentUser.username || 'Thomas J'}. Wire Reference: ${txHash.slice(0, 16)}`);
+    if (onUpdatePayoutRequest) {
+      onUpdatePayoutRequest(req.id, 'Paid', `Approved by Admin ${safeCurrentUsername}. Wire Reference: ${txHash.slice(0, 16)}`);
+    }
   };
 
   const handleMarkProcessing = (req: PayoutRequest) => {
-    sound.playChip();
-    onUpdatePayoutRequest(req.id, 'Processing', `In queue with banking partner. Reviewed by ${currentUser.username || 'Mod'}.`);
+    try {
+      sound.playChip();
+    } catch {}
+    if (onUpdatePayoutRequest) {
+      onUpdatePayoutRequest(req.id, 'Processing', `In queue with banking partner. Reviewed by ${safeCurrentUsername}.`);
+    }
   };
 
   const handleRejectPayout = (reqId: string) => {
-    sound.playLose();
+    try {
+      sound.playLose();
+    } catch {}
     const reason = rejectionNote.trim() || 'Account verification required. Chips refunded to bankroll.';
-    onUpdatePayoutRequest(reqId, 'Rejected', reason);
+    if (onUpdatePayoutRequest) {
+      onUpdatePayoutRequest(reqId, 'Rejected', reason);
+    }
     setRejectingReqId(null);
     setRejectionNote('');
   };
 
   // Handle Role / Status Changes
   const handleUpdateUserStatus = (userId: string, newStatus: AccountStatus) => {
-    sound.playChip();
+    try {
+      sound.playChip();
+    } catch {}
     const updated = updateUserInAdminDirectory(userId, { accountStatus: newStatus });
     setUserList(updated);
     if (selectedUser?.id === userId) {
@@ -181,16 +200,20 @@ export const ModeratorModal: React.FC<ModeratorModalProps> = ({
   };
 
   const handleUpdateUserRole = (userId: string, newRole: UserRole) => {
-    sound.playChip();
+    try {
+      sound.playChip();
+    } catch {}
     const updated = updateUserInAdminDirectory(userId, { userRole: newRole });
     setUserList(updated);
     if (selectedUser?.id === userId) {
       setSelectedUser(prev => prev ? { ...prev, userRole: newRole } : null);
     }
-    if (userId === currentUser.id && onUpdateUserAccount) {
+    if (currentUser && userId === currentUser.id && onUpdateUserAccount) {
       onUpdateUserAccount(prev => ({ ...prev, userRole: newRole }));
     }
   };
+
+  const pendingCount = safePayoutRequests.filter(r => r && (r.status === 'Pending' || r.status === 'Processing')).length;
 
   return (
     <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4">
@@ -208,7 +231,7 @@ export const ModeratorModal: React.FC<ModeratorModalProps> = ({
                   Admin & Moderator Command Center
                 </h2>
                 <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                  {currentUser.userRole?.toUpperCase() || 'ADMIN'} ACCESS
+                  {currentUser?.userRole?.toUpperCase() || 'ADMIN'} ACCESS
                 </span>
               </div>
               <p className="text-xs text-zinc-400">
@@ -239,7 +262,7 @@ export const ModeratorModal: React.FC<ModeratorModalProps> = ({
             }`}
           >
             <DollarSign className="w-4 h-4" />
-            <span>Payout Approvals ({payoutRequests.filter(r => r.status === 'Pending' || r.status === 'Processing').length} Pending)</span>
+            <span>Payout Approvals ({pendingCount} Pending)</span>
           </button>
 
           <button
@@ -269,7 +292,7 @@ export const ModeratorModal: React.FC<ModeratorModalProps> = ({
             }`}
           >
             <UserCheck className="w-4 h-4" />
-            <span>User Accounts Directory ({userList.length})</span>
+            <span>User Accounts Directory ({safeUserList.length})</span>
           </button>
 
           <button
@@ -307,7 +330,7 @@ export const ModeratorModal: React.FC<ModeratorModalProps> = ({
               </span>
             </div>
 
-            {payoutRequests.length === 0 ? (
+            {safePayoutRequests.length === 0 ? (
               <div className="p-8 rounded-3xl bg-zinc-900/40 border border-zinc-800 text-center space-y-2">
                 <DollarSign className="w-10 h-10 text-zinc-600 mx-auto" />
                 <span className="text-xs text-zinc-400 block font-bold">No real-money payout requests in queue.</span>
@@ -315,189 +338,199 @@ export const ModeratorModal: React.FC<ModeratorModalProps> = ({
               </div>
             ) : (
               <div className="space-y-3">
-                {payoutRequests.map(req => (
-                  <div
-                    key={req.id}
-                    className={`p-4 rounded-2xl border transition-all ${
-                      req.status === 'Pending'
-                        ? 'bg-gradient-to-r from-amber-950/30 via-zinc-900 to-zinc-900 border-amber-500/60 shadow-lg'
-                        : req.status === 'Processing'
-                        ? 'bg-zinc-900/90 border-blue-500/50'
-                        : req.status === 'Paid'
-                        ? 'bg-zinc-900/60 border-emerald-500/40 opacity-80'
-                        : 'bg-zinc-900/60 border-rose-500/40 opacity-70'
-                    }`}
-                  >
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-11 h-11 rounded-2xl bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xl shrink-0">
-                          {req.avatar || '👑'}
+                {safePayoutRequests.map(req => {
+                  if (!req) return null;
+                  const reqUsd = typeof req.usdAmount === 'number' && !isNaN(req.usdAmount) ? req.usdAmount : 0;
+                  const reqChips = typeof req.chipsAmount === 'number' && !isNaN(req.chipsAmount) ? req.chipsAmount : 0;
+                  return (
+                    <div
+                      key={req.id}
+                      className={`p-4 rounded-2xl border transition-all ${
+                        req.status === 'Pending'
+                          ? 'bg-gradient-to-r from-amber-950/30 via-zinc-900 to-zinc-900 border-amber-500/60 shadow-lg'
+                          : req.status === 'Processing'
+                          ? 'bg-zinc-900/90 border-blue-500/50'
+                          : req.status === 'Paid'
+                          ? 'bg-zinc-900/60 border-emerald-500/40 opacity-80'
+                          : 'bg-zinc-900/60 border-rose-500/40 opacity-70'
+                      }`}
+                    >
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-11 h-11 rounded-2xl bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xl shrink-0">
+                            {req.avatar || '👑'}
+                          </div>
+
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-black text-white">{req.username || 'Gambler'}</span>
+                              <span className="text-base font-black font-mono text-emerald-400">
+                                ${reqUsd}.00 USD
+                              </span>
+                              <span className="text-xs font-mono text-zinc-400">
+                                ({reqChips.toLocaleString()} chips)
+                              </span>
+                              <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase font-mono ${
+                                req.status === 'Paid'
+                                  ? 'bg-emerald-500 text-zinc-950'
+                                  : req.status === 'Processing'
+                                  ? 'bg-blue-500 text-white'
+                                  : req.status === 'Rejected'
+                                  ? 'bg-rose-500 text-white'
+                                  : 'bg-amber-500 text-zinc-950'
+                              }`}>
+                                {req.status || 'Pending'}
+                              </span>
+                            </div>
+
+                            <div className="text-xs text-zinc-300 mt-1 flex items-center gap-2">
+                              <span className="uppercase font-bold text-amber-400 text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/30">
+                                {req.method || 'Transfer'}
+                              </span>
+                              <span className="font-mono text-zinc-300">{req.destination || 'Direct Wire'}</span>
+                            </div>
+
+                            {req.adminNote && (
+                              <div className="text-[11px] text-zinc-400 mt-1 italic">
+                                Note: {req.adminNote}
+                              </div>
+                            )}
+                          </div>
                         </div>
 
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-black text-white">{req.username}</span>
-                            <span className="text-base font-black font-mono text-emerald-400">
-                              ${req.usdAmount}.00 USD
-                            </span>
-                            <span className="text-xs font-mono text-zinc-400">
-                              ({req.chipsAmount.toLocaleString()} chips)
-                            </span>
-                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase font-mono ${
-                              req.status === 'Paid'
-                                ? 'bg-emerald-500 text-zinc-950'
-                                : req.status === 'Processing'
-                                ? 'bg-blue-500 text-white'
-                                : req.status === 'Rejected'
-                                ? 'bg-rose-500 text-white'
-                                : 'bg-amber-500 text-zinc-950'
-                            }`}>
-                              {req.status}
-                            </span>
-                          </div>
+                        {/* Action Controls for Admin/Mod */}
+                        <div className="flex items-center gap-2 w-full sm:w-auto justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-zinc-800">
+                          {req.status !== 'Paid' && req.status !== 'Rejected' && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => handleApprovePayout(req)}
+                                className="px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-emerald-500/20 transition-all cursor-pointer flex items-center gap-1.5 active:scale-98"
+                              >
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                <span>Approve & Pay</span>
+                              </button>
 
-                          <div className="text-xs text-zinc-300 mt-1 flex items-center gap-2">
-                            <span className="uppercase font-bold text-amber-400 text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/30">
-                              {req.method}
-                            </span>
-                            <span className="font-mono text-zinc-300">{req.destination}</span>
-                          </div>
+                              {req.status === 'Pending' && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleMarkProcessing(req)}
+                                  className="px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1"
+                                >
+                                  <Clock className="w-3.5 h-3.5" />
+                                  <span>Processing</span>
+                                </button>
+                              )}
 
-                          {req.adminNote && (
-                            <div className="text-[11px] text-zinc-400 mt-1 italic">
-                              Note: {req.adminNote}
+                              <button
+                                type="button"
+                                onClick={() => setRejectingReqId(req.id)}
+                                className="px-3 py-2 rounded-xl bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-700/60 font-bold text-xs uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1"
+                              >
+                                <Ban className="w-3.5 h-3.5" />
+                                <span>Reject & Refund</span>
+                              </button>
+                            </>
+                          )}
+
+                          {req.status === 'Paid' && (
+                            <div className="text-right text-[10px] font-mono text-emerald-400 font-bold">
+                              ✓ Paid Out & Confirmed
+                            </div>
+                          )}
+                          {req.status === 'Rejected' && (
+                            <div className="text-right text-[10px] font-mono text-rose-400 font-bold">
+                              ✕ Rejected & Refunded
                             </div>
                           )}
                         </div>
                       </div>
 
-                      {/* Action Controls for Admin/Mod */}
-                      <div className="flex items-center gap-2 w-full sm:w-auto justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-zinc-800">
-                        {req.status !== 'Paid' && req.status !== 'Rejected' && (
-                          <>
+                      {/* Rejection Note input drawer */}
+                      {rejectingReqId === req.id && (
+                        <div className="mt-3 p-3 rounded-xl bg-zinc-950 border border-rose-500/50 space-y-2 animate-in fade-in">
+                          <label className="text-[10px] uppercase font-bold text-rose-300 block">
+                            Reason for Rejection (Chips will be immediately returned to {req.username || 'player'}'s bankroll):
+                          </label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              value={rejectionNote}
+                              onChange={e => setRejectionNote(e.target.value)}
+                              placeholder="e.g. Account verification required / Incorrect account number"
+                              className="flex-1 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-700 text-xs text-white focus:outline-none focus:border-rose-500"
+                            />
                             <button
                               type="button"
-                              onClick={() => handleApprovePayout(req)}
-                              className="px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-emerald-500/20 transition-all cursor-pointer flex items-center gap-1.5 active:scale-98"
+                              onClick={() => handleRejectPayout(req.id)}
+                              className="px-3 py-1.5 rounded-lg bg-rose-600 text-white font-black text-xs uppercase tracking-wider cursor-pointer"
                             >
-                              <CheckCircle2 className="w-3.5 h-3.5" />
-                              <span>Approve & Pay</span>
+                              Confirm Reject
                             </button>
-
-                            {req.status === 'Pending' && (
-                              <button
-                                type="button"
-                                onClick={() => handleMarkProcessing(req)}
-                                className="px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1"
-                              >
-                                <Clock className="w-3.5 h-3.5" />
-                                <span>Processing</span>
-                              </button>
-                            )}
-
                             <button
                               type="button"
-                              onClick={() => setRejectingReqId(req.id)}
-                              className="px-3 py-2 rounded-xl bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-700/60 font-bold text-xs uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1"
+                              onClick={() => setRejectingReqId(null)}
+                              className="px-2 py-1.5 rounded-lg bg-zinc-800 text-zinc-400 text-xs cursor-pointer"
                             >
-                              <Ban className="w-3.5 h-3.5" />
-                              <span>Reject & Refund</span>
+                              Cancel
                             </button>
-                          </>
-                        )}
-
-                        {req.status === 'Paid' && (
-                          <div className="text-right text-[10px] font-mono text-emerald-400 font-bold">
-                            ✓ Paid Out & Confirmed
                           </div>
-                        )}
-                        {req.status === 'Rejected' && (
-                          <div className="text-right text-[10px] font-mono text-rose-400 font-bold">
-                            ✕ Rejected & Refunded
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Rejection Note input drawer */}
-                    {rejectingReqId === req.id && (
-                      <div className="mt-3 p-3 rounded-xl bg-zinc-950 border border-rose-500/50 space-y-2 animate-in fade-in">
-                        <label className="text-[10px] uppercase font-bold text-rose-300 block">
-                          Reason for Rejection (Chips will be immediately returned to {req.username}'s bankroll):
-                        </label>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="text"
-                            value={rejectionNote}
-                            onChange={e => setRejectionNote(e.target.value)}
-                            placeholder="e.g. Account verification required / Incorrect account number"
-                            className="flex-1 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-700 text-xs text-white focus:outline-none focus:border-rose-500"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => handleRejectPayout(req.id)}
-                            className="px-3 py-1.5 rounded-lg bg-rose-600 text-white font-black text-xs uppercase tracking-wider cursor-pointer"
-                          >
-                            Confirm Reject
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setRejectingReqId(null)}
-                            className="px-2 py-1.5 rounded-lg bg-zinc-800 text-zinc-400 text-xs cursor-pointer"
-                          >
-                            Cancel
-                          </button>
                         </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
 
             {/* Daily Tournament Winners Section */}
-            <div className="pt-4 border-t border-zinc-800">
-              <h4 className="text-xs font-black uppercase text-amber-300 mb-2">
-                Daily Tournament Payout Records ({dailyWinners.length})
-              </h4>
-              <div className="space-y-2">
-                {dailyWinners.map(win => (
-                  <div
-                    key={win.id}
-                    className="p-3 rounded-xl bg-zinc-900/60 border border-zinc-800 flex items-center justify-between text-xs"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <span>{win.avatar}</span>
-                      <span className="font-bold text-white">{win.username}</span>
-                      <span className="text-amber-300 font-mono font-bold">({win.formattedScore})</span>
-                      <span className="text-[10px] text-zinc-500">{win.formattedDate}</span>
-                    </div>
+            {safeDailyWinners.length > 0 && (
+              <div className="pt-4 border-t border-zinc-800">
+                <h4 className="text-xs font-black uppercase text-amber-300 mb-2">
+                  Daily Tournament Payout Records ({safeDailyWinners.length})
+                </h4>
+                <div className="space-y-2">
+                  {safeDailyWinners.map(win => {
+                    if (!win) return null;
+                    return (
+                      <div
+                        key={win.id}
+                        className="p-3 rounded-xl bg-zinc-900/60 border border-zinc-800 flex items-center justify-between text-xs"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <span>{win.avatar || '👑'}</span>
+                          <span className="font-bold text-white">{win.username || 'Winner'}</span>
+                          <span className="text-amber-300 font-mono font-bold">({win.formattedScore || '0'})</span>
+                          <span className="text-[10px] text-zinc-500">{win.formattedDate || ''}</span>
+                        </div>
 
-                    <div className="flex items-center gap-2">
-                      <span className={`text-[9px] px-2 py-0.5 rounded font-black uppercase ${
-                        win.payoutStatus === 'Paid'
-                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                          : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                      }`}>
-                        {win.payoutStatus}
-                      </span>
-                      {win.payoutStatus !== 'Paid' && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            sound.playProfit();
-                            onUpdateDailyWinnerStatus(win.id, 'Paid', 'Manual admin approval');
-                          }}
-                          className="px-2 py-1 rounded-lg bg-emerald-500 text-zinc-950 font-black text-[10px] uppercase cursor-pointer"
-                        >
-                          Mark Paid
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                        <div className="flex items-center gap-2">
+                          <span className={`text-[9px] px-2 py-0.5 rounded font-black uppercase ${
+                            win.payoutStatus === 'Paid'
+                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                              : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                          }`}>
+                            {win.payoutStatus || 'Pending'}
+                          </span>
+                          {win.payoutStatus !== 'Paid' && onUpdateDailyWinnerStatus && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                sound.playProfit();
+                                onUpdateDailyWinnerStatus(win.id, 'Paid', 'Manual admin approval');
+                              }}
+                              className="px-2 py-1 rounded-lg bg-emerald-500 text-zinc-950 font-black text-[10px] uppercase cursor-pointer"
+                            >
+                              Mark Paid
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
+            )}
 
           </div>
         )}
@@ -534,7 +567,9 @@ export const ModeratorModal: React.FC<ModeratorModalProps> = ({
 
                 <div className="space-y-1.5 max-h-[360px] overflow-y-auto pr-1">
                   {filteredUsers.map(user => {
+                    if (!user) return null;
                     const isSelected = selectedUser?.id === user.id;
+                    const userBal = typeof user.balance === 'number' && !isNaN(user.balance) ? user.balance : 0;
                     return (
                       <button
                         key={user.id}
@@ -550,17 +585,17 @@ export const ModeratorModal: React.FC<ModeratorModalProps> = ({
                         }`}
                       >
                         <div className="flex items-center gap-2">
-                          <span className="text-base">{user.avatar}</span>
+                          <span className="text-base">{user.avatar || '🎲'}</span>
                           <div>
-                            <span className="text-xs block leading-tight">{user.username}</span>
+                            <span className="text-xs block leading-tight">{user.username || 'Gambler'}</span>
                             <span className="text-[10px] text-zinc-500 font-mono block">
-                              {user.vipTier} • {user.userRole || 'player'}
+                              {user.vipTier || 'Bronze Degen'} • {user.userRole || 'player'}
                             </span>
                           </div>
                         </div>
 
                         <div className="text-right font-mono text-xs">
-                          <span className="text-amber-300 font-bold">{user.balance.toLocaleString()}c</span>
+                          <span className="text-amber-300 font-bold">{userBal.toLocaleString()}c</span>
                         </div>
                       </button>
                     );
@@ -576,12 +611,12 @@ export const ModeratorModal: React.FC<ModeratorModalProps> = ({
                   <div className="p-4 rounded-2xl bg-zinc-900/80 border border-zinc-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
                       <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-500/20 to-zinc-800 border border-amber-400/40 flex items-center justify-center text-3xl">
-                        {selectedUser.avatar}
+                        {selectedUser.avatar || '🎲'}
                       </div>
 
                       <div>
                         <div className="flex items-center gap-2">
-                          <h3 className="text-base font-black text-white">{selectedUser.username}</h3>
+                          <h3 className="text-base font-black text-white">{selectedUser.username || 'Gambler'}</h3>
                           {selectedUser.isCurrentUser && (
                             <span className="px-1.5 py-0.2 rounded text-[8px] font-black uppercase bg-amber-500 text-zinc-950">
                               YOU
@@ -593,11 +628,11 @@ export const ModeratorModal: React.FC<ModeratorModalProps> = ({
                         </div>
 
                         <div className="text-xs text-zinc-400 mt-0.5">
-                          VIP Tier: <strong className="text-amber-300">{selectedUser.vipTier}</strong> • Total Wagered: <span className="font-mono">{formatCompactWager(selectedUser.totalWagered)}c</span>
+                          VIP Tier: <strong className="text-amber-300">{selectedUser.vipTier || 'Bronze Degen'}</strong> • Total Wagered: <span className="font-mono">{formatCompactWager(selectedUser.totalWagered ?? 0)}c</span>
                         </div>
 
                         <div className="text-xs text-zinc-400 mt-0.5 font-mono">
-                          Current Bankroll: <strong className="text-emerald-400 text-sm">{selectedUser.balance.toLocaleString()} Chips</strong> (${(Math.floor(selectedUser.balance / 100)).toLocaleString()}.00 USD)
+                          Current Bankroll: <strong className="text-emerald-400 text-sm">{(selectedUser.balance ?? 0).toLocaleString()} Chips</strong> (${(Math.floor((selectedUser.balance ?? 0) / 100)).toLocaleString()}.00 USD)
                         </div>
                       </div>
                     </div>
@@ -743,9 +778,9 @@ export const ModeratorModal: React.FC<ModeratorModalProps> = ({
                         <strong className="text-white text-sm">
                           {(
                             adjustmentType === 'add'
-                              ? selectedUser.balance + adjustAmount
+                              ? (selectedUser.balance ?? 0) + adjustAmount
                               : adjustmentType === 'deduct'
-                              ? Math.max(0, selectedUser.balance - adjustAmount)
+                              ? Math.max(0, (selectedUser.balance ?? 0) - adjustAmount)
                               : adjustAmount
                           ).toLocaleString()} Chips
                         </strong>
@@ -779,64 +814,69 @@ export const ModeratorModal: React.FC<ModeratorModalProps> = ({
           <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-black uppercase tracking-wider text-white">
-                Player Directory & VIP Standings ({userList.length})
+                Player Directory & VIP Standings ({safeUserList.length})
               </h3>
               <span className="text-xs text-zinc-500 font-mono">Real-time local state store</span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {userList.map(u => (
-                <div
-                  key={u.id}
-                  className="p-3.5 rounded-2xl bg-zinc-900/80 border border-zinc-800 space-y-2"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-2xl">{u.avatar}</span>
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-black text-white">{u.username}</span>
-                          {u.isCurrentUser && (
-                            <span className="px-1.5 py-0.2 rounded text-[8px] font-black uppercase bg-amber-500 text-zinc-950">
-                              YOU
-                            </span>
-                          )}
+              {safeUserList.map(u => {
+                if (!u) return null;
+                const userBal = typeof u.balance === 'number' && !isNaN(u.balance) ? u.balance : 0;
+                const userWager = typeof u.totalWagered === 'number' && !isNaN(u.totalWagered) ? u.totalWagered : 0;
+                return (
+                  <div
+                    key={u.id}
+                    className="p-3.5 rounded-2xl bg-zinc-900/80 border border-zinc-800 space-y-2"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xl">{u.avatar || '🎲'}</span>
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-xs font-black text-white">{u.username || 'Gambler'}</span>
+                            {u.isCurrentUser && (
+                              <span className="px-1.5 py-0.2 rounded text-[8px] font-black uppercase bg-amber-500 text-zinc-950">
+                                YOU
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[10px] text-zinc-500 block font-mono">
+                            {u.email || 'No email linked'}
+                          </span>
                         </div>
-                        <span className="text-[10px] text-zinc-500 block font-mono">
-                          {u.email || 'No email linked'}
-                        </span>
+                      </div>
+
+                      <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase font-mono ${
+                        u.accountStatus === 'banned'
+                          ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
+                          : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                      }`}>
+                        {u.accountStatus || 'active'}
+                      </span>
+                    </div>
+
+                    <div className="pt-2 border-t border-zinc-800/80 grid grid-cols-2 gap-1 text-[10px] font-mono text-zinc-400">
+                      <div>
+                        <span>Role: </span>
+                        <strong className="text-amber-300 uppercase">{u.userRole || 'player'}</strong>
+                      </div>
+                      <div>
+                        <span>VIP: </span>
+                        <strong className="text-zinc-200">{u.vipTier || 'Bronze Degen'}</strong>
+                      </div>
+                      <div>
+                        <span>Balance: </span>
+                        <strong className="text-emerald-400">{userBal.toLocaleString()}c</strong>
+                      </div>
+                      <div>
+                        <span>Wagered: </span>
+                        <strong className="text-zinc-300">{formatCompactWager(userWager)}c</strong>
                       </div>
                     </div>
-
-                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase font-mono ${
-                      u.accountStatus === 'banned'
-                        ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
-                        : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                    }`}>
-                      {u.accountStatus}
-                    </span>
                   </div>
-
-                  <div className="pt-2 border-t border-zinc-800/80 grid grid-cols-2 gap-1 text-[10px] font-mono text-zinc-400">
-                    <div>
-                      <span>Role: </span>
-                      <strong className="text-amber-300 uppercase">{u.userRole || 'player'}</strong>
-                    </div>
-                    <div>
-                      <span>VIP: </span>
-                      <strong className="text-zinc-200">{u.vipTier}</strong>
-                    </div>
-                    <div>
-                      <span>Balance: </span>
-                      <strong className="text-emerald-400">{u.balance.toLocaleString()}c</strong>
-                    </div>
-                    <div>
-                      <span>Wagered: </span>
-                      <strong className="text-zinc-300">{formatCompactWager(u.totalWagered)}c</strong>
-                    </div>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
@@ -853,50 +893,62 @@ export const ModeratorModal: React.FC<ModeratorModalProps> = ({
               </p>
             </div>
 
-            {balanceAdjustments.length === 0 ? (
+            {safeBalanceAdjustments.length === 0 ? (
               <div className="p-8 rounded-2xl bg-zinc-900/40 border border-zinc-800 text-center text-xs text-zinc-500">
                 No balance adjustments recorded in this session yet.
               </div>
             ) : (
               <div className="space-y-2">
-                {balanceAdjustments.map(log => (
-                  <div
-                    key={log.id}
-                    className="p-3 rounded-xl bg-zinc-900/80 border border-zinc-800 flex items-center justify-between gap-3 text-xs"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold font-mono ${
-                        log.amountChanged >= 0
-                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                          : 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
-                      }`}>
-                        {log.amountChanged >= 0 ? '+' : '-'}
-                      </div>
-
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-white">{log.username}</span>
-                          <span className={`font-mono font-black ${
-                            log.amountChanged >= 0 ? 'text-emerald-400' : 'text-rose-400'
-                          }`}>
-                            {log.amountChanged >= 0 ? '+' : ''}{log.amountChanged.toLocaleString()} Chips
-                          </span>
-                          <span className="text-[10px] text-zinc-500 font-mono">
-                            ({log.previousBalance.toLocaleString()}c → {log.newBalance.toLocaleString()}c)
-                          </span>
+                {safeBalanceAdjustments.map(log => {
+                  if (!log) return null;
+                  const amtChanged = typeof log.amountChanged === 'number' && !isNaN(log.amountChanged) ? log.amountChanged : 0;
+                  const prevBal = typeof log.previousBalance === 'number' && !isNaN(log.previousBalance) ? log.previousBalance : 0;
+                  const nextBal = typeof log.newBalance === 'number' && !isNaN(log.newBalance) ? log.newBalance : 0;
+                  let formattedTime = 'Recent';
+                  try {
+                    if (log.timestamp) {
+                      formattedTime = new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    }
+                  } catch {}
+                  return (
+                    <div
+                      key={log.id}
+                      className="p-3 rounded-xl bg-zinc-900/80 border border-zinc-800 flex items-center justify-between gap-3 text-xs"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold font-mono ${
+                          amtChanged >= 0
+                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                            : 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
+                        }`}>
+                          {amtChanged >= 0 ? '+' : '-'}
                         </div>
 
-                        <div className="text-[11px] text-zinc-400 mt-0.5">
-                          Reason: <strong className="text-zinc-200">{log.reason}</strong> • By: <span className="text-amber-300">{log.adjustedBy}</span>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-white">{log.username || 'Gambler'}</span>
+                            <span className={`font-mono font-black ${
+                              amtChanged >= 0 ? 'text-emerald-400' : 'text-rose-400'
+                            }`}>
+                              {amtChanged >= 0 ? '+' : ''}{amtChanged.toLocaleString()} Chips
+                            </span>
+                            <span className="text-[10px] text-zinc-500 font-mono">
+                              ({prevBal.toLocaleString()}c → {nextBal.toLocaleString()}c)
+                            </span>
+                          </div>
+
+                          <div className="text-[11px] text-zinc-400 mt-0.5">
+                            Reason: <strong className="text-zinc-200">{log.reason || 'Manual Adjustment'}</strong> • By: <span className="text-amber-300">{log.adjustedBy || 'Admin'}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="text-right text-[10px] font-mono text-zinc-500">
-                      {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      <div className="text-right text-[10px] font-mono text-zinc-500">
+                        {formattedTime}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
