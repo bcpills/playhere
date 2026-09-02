@@ -905,6 +905,12 @@ export default function App() {
             userAccount={userAccount}
             onUpdateBalance={handleUpdateBalance}
             onUpdateStats={setStats}
+            currencyMode={currencyMode}
+            cashBalance={cashBalance}
+            onUpdateCashBalance={handleUpdateCashBalance}
+            onRecordWager={handleRecordWager}
+            onAddRakeback={handleAddRakeback}
+            onToggleCurrencyMode={setCurrencyMode}
           />
         )}
 

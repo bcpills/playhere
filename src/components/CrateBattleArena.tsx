@@ -60,6 +60,7 @@ interface CrateBattleArenaProps {
   onUpdateCashBalance?: (amount: number | ((prev: number) => number)) => void;
   onRecordWager?: (amount: number, isCash: boolean) => void;
   onAddRakeback?: (wager: number, isBlackjack?: boolean, isCash?: boolean) => void;
+  onToggleCurrencyMode?: (mode: CurrencyMode) => void;
 }
 
 interface ActiveReelState {
@@ -79,6 +80,7 @@ export const CrateBattleArena: React.FC<CrateBattleArenaProps> = ({
   onUpdateCashBalance,
   onRecordWager,
   onAddRakeback,
+  onToggleCurrencyMode,
 }) => {
   const isCash = currencyMode === 'cash';
   const effectiveBalance = isCash ? cashBalance : balance;

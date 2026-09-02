@@ -10,6 +10,7 @@ import {
   ArrowDown, 
   Check, 
   Coins, 
+  DollarSign,
   Swords, 
   Layers, 
   Zap, 
@@ -32,6 +33,7 @@ interface UnboxerGameProps {
   onUpdateCashBalance?: (amount: number | ((prev: number) => number)) => void;
   onRecordWager?: (amount: number, isCash: boolean) => void;
   onAddRakeback?: (wager: number, isBlackjack?: boolean, isCash?: boolean) => void;
+  onToggleCurrencyMode?: (mode: CurrencyMode) => void;
 }
 
 interface MultiReelState {
@@ -52,6 +54,7 @@ export const UnboxerGame: React.FC<UnboxerGameProps> = ({
   onUpdateCashBalance,
   onRecordWager,
   onAddRakeback,
+  onToggleCurrencyMode,
 }) => {
   const isCash = currencyMode === 'cash';
   const effectiveBalance = isCash ? cashBalance : balance;
@@ -258,7 +261,76 @@ export const UnboxerGame: React.FC<UnboxerGameProps> = ({
   }, []);
 
   return (
-    <div className="w-full max-w-6xl mx-auto space-y-6">
+    <div className="w-full max-w-6xl mx-auto space-y-4 sm:space-y-6">
+      {/* ========================================================================= */}
+      {/* IN-GAME CHESTS CURRENCY SWITCHER (Real Cash $ vs Gold Coins GC)          */}
+      {/* ========================================================================= */}
+      <div className="p-3 sm:p-4 rounded-2xl bg-zinc-950 border-2 border-purple-900/40 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-xl bg-purple-950/80 border border-purple-500/40 flex items-center justify-center text-xl shrink-0">
+            📦
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm sm:text-base font-black uppercase text-zinc-100 tracking-wider">
+                Loot Crates & Mystery Chests
+              </h2>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                isCash ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+              }`}>
+                {isCash ? '💵 Real Cash ($) Mode' : '🟡 Gold Coins (GC) Mode'}
+              </span>
+            </div>
+            <p className="text-xs text-zinc-400 mt-0.5">
+              {isCash
+                ? 'Unbox for real USD items & cash out your winnings directly to crypto'
+                : 'Play chests with free daily coins for entertainment and leaderboard ranks'}
+            </p>
+          </div>
+        </div>
+
+        {/* Currency Switch Buttons */}
+        {onToggleCurrencyMode && (
+          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-zinc-900 border border-zinc-800 shrink-0 w-full sm:w-auto justify-center">
+            <button
+              id="unboxer-currency-cash-btn"
+              onClick={() => {
+                if (!isCash) {
+                  sound.playChip();
+                  onToggleCurrencyMode('cash');
+                }
+              }}
+              className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                isCash
+                  ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-zinc-950 shadow-md border border-emerald-300/60 font-black'
+                  : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
+              }`}
+            >
+              <DollarSign className="w-3.5 h-3.5 stroke-[3]" />
+              <span>Real Cash (${(typeof cashBalance === 'number' ? cashBalance : 0).toFixed(2)})</span>
+            </button>
+
+            <button
+              id="unboxer-currency-gc-btn"
+              onClick={() => {
+                if (isCash) {
+                  sound.playChip();
+                  onToggleCurrencyMode('gc');
+                }
+              }}
+              className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                !isCash
+                  ? 'bg-gradient-to-r from-amber-500 to-yellow-400 text-zinc-950 shadow-md border border-yellow-200/60 font-black'
+                  : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
+              }`}
+            >
+              <Coins className="w-3.5 h-3.5" />
+              <span>Coins ({(isNaN(balance) ? 1000000 : balance).toLocaleString()} GC)</span>
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* ========================================================================= */}
       {/* MODE TABS SWITCHER (Solo Unboxer vs Crate Battles Arena)                 */}
       {/* ========================================================================= */}
@@ -312,6 +384,7 @@ export const UnboxerGame: React.FC<UnboxerGameProps> = ({
           onUpdateCashBalance={onUpdateCashBalance}
           onRecordWager={onRecordWager}
           onAddRakeback={onAddRakeback}
+          onToggleCurrencyMode={onToggleCurrencyMode}
         />
       ) : (
         <div className="space-y-6">
