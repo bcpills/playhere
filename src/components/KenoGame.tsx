@@ -22,6 +22,7 @@ interface KenoGameProps {
   cashBalance?: number;
   onUpdateCashBalance?: (amount: number | ((prev: number) => number)) => void;
   onRecordWager?: (amount: number, isCash: boolean) => void;
+  onToggleCurrencyMode?: (mode: CurrencyMode) => void;
 }
 
 export const KenoGame: React.FC<KenoGameProps> = ({
@@ -33,6 +34,7 @@ export const KenoGame: React.FC<KenoGameProps> = ({
   cashBalance = 0,
   onUpdateCashBalance,
   onRecordWager,
+  onToggleCurrencyMode,
 }) => {
   const isCash = currencyMode === 'cash';
   const effectiveBalance = isCash ? cashBalance : balance;
@@ -191,8 +193,8 @@ export const KenoGame: React.FC<KenoGameProps> = ({
   };
 
   return (
-    <div className="w-full max-w-5xl mx-auto space-y-4">
-      {/* Header Info & Mode Selector */}
+    <div className="w-full max-w-5xl mx-auto space-y-3 sm:space-y-4">
+      {/* Header Info, Currency Selector & Mode Selector */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3.5 sm:p-4 rounded-3xl bg-zinc-950/90 border border-zinc-800 shadow-xl">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-xl shadow-inner shrink-0">
@@ -213,33 +215,69 @@ export const KenoGame: React.FC<KenoGameProps> = ({
           </div>
         </div>
 
-        {/* Volatility Modes */}
-        <div className="grid grid-cols-3 gap-1.5 p-1 rounded-2xl bg-zinc-900 border border-zinc-800">
-          {(['safe', 'classic', 'degen'] as const).map((mode) => (
+        {/* Currency Switcher & Volatility Modes */}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center p-1 rounded-2xl bg-zinc-900 border border-zinc-800">
             <button
-              key={mode}
-              id={`keno-mode-${mode}`}
+              type="button"
+              id="keno-currency-cash-btn"
               disabled={activeDrawing}
               onClick={() => {
                 sound.playChip();
-                setDifficulty(mode);
+                onToggleCurrencyMode?.('cash');
               }}
-              className={`px-2 py-1.5 rounded-xl text-[11px] font-black uppercase transition-all text-center ${
-                difficulty === mode
-                  ? mode === 'safe'
-                    ? 'bg-emerald-600 text-white shadow-md'
-                    : mode === 'classic'
-                    ? 'bg-amber-500 text-zinc-950 shadow-md'
-                    : 'bg-rose-600 text-white shadow-md'
+              className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase transition-all flex items-center gap-1 cursor-pointer ${
+                isCash
+                  ? 'bg-emerald-500 text-zinc-950 shadow-md shadow-emerald-500/20'
                   : 'text-zinc-400 hover:text-zinc-200'
-              }`}
+              } disabled:opacity-50`}
             >
-              <div className="leading-tight">{mode === 'safe' ? 'Safe' : mode === 'classic' ? 'Classic' : 'Degen'}</div>
-              <div className="text-[8px] opacity-70 font-mono">
-                {mode === 'safe' ? 'Low Risk' : mode === 'classic' ? 'Balanced' : 'High Max'}
-              </div>
+              <span>💵 Cash</span>
+              <span className="font-mono text-[10px] font-bold">(${cashBalance.toFixed(2)})</span>
             </button>
-          ))}
+            <button
+              type="button"
+              id="keno-currency-gc-btn"
+              disabled={activeDrawing}
+              onClick={() => {
+                sound.playChip();
+                onToggleCurrencyMode?.('gc');
+              }}
+              className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase transition-all flex items-center gap-1 cursor-pointer ${
+                !isCash
+                  ? 'bg-amber-500 text-zinc-950 shadow-md shadow-amber-500/20'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              } disabled:opacity-50`}
+            >
+              <span>🟡 GC</span>
+              <span className="font-mono text-[10px] font-bold">({balance.toLocaleString()})</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-3 gap-1 p-1 rounded-2xl bg-zinc-900 border border-zinc-800">
+            {(['safe', 'classic', 'degen'] as const).map((mode) => (
+              <button
+                key={mode}
+                id={`keno-mode-${mode}`}
+                disabled={activeDrawing}
+                onClick={() => {
+                  sound.playChip();
+                  setDifficulty(mode);
+                }}
+                className={`px-2 py-1.5 rounded-xl text-[11px] font-black uppercase transition-all text-center cursor-pointer ${
+                  difficulty === mode
+                    ? mode === 'safe'
+                      ? 'bg-emerald-600 text-white shadow-md'
+                      : mode === 'classic'
+                      ? 'bg-amber-500 text-zinc-950 shadow-md'
+                      : 'bg-rose-600 text-white shadow-md'
+                    : 'text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                <div className="leading-tight">{mode === 'safe' ? 'Safe' : mode === 'classic' ? 'Classic' : 'Degen'}</div>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -268,7 +306,7 @@ export const KenoGame: React.FC<KenoGameProps> = ({
                   key={count}
                   disabled={activeDrawing}
                   onClick={() => handleQuickPick(count)}
-                  className="px-2 py-1 rounded-lg text-[10px] font-bold bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 disabled:opacity-40"
+                  className="px-2 py-1 rounded-lg text-[10px] font-bold bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 disabled:opacity-40 cursor-pointer"
                 >
                   Pick {count}
                 </button>
@@ -276,7 +314,7 @@ export const KenoGame: React.FC<KenoGameProps> = ({
               <button
                 disabled={activeDrawing || selectedNumbers.length === 0}
                 onClick={handleClearPicks}
-                className="px-2 py-1 rounded-lg text-[10px] font-bold bg-zinc-900 hover:bg-zinc-800 text-rose-400 border border-zinc-800 disabled:opacity-40"
+                className="px-2 py-1 rounded-lg text-[10px] font-bold bg-zinc-900 hover:bg-zinc-800 text-rose-400 border border-zinc-800 disabled:opacity-40 cursor-pointer"
               >
                 Clear
               </button>
@@ -290,13 +328,13 @@ export const KenoGame: React.FC<KenoGameProps> = ({
               const isDrawn = drawnNumbers.includes(num);
               const isHit = isSelected && isDrawn;
 
-              let btnStyle = 'bg-zinc-900/90 text-zinc-300 border-zinc-800 hover:border-zinc-600';
+              let btnStyle = 'bg-zinc-900/90 text-zinc-300 border-zinc-800 hover:border-zinc-600 cursor-pointer';
               if (isHit) {
-                btnStyle = 'bg-gradient-to-tr from-amber-500 to-yellow-300 text-zinc-950 font-black border-yellow-200 shadow-lg shadow-amber-500/40 scale-105 z-10 animate-bounce';
+                btnStyle = 'bg-gradient-to-tr from-amber-500 to-yellow-300 text-zinc-950 font-black border-yellow-200 shadow-lg shadow-amber-500/40 scale-105 z-10 animate-bounce cursor-pointer';
               } else if (isDrawn) {
-                btnStyle = 'bg-purple-900/60 text-purple-200 border-purple-500/50 shadow-inner';
+                btnStyle = 'bg-purple-900/60 text-purple-200 border-purple-500/50 shadow-inner cursor-pointer';
               } else if (isSelected) {
-                btnStyle = 'bg-emerald-600 text-white font-black border-emerald-400 shadow-md shadow-emerald-600/30';
+                btnStyle = 'bg-emerald-600 text-white font-black border-emerald-400 shadow-md shadow-emerald-600/30 cursor-pointer';
               }
 
               return (
@@ -320,7 +358,7 @@ export const KenoGame: React.FC<KenoGameProps> = ({
               <span>Drawn Balls ({drawnNumbers.length}/{KENO_DRAW_COUNT}):</span>
               {lastWin && lastWin.amount > 0 && (
                 <span className="text-emerald-400 font-black">
-                  Won +{lastWin.amount.toLocaleString()} Chips ({lastWin.multiplier}x)
+                  Won +{isCash ? `$${lastWin.amount.toFixed(2)}` : `${lastWin.amount.toLocaleString()} GC`} ({lastWin.multiplier}x)
                 </span>
               )}
             </div>
@@ -354,7 +392,7 @@ export const KenoGame: React.FC<KenoGameProps> = ({
           {/* Primary Action Button */}
           <button
             id="start-keno-draw-btn"
-            disabled={activeDrawing || selectedNumbers.length === 0 || wager > balance || wager <= 0}
+            disabled={activeDrawing || selectedNumbers.length === 0 || wager > effectiveBalance || wager <= 0}
             onClick={handleStartDraw}
             className="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-zinc-950 font-black text-sm uppercase tracking-wider shadow-xl shadow-amber-500/20 transition-all transform active:scale-98 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
           >
@@ -364,7 +402,7 @@ export const KenoGame: React.FC<KenoGameProps> = ({
                 ? 'Hopper Drawing Balls...'
                 : selectedNumbers.length === 0
                 ? 'Pick at Least 1 Number'
-                : `Draw 10 Balls (${wager.toLocaleString()} Chips)`}
+                : `Draw 10 Balls (${isCash ? `$${wager.toFixed(2)}` : `${wager.toLocaleString()} GC`})`}
             </span>
           </button>
 
@@ -376,7 +414,7 @@ export const KenoGame: React.FC<KenoGameProps> = ({
                 <button
                   key={spd}
                   onClick={() => setGameSpeed(spd)}
-                  className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase ${
+                  className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase cursor-pointer ${
                     gameSpeed === spd
                       ? 'bg-amber-500 text-zinc-950'
                       : 'bg-zinc-900 text-zinc-400 hover:text-zinc-200'

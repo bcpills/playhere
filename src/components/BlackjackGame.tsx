@@ -21,6 +21,7 @@ interface BlackjackGameProps {
   cashBalance?: number;
   onUpdateCashBalance?: (amount: number | ((prev: number) => number)) => void;
   onRecordWager?: (amount: number, isCash: boolean) => void;
+  onToggleCurrencyMode?: (mode: CurrencyMode) => void;
 }
 
 export const BlackjackGame: React.FC<BlackjackGameProps> = ({
@@ -32,6 +33,7 @@ export const BlackjackGame: React.FC<BlackjackGameProps> = ({
   cashBalance = 0,
   onUpdateCashBalance,
   onRecordWager,
+  onToggleCurrencyMode,
 }) => {
   const isCash = currencyMode === 'cash';
   const effectiveBalance = isCash ? cashBalance : balance;
@@ -551,6 +553,65 @@ export const BlackjackGame: React.FC<BlackjackGameProps> = ({
 
   return (
     <div className="w-full max-w-5xl mx-auto space-y-3">
+      {/* Currency Switcher Bar */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 p-2.5 sm:p-3 rounded-2xl bg-zinc-950/90 border border-zinc-800 shadow-lg">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-black uppercase tracking-wider text-zinc-300">
+            Playing With:
+          </span>
+          <div className="flex items-center p-1 rounded-xl bg-zinc-900 border border-zinc-800">
+            <button
+              type="button"
+              id="bj-currency-cash-btn"
+              disabled={phase !== 'betting'}
+              onClick={() => {
+                sound.playChip();
+                onToggleCurrencyMode?.('cash');
+              }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase transition-all flex items-center gap-1.5 cursor-pointer ${
+                isCash
+                  ? 'bg-emerald-500 text-zinc-950 shadow-md shadow-emerald-500/20'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
+            >
+              <span>💵 Real Cash ($)</span>
+              <span className="font-mono text-[11px] font-bold">(${cashBalance.toFixed(2)})</span>
+            </button>
+            <button
+              type="button"
+              id="bj-currency-gc-btn"
+              disabled={phase !== 'betting'}
+              onClick={() => {
+                sound.playChip();
+                onToggleCurrencyMode?.('gc');
+              }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase transition-all flex items-center gap-1.5 cursor-pointer ${
+                !isCash
+                  ? 'bg-amber-500 text-zinc-950 shadow-md shadow-amber-500/20'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
+            >
+              <span>🟡 Gold Coins (GC)</span>
+              <span className="font-mono text-[11px] font-bold">({balance.toLocaleString()})</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+          <span className={`text-xs font-mono font-bold px-2.5 py-1 rounded-xl bg-zinc-900 border ${isCash ? 'text-emerald-300 border-emerald-500/40' : 'text-amber-300 border-amber-500/40'}`}>
+            Active Bal: {isCash ? `$${cashBalance.toFixed(2)}` : `${balance.toLocaleString()} GC`}
+          </span>
+          <button
+            id="side-bet-paytable-btn"
+            onClick={() => setShowPaytableModal(true)}
+            className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold rounded-xl bg-zinc-900 hover:bg-zinc-850 text-amber-300 border border-amber-500/40 transition-colors cursor-pointer"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+            <span>Paytables</span>
+          </button>
+        </div>
+      </div>
+
       {/* Compact Felt Table */}
       <div 
         id="blackjack-felt-table"
@@ -568,17 +629,9 @@ export const BlackjackGame: React.FC<BlackjackGameProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            <span className={`text-xs font-mono font-bold ${isCash ? 'text-emerald-300' : 'text-amber-300'}`}>
-              Bal: {isCash ? `$${cashBalance.toFixed(2)}` : `${balance.toLocaleString()} GC`}
+            <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-zinc-950/80 text-zinc-300 border border-zinc-700">
+              Shoe: {shoe.length} Cards
             </span>
-            <button
-              id="side-bet-paytable-btn"
-              onClick={() => setShowPaytableModal(true)}
-              className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold rounded-xl bg-zinc-950/80 hover:bg-zinc-900 text-amber-300 border border-amber-500/40 transition-colors"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              <span>Paytables</span>
-            </button>
           </div>
         </div>
 
@@ -610,9 +663,9 @@ export const BlackjackGame: React.FC<BlackjackGameProps> = ({
         {sideBetResults && (
           <div className="relative z-20 my-1 p-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 text-zinc-950 font-black text-center shadow-lg text-xs animate-bounce">
             <span>🔥 Side Bet Win: </span>
-            {sideBetResults.twentyOnePlusThree && <span>21+3 (+{sideBetResults.twentyOnePlusThree.win}) </span>}
-            {sideBetResults.perfectPairs && <span>Pairs (+{sideBetResults.perfectPairs.win}) </span>}
-            {sideBetResults.luckyLadies && <span>Lucky Ladies (+{sideBetResults.luckyLadies.win})</span>}
+            {sideBetResults.twentyOnePlusThree && <span>21+3 (+{isCash ? `$${sideBetResults.twentyOnePlusThree.win.toFixed(2)}` : `${sideBetResults.twentyOnePlusThree.win} GC`}) </span>}
+            {sideBetResults.perfectPairs && <span>Pairs (+{isCash ? `$${sideBetResults.perfectPairs.win.toFixed(2)}` : `${sideBetResults.perfectPairs.win} GC`}) </span>}
+            {sideBetResults.luckyLadies && <span>Lucky Ladies (+{isCash ? `$${sideBetResults.luckyLadies.win.toFixed(2)}` : `${sideBetResults.luckyLadies.win} GC`})</span>}
           </div>
         )}
 
@@ -629,7 +682,7 @@ export const BlackjackGame: React.FC<BlackjackGameProps> = ({
               <span className="text-[8px] text-zinc-400">100:1</span>
               <div className="mt-1 w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-purple-400/40 flex items-center justify-center font-bold text-xs text-purple-200 bg-purple-950/50">
                 {sideBets.twentyOnePlusThree > 0 ? (
-                  <span className="text-amber-300 font-black">{sideBets.twentyOnePlusThree}</span>
+                  <span className="text-amber-300 font-black">{isCash ? `$${sideBets.twentyOnePlusThree.toFixed(2)}` : sideBets.twentyOnePlusThree}</span>
                 ) : (
                   <span className="text-zinc-500 text-[9px]">+</span>
                 )}
@@ -646,7 +699,7 @@ export const BlackjackGame: React.FC<BlackjackGameProps> = ({
               <span className="text-[8px] text-zinc-400">25:1</span>
               <div className="mt-1 w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-blue-400/40 flex items-center justify-center font-bold text-xs text-blue-200 bg-blue-950/50">
                 {sideBets.perfectPairs > 0 ? (
-                  <span className="text-amber-300 font-black">{sideBets.perfectPairs}</span>
+                  <span className="text-amber-300 font-black">{isCash ? `$${sideBets.perfectPairs.toFixed(2)}` : sideBets.perfectPairs}</span>
                 ) : (
                   <span className="text-zinc-500 text-[9px]">+</span>
                 )}
@@ -663,7 +716,7 @@ export const BlackjackGame: React.FC<BlackjackGameProps> = ({
               <span className="text-[8px] text-zinc-400">1000:1</span>
               <div className="mt-1 w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-rose-400/40 flex items-center justify-center font-bold text-xs text-rose-200 bg-rose-950/50">
                 {sideBets.luckyLadies > 0 ? (
-                  <span className="text-amber-300 font-black">{sideBets.luckyLadies}</span>
+                  <span className="text-amber-300 font-black">{isCash ? `$${sideBets.luckyLadies.toFixed(2)}` : sideBets.luckyLadies}</span>
                 ) : (
                   <span className="text-zinc-500 text-[9px]">+</span>
                 )}
@@ -680,7 +733,7 @@ export const BlackjackGame: React.FC<BlackjackGameProps> = ({
               <span className="text-[8px] text-amber-400/80">Hand</span>
               <div className="mt-1 w-9 h-9 sm:w-10 sm:h-10 rounded-full border-2 border-amber-400 flex items-center justify-center font-black text-xs text-amber-200 bg-amber-900/80">
                 {mainBet > 0 ? (
-                  <span className="text-yellow-300 font-black">{mainBet}</span>
+                  <span className="text-yellow-300 font-black">{isCash ? `$${mainBet.toFixed(2)}` : mainBet}</span>
                 ) : (
                   <span className="text-amber-500/60 text-[9px]">+</span>
                 )}
@@ -717,7 +770,7 @@ export const BlackjackGame: React.FC<BlackjackGameProps> = ({
                       {val.total} {val.isBlackjack && '🔥 21'} {val.isBust && '💥 BUST'}
                     </span>
                     <span className="text-[9px] text-zinc-400 font-bold">
-                      ({hand.bet})
+                      ({isCash ? `$${hand.bet.toFixed(2)}` : `${hand.bet} GC`})
                     </span>
                   </div>
 
@@ -756,15 +809,15 @@ export const BlackjackGame: React.FC<BlackjackGameProps> = ({
             </div>
             <div className="flex items-center justify-center gap-2 mt-2">
               <button
-                disabled={balance < Math.floor(mainBet / 2)}
+                disabled={effectiveBalance < (isCash ? Number((mainBet / 2).toFixed(2)) : Math.floor(mainBet / 2))}
                 onClick={() => handleInsurance(true)}
-                className="px-3 py-1.5 text-xs font-black rounded-xl bg-amber-500 text-zinc-950"
+                className="px-3 py-1.5 text-xs font-black rounded-xl bg-amber-500 text-zinc-950 cursor-pointer disabled:opacity-40"
               >
-                Insure ({Math.floor(mainBet / 2)})
+                Insure ({isCash ? `$${(mainBet / 2).toFixed(2)}` : `${Math.floor(mainBet / 2)} GC`})
               </button>
               <button
                 onClick={() => handleInsurance(false)}
-                className="px-3 py-1.5 text-xs font-bold rounded-xl bg-zinc-800 text-zinc-300"
+                className="px-3 py-1.5 text-xs font-bold rounded-xl bg-zinc-800 text-zinc-300 cursor-pointer hover:bg-zinc-700"
               >
                 Pass
               </button>
@@ -777,11 +830,11 @@ export const BlackjackGame: React.FC<BlackjackGameProps> = ({
           {phase === 'betting' && (
             <button
               id="deal-cards-btn"
-              disabled={mainBet <= 0 || balance < totalCurrentBet}
+              disabled={mainBet <= 0 || effectiveBalance < totalCurrentBet}
               onClick={handleDeal}
-              className="w-full sm:w-auto px-8 py-3 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 text-zinc-950 font-black text-sm uppercase tracking-wider shadow-lg shadow-amber-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all transform active:scale-95"
+              className="w-full sm:w-auto px-8 py-3 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 text-zinc-950 font-black text-sm uppercase tracking-wider shadow-lg shadow-amber-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all transform active:scale-95 cursor-pointer"
             >
-              DEAL CARDS ({totalCurrentBet} Chips)
+              DEAL CARDS ({isCash ? `$${totalCurrentBet.toFixed(2)}` : `${totalCurrentBet.toLocaleString()} GC`})
             </button>
           )}
 
@@ -790,7 +843,7 @@ export const BlackjackGame: React.FC<BlackjackGameProps> = ({
               <button
                 id="bj-hit-btn"
                 onClick={handleHit}
-                className="flex-1 max-w-[130px] py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-wider shadow-md active:scale-95"
+                className="flex-1 max-w-[130px] py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-wider shadow-md active:scale-95 cursor-pointer"
               >
                 HIT
               </button>
@@ -798,7 +851,7 @@ export const BlackjackGame: React.FC<BlackjackGameProps> = ({
               <button
                 id="bj-stand-btn"
                 onClick={handleStand}
-                className="flex-1 max-w-[130px] py-2.5 rounded-xl bg-rose-700 hover:bg-rose-600 text-white font-black text-xs uppercase tracking-wider shadow-md active:scale-95"
+                className="flex-1 max-w-[130px] py-2.5 rounded-xl bg-rose-700 hover:bg-rose-600 text-white font-black text-xs uppercase tracking-wider shadow-md active:scale-95 cursor-pointer"
               >
                 STAND
               </button>
@@ -807,7 +860,7 @@ export const BlackjackGame: React.FC<BlackjackGameProps> = ({
                 <button
                   id="bj-double-btn"
                   onClick={handleDoubleDown}
-                  className="flex-1 max-w-[150px] py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black text-xs uppercase tracking-wider shadow-md active:scale-95 flex items-center justify-center gap-1"
+                  className="flex-1 max-w-[150px] py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black text-xs uppercase tracking-wider shadow-md active:scale-95 flex items-center justify-center gap-1 cursor-pointer"
                 >
                   <Zap className="w-3.5 h-3.5" /> 2× DOUBLE
                 </button>
@@ -817,7 +870,7 @@ export const BlackjackGame: React.FC<BlackjackGameProps> = ({
                 <button
                   id="bj-split-btn"
                   onClick={handleSplit}
-                  className="flex-1 max-w-[130px] py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-black text-xs uppercase tracking-wider shadow-md active:scale-95"
+                  className="flex-1 max-w-[130px] py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-black text-xs uppercase tracking-wider shadow-md active:scale-95 cursor-pointer"
                 >
                   SPLIT
                 </button>
@@ -829,7 +882,7 @@ export const BlackjackGame: React.FC<BlackjackGameProps> = ({
             <button
               id="bj-new-round-btn"
               onClick={handleNewRound}
-              className="w-full sm:w-auto px-8 py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 text-white font-black text-sm uppercase tracking-wider shadow-lg transition-all transform active:scale-95"
+              className="w-full sm:w-auto px-8 py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 text-white font-black text-sm uppercase tracking-wider shadow-lg transition-all transform active:scale-95 cursor-pointer"
             >
               PLAY AGAIN
             </button>

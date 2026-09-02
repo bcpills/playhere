@@ -12,7 +12,8 @@ import {
   DepositTransaction,
   BalanceAdjustmentLog,
   UserRole,
-  AccountStatus
+  AccountStatus,
+  CurrencyMode
 } from './types';
 import { Header } from './components/Header';
 import { LobbyHome } from './components/LobbyHome';
@@ -263,6 +264,7 @@ export default function App() {
 
   // Navigation & Modals
   const [currentTab, setCurrentTab] = useState<GameTab>('home');
+  const [currencyMode, setCurrencyMode] = useState<CurrencyMode>('cash');
   const [isBailoutOpen, setIsBailoutOpen] = useState<boolean>(false);
   const [isStatsOpen, setIsStatsOpen] = useState<boolean>(false);
   const [isRulesOpen, setIsRulesOpen] = useState<boolean>(false);
@@ -875,6 +877,11 @@ export default function App() {
             onUpdateBalance={handleUpdateBalance}
             onUpdateStats={setStats}
             onAddRakeback={handleAddRakeback}
+            currencyMode={currencyMode}
+            cashBalance={cashBalance}
+            onUpdateCashBalance={handleUpdateCashBalance}
+            onRecordWager={handleRecordWager}
+            onToggleCurrencyMode={setCurrencyMode}
           />
         )}
 
@@ -884,6 +891,11 @@ export default function App() {
             onUpdateBalance={handleUpdateBalance}
             onUpdateStats={setStats}
             onAddRakeback={handleAddRakeback}
+            currencyMode={currencyMode}
+            cashBalance={cashBalance}
+            onUpdateCashBalance={handleUpdateCashBalance}
+            onRecordWager={handleRecordWager}
+            onToggleCurrencyMode={setCurrencyMode}
           />
         )}
 

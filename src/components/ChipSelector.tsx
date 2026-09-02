@@ -19,6 +19,7 @@ interface ChipSelectorProps {
   onHalfBets?: () => void;
   onMaxBet?: () => void;
   balance?: number;
+  cashBalance?: number;
   currentBetTotal?: number;
   onCustomBetSubmit?: (customAmount: number) => void;
   currencyMode?: CurrencyMode;
@@ -63,6 +64,7 @@ export const ChipSelector: React.FC<ChipSelectorProps> = ({
   onHalfBets,
   onMaxBet,
   balance = 500,
+  cashBalance,
   currentBetTotal = 0,
   onCustomBetSubmit,
   currencyMode = 'gc',
@@ -71,6 +73,7 @@ export const ChipSelector: React.FC<ChipSelectorProps> = ({
   const [isTypingBet, setIsTypingBet] = useState<boolean>(false);
 
   const activeChips = currencyMode === 'cash' ? CASH_CHIP_VALUES : CHIP_VALUES;
+  const effectiveBal = currencyMode === 'cash' ? (cashBalance !== undefined ? cashBalance : balance) : balance;
 
   useEffect(() => {
     if (currentBet !== undefined) {
@@ -313,7 +316,7 @@ export const ChipSelector: React.FC<ChipSelectorProps> = ({
           {onDoubleBets && (
             <button
               type="button"
-              disabled={disabled || currentBetTotal === 0 || balance < currentBetTotal * 2}
+              disabled={disabled || currentBetTotal === 0 || effectiveBal < currentBetTotal * 2}
               onClick={() => {
                 sound.playChip();
                 onDoubleBets();
@@ -326,7 +329,7 @@ export const ChipSelector: React.FC<ChipSelectorProps> = ({
           {onMaxBet && (
             <button
               type="button"
-              disabled={disabled || balance <= 0}
+              disabled={disabled || effectiveBal <= 0}
               onClick={() => {
                 sound.playChip();
                 onMaxBet();
