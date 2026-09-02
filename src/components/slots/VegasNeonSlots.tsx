@@ -190,9 +190,14 @@ export const VegasNeonSlots: React.FC<VegasNeonSlotsProps> = ({
     const reelDelay = turboMode ? 100 : 200;
     const totalSpinTime = turboMode ? 400 : 900;
 
-    // Staggered reel stopping with realistic audio ticks
+    // Staggered reel stopping with realistic audio ticks & progressive grid reveal
     for (let c = 0; c < 5; c++) {
       setTimeout(() => {
+        setGrid(prev => {
+          const next = [...prev];
+          next[c] = nextGrid[c];
+          return next;
+        });
         setSpinningReels(prev => {
           const next = [...prev];
           next[c] = false;

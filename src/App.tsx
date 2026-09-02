@@ -482,19 +482,23 @@ export default function App() {
 
   // Daily Dollar Claim Handler ($1.00 Cash + 100,000 Gold Coins Reloaded at Midnight EST)
   const handleClaimDailyDollar = () => {
-    const currentEstDate = getCurrentEstDateString();
-    if (userAccount.lastDailyDollarClaimEstDate === currentEstDate) return;
+    try {
+      const currentEstDate = getCurrentEstDateString();
+      if (userAccount.lastDailyDollarClaimEstDate === currentEstDate) return;
 
-    sound.playProfit();
-    handleUpdateCashBalance(1.00);
-    handleUpdateBalance(100000);
+      sound.playProfit();
+      handleUpdateCashBalance(1.00);
+      handleUpdateBalance(100000);
 
-    setUserAccount(prev => ({
-      ...prev,
-      lastDailyDollarClaimEstDate: currentEstDate,
-      lastDailyClaim: Date.now(),
-      cashBalance: (prev.cashBalance || 0) + 1.00,
-    }));
+      setUserAccount(prev => ({
+        ...prev,
+        lastDailyDollarClaimEstDate: currentEstDate,
+        lastDailyClaim: Date.now(),
+        cashBalance: Number(((prev.cashBalance || 0) + 1.00).toFixed(2)),
+      }));
+    } catch (err) {
+      console.error('Failed to process daily dollar claim:', err);
+    }
   };
 
   // Rakeback System: 10% on general bets, 2% on Blackjack (Dual Real Cash & GC)

@@ -32,20 +32,23 @@ export const ReelColumn: React.FC<ReelColumnProps> = ({
       <div className="absolute bottom-0 inset-x-0 h-6 bg-gradient-to-t from-black/80 to-transparent z-10 pointer-events-none" />
 
       {isSpinning ? (
-        /* FAST ROLLING STRIP ANIMATION */
+        /* FAST ROLLING STRIP ANIMATION WITH MOTION BLUR & SPEED LINES */
         <div className="relative w-full h-full overflow-hidden flex flex-col justify-center items-center">
+          {/* Subtle spinning speed lines overlay */}
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-purple-500/5 to-transparent pointer-events-none z-10" />
+          
           <motion.div
             animate={{ y: ['-50%', '0%'] }}
-            transition={{ repeat: Infinity, duration: 0.18, ease: 'linear' }}
-            className="flex flex-col gap-2 sm:gap-3 items-center w-full filter blur-[1px] opacity-80"
+            transition={{ repeat: Infinity, duration: 0.14, ease: 'linear' }}
+            className="flex flex-col gap-2 sm:gap-3 items-center w-full filter blur-[1.5px] opacity-85"
           >
             {/* Doubled strip for seamless infinite vertical scroll */}
             {[...stripSymbols, ...stripSymbols].map((sym, idx) => (
               <div
                 key={`${colIndex}-strip-${idx}`}
-                className="w-full h-16 sm:h-22 rounded-xl bg-zinc-900/70 border border-zinc-800 flex flex-col items-center justify-center p-1 shrink-0"
+                className="w-full h-16 sm:h-22 rounded-xl bg-gradient-to-b from-zinc-900/80 to-zinc-950/90 border border-purple-900/40 flex flex-col items-center justify-center p-1 shrink-0 shadow-sm"
               >
-                <span className="text-2xl sm:text-3xl filter saturate-150">
+                <span className="text-2xl sm:text-3xl filter saturate-150 transform scale-105">
                   {sym.emoji}
                 </span>
                 <span className="text-[8px] font-black uppercase text-zinc-500 truncate max-w-full">
@@ -56,11 +59,12 @@ export const ReelColumn: React.FC<ReelColumnProps> = ({
           </motion.div>
         </div>
       ) : (
-        /* STOPPED REEL STATE WITH BOUNCE-IN DECELERATION */
+        /* STOPPED REEL STATE WITH ACCURATE SYMBOL LANDING & MECHANICAL SPRING BOUNCE */
         <motion.div
-          initial={{ y: -30, opacity: 0.8 }}
-          animate={{ y: [ -12, 6, -2, 0 ], opacity: 1 }}
-          transition={{ duration: 0.35, ease: 'easeOut' }}
+          key={`reel-${colIndex}-${symbols.map(s => s.id + (s.orbValue || '')).join('-')}`}
+          initial={{ y: -42, opacity: 0.75, filter: 'blur(2px)' }}
+          animate={{ y: 0, opacity: 1, filter: 'blur(0px)' }}
+          transition={{ type: 'spring', damping: 14, stiffness: 250, mass: 0.8 }}
           className="flex flex-col gap-1.5 sm:gap-2.5 h-full justify-between"
         >
           {symbols.map((sym, rowIdx) => {

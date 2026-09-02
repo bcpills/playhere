@@ -203,37 +203,53 @@ export const BailoutModal: React.FC<BailoutModalProps> = ({
 
   const handleClaimDailyDollarAction = () => {
     if (!canClaimDailyDollar || dailyDollarClaimed || !onClaimDailyDollar) return;
-    sound.playWin(true);
-    confetti({ particleCount: 120, spread: 80, origin: { y: 0.5 } });
-    setDailyDollarClaimed(true);
-    onClaimDailyDollar();
-    setTimeout(() => {
-      setDailyDollarClaimed(false);
-    }, 2000);
+    try {
+      sound.playWin(true);
+      try {
+        confetti({ particleCount: 100, spread: 70, origin: { y: 0.5 } });
+      } catch {
+        // Safe fallback if confetti canvas fails
+      }
+      setDailyDollarClaimed(true);
+      onClaimDailyDollar();
+      setTimeout(() => {
+        setDailyDollarClaimed(false);
+      }, 2000);
+    } catch (err) {
+      console.error('Error claiming daily dollar:', err);
+    }
   };
 
   const [cashRakebackClaimed, setCashRakebackClaimed] = useState<boolean>(false);
 
   const handleClaimRakebackAction = (mode: 'gc' | 'cash' = 'gc') => {
     if (!onClaimRakeback) return;
-    if (mode === 'cash') {
-      if (unclaimedCashRakeback <= 0 || cashRakebackClaimed) return;
-      sound.playProfit();
-      confetti({ particleCount: 70, spread: 50, origin: { y: 0.6 } });
-      setCashRakebackClaimed(true);
-      onClaimRakeback('cash');
-      setTimeout(() => {
-        setCashRakebackClaimed(false);
-      }, 2000);
-    } else {
-      if (unclaimedRakeback <= 0 || rakebackClaimed) return;
-      sound.playProfit();
-      confetti({ particleCount: 70, spread: 50, origin: { y: 0.6 } });
-      setRakebackClaimed(true);
-      onClaimRakeback('gc');
-      setTimeout(() => {
-        setRakebackClaimed(false);
-      }, 2000);
+    try {
+      if (mode === 'cash') {
+        if (unclaimedCashRakeback <= 0 || cashRakebackClaimed) return;
+        sound.playProfit();
+        try {
+          confetti({ particleCount: 70, spread: 50, origin: { y: 0.6 } });
+        } catch {}
+        setCashRakebackClaimed(true);
+        onClaimRakeback('cash');
+        setTimeout(() => {
+          setCashRakebackClaimed(false);
+        }, 2000);
+      } else {
+        if (unclaimedRakeback <= 0 || rakebackClaimed) return;
+        sound.playProfit();
+        try {
+          confetti({ particleCount: 70, spread: 50, origin: { y: 0.6 } });
+        } catch {}
+        setRakebackClaimed(true);
+        onClaimRakeback('gc');
+        setTimeout(() => {
+          setRakebackClaimed(false);
+        }, 2000);
+      }
+    } catch (err) {
+      console.error('Error claiming rakeback:', err);
     }
   };
 

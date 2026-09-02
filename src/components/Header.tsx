@@ -94,9 +94,9 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="sticky top-0 z-40 w-full bg-[#0d091a]/95 backdrop-blur-md border-b border-purple-900/30 shadow-xl shadow-purple-950/20">
-      <div className="max-w-7xl mx-auto px-2 sm:px-4 py-1.5 sm:py-2">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 py-1.5 sm:py-2 overflow-x-auto scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none]">
         {/* Responsive Header Row: Brand, Currency Switcher, Cashier & Actions */}
-        <div className="flex items-center justify-between gap-1.5 sm:gap-3">
+        <div className="flex items-center justify-between gap-2 sm:gap-3 min-w-max">
           
           {/* Left: Logo & Back to Lobby */}
           <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">

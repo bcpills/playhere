@@ -268,9 +268,14 @@ export const HoldAndWinSlots: React.FC<HoldAndWinSlotsProps> = ({
     const reelDelay = turboMode ? 90 : 180;
     const totalSpinTime = turboMode ? 350 : 800;
 
-    // Staggered reel stop animation
+    // Staggered reel stop animation with progressive grid symbol reveal
     for (let c = 0; c < 5; c++) {
       setTimeout(() => {
+        setGrid(prev => {
+          const next = [...prev];
+          next[c] = nextGrid[c];
+          return next;
+        });
         setSpinningReels(prev => {
           const next = [...prev];
           next[c] = false;
