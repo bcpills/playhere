@@ -243,6 +243,7 @@ export const LOOT_CRATES: LootCrate[] = [
     name: 'Bum Bag Crate',
     tagline: 'Pocket change, street relics, and budget degenerate artifacts.',
     cost: 10,
+    cashCost: 0.10,
     icon: '🎒',
     accentColor: '#9ca3af',
     glowColor: 'rgba(156, 163, 175, 0.3)',
@@ -253,6 +254,7 @@ export const LOOT_CRATES: LootCrate[] = [
     name: 'Street Hustler Case',
     tagline: 'Underground casino tools, weighted dice, and flashy gear.',
     cost: 50,
+    cashCost: 0.50,
     icon: '🎲',
     accentColor: '#3b82f6',
     glowColor: 'rgba(59, 130, 246, 0.3)',
@@ -263,6 +265,7 @@ export const LOOT_CRATES: LootCrate[] = [
     name: 'Enchanted Forest Stash',
     tagline: 'Pixie dust vials, liquid fortune elixirs, and Phoenix feathers.',
     cost: 75,
+    cashCost: 0.75,
     icon: '🍄',
     accentColor: '#10b981',
     glowColor: 'rgba(16, 185, 129, 0.35)',
@@ -273,6 +276,7 @@ export const LOOT_CRATES: LootCrate[] = [
     name: 'Neo-Tokyo Cyberpunk Case',
     tagline: 'Neural decks, holographic visors, and Damascus Matrix katanas.',
     cost: 100,
+    cashCost: 1.00,
     icon: '⚡',
     accentColor: '#06b6d4',
     glowColor: 'rgba(6, 182, 212, 0.4)',
@@ -283,6 +287,7 @@ export const LOOT_CRATES: LootCrate[] = [
     name: 'Prehistoric Jurassic Coffer',
     tagline: 'Amber mosquitoes, Megalodon shark teeth, and amber T-Rex skulls.',
     cost: 150,
+    cashCost: 1.50,
     icon: '🦖',
     accentColor: '#f97316',
     glowColor: 'rgba(249, 115, 22, 0.4)',
@@ -293,6 +298,7 @@ export const LOOT_CRATES: LootCrate[] = [
     name: 'High Roller Vault',
     tagline: 'Penthouse comps, luxury watches, and Macau tournament trophies.',
     cost: 200,
+    cashCost: 2.00,
     icon: '💎',
     accentColor: '#a855f7',
     glowColor: 'rgba(168, 85, 247, 0.3)',
@@ -303,6 +309,7 @@ export const LOOT_CRATES: LootCrate[] = [
     name: 'Mythic Gems & Minerals Vault',
     tagline: 'Kryptonite, Wakandan Vibranium, Kyber Crystals & Arkenstone.',
     cost: 350,
+    cashCost: 3.50,
     icon: '💎',
     accentColor: '#6366f1',
     glowColor: 'rgba(99, 102, 241, 0.45)',
@@ -313,6 +320,7 @@ export const LOOT_CRATES: LootCrate[] = [
     name: 'The ChipZone Mythic Crate',
     tagline: 'Ridiculous golden artifacts, legendary knifes, and maximum flex.',
     cost: 500,
+    cashCost: 5.00,
     icon: '👑',
     accentColor: '#f59e0b',
     glowColor: 'rgba(245, 158, 11, 0.4)',
@@ -323,6 +331,7 @@ export const LOOT_CRATES: LootCrate[] = [
     name: 'Eldritch Arcane Grimoire',
     tagline: 'Ancient scarabs, Necronomicon Ex-Mortis, and Void Harbingers.',
     cost: 650,
+    cashCost: 6.50,
     icon: '🔮',
     accentColor: '#d946ef',
     glowColor: 'rgba(217, 70, 239, 0.45)',
@@ -333,6 +342,7 @@ export const LOOT_CRATES: LootCrate[] = [
     name: 'Underworld Mafia Syndicate Safe',
     tagline: 'Solid gold signet rings, gold Tommy guns, and Maybach keys.',
     cost: 800,
+    cashCost: 8.00,
     icon: '💼',
     accentColor: '#ec4899',
     glowColor: 'rgba(236, 72, 153, 0.4)',
@@ -343,6 +353,7 @@ export const LOOT_CRATES: LootCrate[] = [
     name: 'Diamond Whale Coffer',
     tagline: 'Private jet charters, Patek Philippe celestial watches, and Emerald Doppler blades.',
     cost: 1500,
+    cashCost: 15.00,
     icon: '🐋',
     accentColor: '#38bdf8',
     glowColor: 'rgba(56, 189, 248, 0.4)',
@@ -353,6 +364,7 @@ export const LOOT_CRATES: LootCrate[] = [
     name: 'Olympus Pantheon Reliquary',
     tagline: 'Hermes sandals, Athena Aegis shield, Zeus Master Bolt & Pandora Box.',
     cost: 2500,
+    cashCost: 25.00,
     icon: '🏛️',
     accentColor: '#eab308',
     glowColor: 'rgba(234, 179, 8, 0.55)',
@@ -363,6 +375,7 @@ export const LOOT_CRATES: LootCrate[] = [
     name: 'Degenerate Overlord Armory',
     tagline: 'Casino equity shares, platinum bullion, and legendary Case Hardened Blue Gems.',
     cost: 5000,
+    cashCost: 50.00,
     icon: '🔥',
     accentColor: '#ef4444',
     glowColor: 'rgba(239, 68, 68, 0.5)',
@@ -373,6 +386,7 @@ export const LOOT_CRATES: LootCrate[] = [
     name: 'Sovereign ChipZone Reliquary',
     tagline: 'The absolute apex of digital opulence. Odin Gungnir, Sovereign Crown & The Infinity Poop Scepter.',
     cost: 15000,
+    cashCost: 100.00,
     icon: '👑',
     accentColor: '#eab308',
     glowColor: 'rgba(234, 179, 8, 0.6)',
@@ -383,12 +397,28 @@ export const LOOT_CRATES: LootCrate[] = [
     name: 'Cosmic Supernova God Core',
     tagline: 'Antimatter engines, event horizon gravity scepters, and the Omniversal 1-of-1 God Core.',
     cost: 30000,
+    cashCost: 250.00,
     icon: '🌌',
     accentColor: '#c084fc',
     glowColor: 'rgba(192, 132, 252, 0.6)',
     items: COSMIC_SUPERNOVA_ITEMS,
   },
 ];
+
+export function getCrateCost(crate: LootCrate, currency: 'cash' | 'gc' | string = 'gc'): number {
+  if (currency === 'cash') {
+    return crate.cashCost !== undefined ? crate.cashCost : Number((crate.cost / 100).toFixed(2));
+  }
+  return crate.cost;
+}
+
+export function getItemValue(item: LootItem, currency: 'cash' | 'gc' | string = 'gc'): number {
+  if (currency === 'cash') {
+    if (item.cashValue !== undefined) return item.cashValue;
+    return Math.max(0.01, Number((item.value / 100).toFixed(2)));
+  }
+  return item.value;
+}
 
 /**
  * Picks a random item from a crate based on item drop weights

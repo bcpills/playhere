@@ -17,8 +17,8 @@ import {
   ArrowRight,
   Plus
 } from 'lucide-react';
-import { LootCrate, LootItem, ItemRarity, InventoryItem, CasinoStats, UserAccount } from '../types';
-import { LOOT_CRATES, RARITY_CONFIG, pickRandomLootItem, generateReelItems, formatDropOdds } from '../utils/crates';
+import { LootCrate, LootItem, ItemRarity, InventoryItem, CasinoStats, UserAccount, CurrencyMode } from '../types';
+import { LOOT_CRATES, RARITY_CONFIG, pickRandomLootItem, generateReelItems, formatDropOdds, getCrateCost, getItemValue } from '../utils/crates';
 import { sound } from '../utils/audio';
 import { CrateBattleArena } from './CrateBattleArena';
 
@@ -27,6 +27,11 @@ interface UnboxerGameProps {
   userAccount: UserAccount;
   onUpdateBalance: (delta: number) => void;
   onUpdateStats: (updater: (prev: CasinoStats) => CasinoStats) => void;
+  currencyMode?: CurrencyMode;
+  cashBalance?: number;
+  onUpdateCashBalance?: (amount: number | ((prev: number) => number)) => void;
+  onRecordWager?: (amount: number, isCash: boolean) => void;
+  onAddRakeback?: (wager: number, isBlackjack?: boolean, isCash?: boolean) => void;
 }
 
 interface MultiReelState {
@@ -42,7 +47,15 @@ export const UnboxerGame: React.FC<UnboxerGameProps> = ({
   userAccount,
   onUpdateBalance,
   onUpdateStats,
+  currencyMode = 'gc',
+  cashBalance = 0,
+  onUpdateCashBalance,
+  onRecordWager,
+  onAddRakeback,
 }) => {
+  const isCash = currencyMode === 'cash';
+  const effectiveBalance = isCash ? cashBalance : balance;
+
   // Navigation: Solo Unbox vs Crate Battles Arena
   const [activeTab, setActiveTab] = useState<'solo' | 'battles'>('solo');
 
@@ -68,16 +81,32 @@ export const UnboxerGame: React.FC<UnboxerGameProps> = ({
   const ITEM_WIDTH = 150;
   const ITEM_GAP = 10;
 
+  const currentCrateCost = getCrateCost(selectedCrate, currencyMode);
+
+  const modifyBalance = (delta: number) => {
+    if (isCash && onUpdateCashBalance) {
+      onUpdateCashBalance(prev => Number((prev + delta).toFixed(2)));
+    } else {
+      onUpdateBalance(delta);
+    }
+  };
+
   // Solo Single or Multi Open sequence
   const handleOpenSoloCrates = (count = multiCount) => {
-    const totalCost = selectedCrate.cost * count;
-    if (balance < totalCost || isOpening) return;
+    const costPerCrate = getCrateCost(selectedCrate, currencyMode);
+    const totalCost = isCash ? Number((costPerCrate * count).toFixed(2)) : (costPerCrate * count);
+    if (effectiveBalance < totalCost || isOpening) return;
 
     // Deduct total cost
-    onUpdateBalance(-totalCost);
+    modifyBalance(-totalCost);
+    onRecordWager?.(totalCost, isCash);
+    if (onAddRakeback) {
+      onAddRakeback(totalCost, false, isCash);
+    }
+
     onUpdateStats(prev => ({
       ...prev,
-      totalWagered: prev.totalWagered + totalCost,
+      totalWagered: isCash ? prev.totalWagered + (totalCost * 1000) : prev.totalWagered + totalCost,
       cratesOpened: prev.cratesOpened + count,
     }));
 
@@ -127,10 +156,11 @@ export const UnboxerGame: React.FC<UnboxerGameProps> = ({
         setIsOpening(false);
         setRevealedItem(winItem);
 
+        const val = getItemValue(winItem, currencyMode);
         // Auto credit winnings directly to balance
-        onUpdateBalance(winItem.value);
+        modifyBalance(val);
 
-        const isProfit = winItem.value > selectedCrate.cost;
+        const isProfit = val > costPerCrate;
         if (winItem.rarity === 'covert' || winItem.rarity === 'mythic' || winItem.rarity === 'exotic') {
           confetti({ particleCount: 120, spread: 90, origin: { y: 0.5 } });
           sound.playLootRare();
@@ -142,9 +172,9 @@ export const UnboxerGame: React.FC<UnboxerGameProps> = ({
 
         onUpdateStats(prev => ({
           ...prev,
-          totalWon: prev.totalWon + winItem.value,
-          biggestWin: Math.max(prev.biggestWin, winItem.value),
-          biggestMultiplier: Math.max(prev.biggestMultiplier, Math.round(winItem.value / selectedCrate.cost)),
+          totalWon: isCash ? prev.totalWon + (val * 1000) : prev.totalWon + val,
+          biggestWin: isCash ? Math.max(prev.biggestWin, val * 1000) : Math.max(prev.biggestWin, val),
+          biggestMultiplier: Math.max(prev.biggestMultiplier, Math.round(val / costPerCrate)),
         }));
       }, 6400);
 
@@ -192,10 +222,12 @@ export const UnboxerGame: React.FC<UnboxerGameProps> = ({
         setIsOpening(false);
         setMultiRevealedItems(wonItems);
 
-        const totalWonVal = wonItems.reduce((s, item) => s + item.value, 0);
+        const totalWonVal = isCash 
+          ? Number(wonItems.reduce((s, item) => s + getItemValue(item, currencyMode), 0).toFixed(2))
+          : wonItems.reduce((s, item) => s + getItemValue(item, currencyMode), 0);
 
         // Auto credit winnings directly to balance
-        onUpdateBalance(totalWonVal);
+        modifyBalance(totalWonVal);
 
         const hasRare = wonItems.some(i => i.rarity === 'covert' || i.rarity === 'mythic' || i.rarity === 'exotic');
 
@@ -208,11 +240,11 @@ export const UnboxerGame: React.FC<UnboxerGameProps> = ({
           sound.playWin(false);
         }
 
-        const maxItemVal = Math.max(...wonItems.map(i => i.value));
+        const maxItemVal = Math.max(...wonItems.map(i => getItemValue(i, currencyMode)));
         onUpdateStats(prev => ({
           ...prev,
-          totalWon: prev.totalWon + totalWonVal,
-          biggestWin: Math.max(prev.biggestWin, maxItemVal),
+          totalWon: isCash ? prev.totalWon + (totalWonVal * 1000) : prev.totalWon + totalWonVal,
+          biggestWin: isCash ? Math.max(prev.biggestWin, maxItemVal * 1000) : Math.max(prev.biggestWin, maxItemVal),
           biggestMultiplier: Math.max(prev.biggestMultiplier, Math.round(totalWonVal / totalCost)),
         }));
       }, 5600);
@@ -275,6 +307,11 @@ export const UnboxerGame: React.FC<UnboxerGameProps> = ({
           userAccount={userAccount}
           onUpdateBalance={onUpdateBalance}
           onUpdateStats={onUpdateStats}
+          currencyMode={currencyMode}
+          cashBalance={cashBalance}
+          onUpdateCashBalance={onUpdateCashBalance}
+          onRecordWager={onRecordWager}
+          onAddRakeback={onAddRakeback}
         />
       ) : (
         <div className="space-y-6">
@@ -295,7 +332,8 @@ export const UnboxerGame: React.FC<UnboxerGameProps> = ({
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5 sm:gap-3">
               {LOOT_CRATES.map((crate) => {
                 const isSelected = selectedCrate.id === crate.id;
-                const canAfford = balance >= crate.cost * multiCount;
+                const cost = getCrateCost(crate, currencyMode);
+                const canAfford = effectiveBalance >= cost * multiCount;
 
                 return (
                   <div
@@ -316,7 +354,7 @@ export const UnboxerGame: React.FC<UnboxerGameProps> = ({
                       <div className="flex items-center justify-between mb-1.5">
                         <span className="text-2xl sm:text-3xl">{crate.icon}</span>
                         <span className="px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono">
-                          {crate.cost.toLocaleString()}c
+                          {isCash ? `$${cost.toFixed(2)}` : `${cost.toLocaleString()} GC`}
                         </span>
                       </div>
 
@@ -375,6 +413,7 @@ export const UnboxerGame: React.FC<UnboxerGameProps> = ({
                   {singleReelItems.length > 0 ? (
                     singleReelItems.map((item, idx) => {
                       const rarity = RARITY_CONFIG[item.rarity];
+                      const val = getItemValue(item, currencyMode);
                       return (
                         <div
                           key={`${item.id}-${idx}`}
@@ -394,7 +433,7 @@ export const UnboxerGame: React.FC<UnboxerGameProps> = ({
                               {item.name}
                             </div>
                             <div className="text-[11px] font-mono font-bold text-amber-300">
-                              {item.value.toLocaleString()} Chips
+                              {isCash ? `$${val.toFixed(2)}` : `${val.toLocaleString()} GC`}
                             </div>
                           </div>
                         </div>
@@ -405,6 +444,7 @@ export const UnboxerGame: React.FC<UnboxerGameProps> = ({
                     Array.from({ length: 15 }).map((_, idx) => {
                       const item = selectedCrate.items[idx % selectedCrate.items.length];
                       const rarity = RARITY_CONFIG[item.rarity];
+                      const val = getItemValue(item, currencyMode);
                       return (
                         <div
                           key={idx}
@@ -417,7 +457,7 @@ export const UnboxerGame: React.FC<UnboxerGameProps> = ({
                           <span className="text-3xl my-1">{item.icon}</span>
                           <div className="w-full">
                             <div className="text-xs font-bold text-zinc-300 truncate">{item.name}</div>
-                            <div className="text-[10px] font-mono text-zinc-400">{item.value} Chips</div>
+                            <div className="text-[10px] font-mono text-zinc-400">{isCash ? `$${val.toFixed(2)}` : `${val.toLocaleString()} GC`}</div>
                           </div>
                         </div>
                       );
@@ -461,6 +501,7 @@ export const UnboxerGame: React.FC<UnboxerGameProps> = ({
                           >
                             {reel.items.map((item, iIdx) => {
                               const rarity = RARITY_CONFIG[item.rarity];
+                              const val = getItemValue(item, currencyMode);
                               return (
                                 <div
                                   key={`item-${rIdx}-${iIdx}`}
@@ -481,7 +522,7 @@ export const UnboxerGame: React.FC<UnboxerGameProps> = ({
                         ) : (
                           <div className="w-full flex items-center justify-center gap-2 text-zinc-500 text-xs">
                             <span>{selectedCrate.icon}</span>
-                            <span>Crate #{rIdx + 1} Ready ({selectedCrate.cost}c)</span>
+                            <span>Crate #{rIdx + 1} Ready ({isCash ? `$${currentCrateCost.toFixed(2)}` : `${currentCrateCost.toLocaleString()} GC`})</span>
                           </div>
                         )}
                       </div>
@@ -521,13 +562,13 @@ export const UnboxerGame: React.FC<UnboxerGameProps> = ({
               {/* Action Button */}
               <button
                 id="unbox-launch-btn"
-                disabled={isOpening || balance < selectedCrate.cost * multiCount}
+                disabled={isOpening || effectiveBalance < currentCrateCost * multiCount}
                 onClick={() => handleOpenSoloCrates(multiCount)}
                 className="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-500 hover:to-pink-500 text-white font-black text-sm uppercase tracking-wider shadow-xl shadow-purple-600/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all transform hover:scale-105 flex items-center gap-2 cursor-pointer"
               >
                 <Sparkles className="w-5 h-5 text-yellow-300" />
                 <span>
-                  UNBOX {multiCount}× ({(selectedCrate.cost * multiCount).toLocaleString()} CHIPS)
+                  UNBOX {multiCount}× ({isCash ? `$${(currentCrateCost * multiCount).toFixed(2)}` : `${(currentCrateCost * multiCount).toLocaleString()} GC`})
                 </span>
               </button>
             </div>
@@ -566,13 +607,13 @@ export const UnboxerGame: React.FC<UnboxerGameProps> = ({
                     <div>
                       <div className="text-[10px] uppercase tracking-wider text-zinc-400 font-bold">Resale Value</div>
                       <div className="text-lg font-black text-amber-300 font-mono">
-                        +{revealedItem.value.toLocaleString()} Chips
+                        +{isCash ? `$${getItemValue(revealedItem, currencyMode).toFixed(2)}` : `${getItemValue(revealedItem, currencyMode).toLocaleString()} GC`}
                       </div>
                     </div>
                     <div className="border-l border-zinc-800 pl-4">
                       <div className="text-[10px] uppercase tracking-wider text-zinc-400 font-bold">Multiplier</div>
                       <div className="text-lg font-black text-emerald-400 font-mono">
-                        {(revealedItem.value / selectedCrate.cost).toFixed(1)}x
+                        {(getItemValue(revealedItem, currencyMode) / currentCrateCost).toFixed(1)}x
                       </div>
                     </div>
                   </div>
@@ -582,7 +623,7 @@ export const UnboxerGame: React.FC<UnboxerGameProps> = ({
                 <div className="mt-4 p-3 rounded-2xl bg-emerald-950/80 border border-emerald-400/70 flex items-center justify-center gap-2 shadow-lg">
                   <Coins className="w-4 h-4 text-emerald-400 animate-pulse" />
                   <span className="text-xs font-black text-emerald-300 font-mono">
-                    ✓ +{revealedItem.value.toLocaleString()} Chips Added Directly to Balance!
+                    ✓ +{isCash ? `$${getItemValue(revealedItem, currencyMode).toFixed(2)}` : `${getItemValue(revealedItem, currencyMode).toLocaleString()} GC`} Added Directly to Balance!
                   </span>
                 </div>
 
@@ -595,7 +636,7 @@ export const UnboxerGame: React.FC<UnboxerGameProps> = ({
                     className="flex-1 py-3 px-4 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 text-zinc-950 shadow-lg flex items-center justify-center gap-2 transition-all cursor-pointer transform hover:scale-105"
                   >
                     <RefreshCw className="w-4 h-4" />
-                    <span>Open Again ({selectedCrate.cost.toLocaleString()}c)</span>
+                    <span>Open Again ({isCash ? `$${currentCrateCost.toFixed(2)}` : `${currentCrateCost.toLocaleString()} GC`})</span>
                   </button>
 
                   <button
@@ -626,19 +667,19 @@ export const UnboxerGame: React.FC<UnboxerGameProps> = ({
                   <div>
                     <div className="text-[10px] uppercase font-bold text-zinc-400">Total Spent</div>
                     <div className="text-sm sm:text-base font-black text-zinc-300 font-mono">
-                      {(selectedCrate.cost * multiRevealedItems.length).toLocaleString()}c
+                      {isCash ? `$${(currentCrateCost * multiRevealedItems.length).toFixed(2)}` : `${(currentCrateCost * multiRevealedItems.length).toLocaleString()} GC`}
                     </div>
                   </div>
                   <div>
                     <div className="text-[10px] uppercase font-bold text-zinc-400">Total Loot Worth</div>
                     <div className="text-sm sm:text-base font-black text-amber-300 font-mono">
-                      +{multiRevealedItems.reduce((s, i) => s + i.value, 0).toLocaleString()}c
+                      +{isCash ? `$${multiRevealedItems.reduce((s, i) => s + getItemValue(i, currencyMode), 0).toFixed(2)}` : `${multiRevealedItems.reduce((s, i) => s + getItemValue(i, currencyMode), 0).toLocaleString()} GC`}
                     </div>
                   </div>
                   <div>
                     <div className="text-[10px] uppercase font-bold text-zinc-400">Return Multiplier</div>
                     <div className="text-sm sm:text-base font-black text-emerald-400 font-mono">
-                      {(multiRevealedItems.reduce((s, i) => s + i.value, 0) / (selectedCrate.cost * multiRevealedItems.length)).toFixed(2)}x
+                      {(multiRevealedItems.reduce((s, i) => s + getItemValue(i, currencyMode), 0) / (currentCrateCost * multiRevealedItems.length)).toFixed(2)}x
                     </div>
                   </div>
                 </div>
@@ -647,7 +688,7 @@ export const UnboxerGame: React.FC<UnboxerGameProps> = ({
                 <div className="mt-4 p-3 rounded-2xl bg-emerald-950/80 border border-emerald-400/70 flex items-center justify-center gap-2 shadow-lg">
                   <Coins className="w-4 h-4 text-emerald-400 animate-pulse" />
                   <span className="text-xs font-black text-emerald-300 font-mono">
-                    ✓ +{multiRevealedItems.reduce((s, i) => s + i.value, 0).toLocaleString()} Total Chips Auto-Collected to Balance!
+                    ✓ +{isCash ? `$${multiRevealedItems.reduce((s, i) => s + getItemValue(i, currencyMode), 0).toFixed(2)}` : `${multiRevealedItems.reduce((s, i) => s + getItemValue(i, currencyMode), 0).toLocaleString()} GC`} Total Auto-Collected to Balance!
                   </span>
                 </div>
 
@@ -655,6 +696,7 @@ export const UnboxerGame: React.FC<UnboxerGameProps> = ({
                 <div className="mt-5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                   {multiRevealedItems.map((item, idx) => {
                     const rarity = RARITY_CONFIG[item.rarity];
+                    const val = getItemValue(item, currencyMode);
                     return (
                       <div
                         key={`batch-won-${item.id}-${idx}`}
@@ -666,7 +708,7 @@ export const UnboxerGame: React.FC<UnboxerGameProps> = ({
                         <span className="text-3xl my-1.5">{item.icon}</span>
                         <div className="w-full">
                           <div className="text-xs font-black text-zinc-100 truncate">{item.name}</div>
-                          <div className="text-[11px] font-mono font-bold text-amber-300">{item.value.toLocaleString()}c</div>
+                          <div className="text-[11px] font-mono font-bold text-amber-300">{isCash ? `$${val.toFixed(2)}` : `${val.toLocaleString()} GC`}</div>
                         </div>
                       </div>
                     );
@@ -684,7 +726,7 @@ export const UnboxerGame: React.FC<UnboxerGameProps> = ({
                     className="flex-1 py-3.5 px-5 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 text-zinc-950 shadow-lg flex items-center justify-center gap-2 transition-all cursor-pointer transform hover:scale-105"
                   >
                     <RefreshCw className="w-4 h-4" />
-                    <span>Open Again ({(selectedCrate.cost * multiRevealedItems.length).toLocaleString()}c)</span>
+                    <span>Open Again ({isCash ? `$${(currentCrateCost * multiRevealedItems.length).toFixed(2)}` : `${(currentCrateCost * multiRevealedItems.length).toLocaleString()} GC`})</span>
                   </button>
 
                   <button
@@ -712,7 +754,7 @@ export const UnboxerGame: React.FC<UnboxerGameProps> = ({
                         {inspectingCrate.name} Prize Pool
                       </h3>
                       <p className="text-xs text-zinc-400">
-                        Cost: {inspectingCrate.cost.toLocaleString()} Chips
+                        Cost: {isCash ? `$${getCrateCost(inspectingCrate, currencyMode).toFixed(2)}` : `${getCrateCost(inspectingCrate, currencyMode).toLocaleString()} GC`}
                       </p>
                     </div>
                   </div>
@@ -727,47 +769,37 @@ export const UnboxerGame: React.FC<UnboxerGameProps> = ({
                 <div className="space-y-2.5">
                   {inspectingCrate.items.map((item) => {
                     const rarity = RARITY_CONFIG[item.rarity];
+                    const val = getItemValue(item, currencyMode);
                     const totalWeight = inspectingCrate.items.reduce((s, i) => s + i.dropWeight, 0);
-                    const dropOdds = formatDropOdds(item.dropWeight, totalWeight);
-
                     return (
                       <div
-                        key={item.id}
-                        className={`flex items-center justify-between p-3 rounded-2xl border bg-gradient-to-r ${rarity.bg} ${rarity.border}`}
+                        key={`pool-${inspectingCrate.id}-${item.id}`}
+                        className={`p-3 rounded-2xl border bg-gradient-to-r ${rarity.bg} ${rarity.border} flex items-center justify-between gap-3 shadow`}
                       >
                         <div className="flex items-center gap-3">
-                          <span className="text-2xl">{item.icon}</span>
+                          <span className="text-3xl shrink-0">{item.icon}</span>
                           <div>
                             <div className="flex items-center gap-2">
                               <span className="text-sm font-black text-zinc-100">{item.name}</span>
-                              <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${rarity.text} bg-black/40`}>
+                              <span className={`text-[9px] font-black uppercase px-2 py-0.2 rounded-full ${rarity.text} bg-black/40 border border-current/30`}>
                                 {rarity.label}
                               </span>
                             </div>
-                            <p className="text-xs text-zinc-400 italic">{item.description}</p>
+                            <p className="text-xs text-zinc-400 italic line-clamp-1">{item.description}</p>
                           </div>
                         </div>
 
-                        <div className="text-right flex flex-col items-end">
-                          <span className="text-xs font-mono font-black text-amber-300">
-                            {item.value.toLocaleString()} Chips
-                          </span>
-                          <span className="text-[10px] font-bold text-zinc-400">
-                            {dropOdds} Drop Rate
-                          </span>
+                        <div className="text-right shrink-0">
+                          <div className="text-sm font-black text-amber-300 font-mono">
+                            {isCash ? `$${val.toFixed(2)}` : `${val.toLocaleString()} GC`}
+                          </div>
+                          <div className="text-[10px] text-zinc-400 font-bold">
+                            Drop: {formatDropOdds(item.dropWeight, totalWeight)}
+                          </div>
                         </div>
                       </div>
                     );
                   })}
-                </div>
-
-                <div className="mt-6 flex justify-end">
-                  <button
-                    onClick={() => setInspectingCrate(null)}
-                    className="px-5 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-bold cursor-pointer"
-                  >
-                    Close
-                  </button>
                 </div>
               </div>
             </div>

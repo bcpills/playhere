@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { 
   Bomb, 
@@ -10,16 +10,20 @@ import {
   Sliders,
   Sparkles
 } from 'lucide-react';
-import { CasinoStats } from '../types';
+import { CasinoStats, CurrencyMode } from '../types';
 import { sound } from '../utils/audio';
 import { formatCompactWager } from '../utils/leaderboard';
 
 interface MinesGameProps {
   balance: number;
+  cashBalance?: number;
+  currencyMode?: CurrencyMode;
   onUpdateBalance: (amount: number | ((prev: number) => number)) => void;
+  onUpdateCashBalance?: (amount: number | ((prev: number) => number)) => void;
   stats: CasinoStats;
   onUpdateStats: (updater: (prev: CasinoStats) => CasinoStats) => void;
-  onAddRakeback?: (wager: number, isBlackjack?: boolean) => void;
+  onAddRakeback?: (wager: number, isBlackjack?: boolean, isCash?: boolean) => void;
+  onRecordWager?: (amount: number, isCash: boolean) => void;
 }
 
 type TileState = 'hidden' | 'gem' | 'mine' | 'exploded';
@@ -49,11 +53,18 @@ export function getMinesMultiplier(mines: number, revealedGems: number): number 
 
 export const MinesGame: React.FC<MinesGameProps> = ({
   balance,
+  cashBalance = 2.00,
+  currencyMode = 'cash',
   onUpdateBalance,
+  onUpdateCashBalance,
+  stats,
   onUpdateStats,
   onAddRakeback,
+  onRecordWager,
 }) => {
-  const [betAmount, setBetAmount] = useState<number>(50);
+  const isCash = currencyMode === 'cash';
+  const effectiveBalance = isCash ? cashBalance : balance;
+  const [betAmount, setBetAmount] = useState<number>(() => isCash ? 0.25 : 50);
   const [mineCount, setMineCount] = useState<number>(3);
   const [gameActive, setGameActive] = useState<boolean>(false);
   const [gameOver, setGameOver] = useState<boolean>(false);
@@ -63,8 +74,17 @@ export const MinesGame: React.FC<MinesGameProps> = ({
   const [lastWinAmount, setLastWinAmount] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // Synchronize bet amount when currency mode flips
+  useEffect(() => {
+    if (isCash) {
+      setBetAmount(0.25);
+    } else {
+      setBetAmount(50);
+    }
+  }, [isCash]);
+
   // Quick Bet presets
-  const quickBets = [10, 25, 50, 100, 500, 1000];
+  const quickBets = isCash ? [0.10, 0.25, 0.50, 1.00, 2.00, 5.00] : [10, 25, 50, 100, 500, 1000];
   const quickMines = [1, 2, 3, 5, 10, 15, 20, 24];
 
   // Current and Next Multipliers
@@ -78,8 +98,11 @@ export const MinesGame: React.FC<MinesGameProps> = ({
   }, [mineCount, revealedGemsCount, currentMultiplier]);
 
   const currentCashoutValue = useMemo(() => {
+    if (isCash) {
+      return Number((betAmount * currentMultiplier).toFixed(2));
+    }
     return Math.floor(betAmount * currentMultiplier);
-  }, [betAmount, currentMultiplier]);
+  }, [betAmount, currentMultiplier, isCash]);
 
   const currentProfit = useMemo(() => {
     return Math.max(0, currentCashoutValue - betAmount);
@@ -103,8 +126,8 @@ export const MinesGame: React.FC<MinesGameProps> = ({
       setErrorMessage('Please enter a valid bet amount.');
       return;
     }
-    if (betAmount > balance) {
-      setErrorMessage('Insufficient balance to place this wager.');
+    if (betAmount > effectiveBalance) {
+      setErrorMessage(isCash ? 'Insufficient Cash balance to place this wager.' : 'Insufficient GC balance to place this wager.');
       sound.playLose();
       return;
     }
@@ -119,20 +142,29 @@ export const MinesGame: React.FC<MinesGameProps> = ({
     setLastWinAmount(null);
     setRevealedGemsCount(0);
 
-    // Deduct bet from balance
-    onUpdateBalance(-betAmount);
+    // Deduct bet from correct balance
+    if (isCash && onUpdateCashBalance) {
+      onUpdateCashBalance(-betAmount);
+    } else {
+      onUpdateBalance(-betAmount);
+    }
     
     // Add 10% rakeback
     if (onAddRakeback) {
-      onAddRakeback(betAmount, false);
+      onAddRakeback(betAmount, false, isCash);
     }
 
     // Update stats: wagered
-    onUpdateStats(prev => ({
-      ...prev,
-      totalWagered: prev.totalWagered + betAmount,
-      roundsPlayedMines: (prev.roundsPlayedMines || 0) + 1,
-    }));
+    if (onRecordWager) {
+      onRecordWager(betAmount, isCash);
+    } else {
+      onUpdateStats(prev => ({
+        ...prev,
+        totalWagered: isCash ? prev.totalWagered + (betAmount * 1000) : prev.totalWagered + betAmount,
+        totalWageredCash: isCash ? (prev.totalWageredCash || 0) + betAmount : (prev.totalWageredCash || 0),
+        roundsPlayedMines: (prev.roundsPlayedMines || 0) + 1,
+      }));
+    }
 
     // Generate random 5x5 board with exact mineCount mines
     const mineIndices = new Set<number>();
@@ -178,8 +210,8 @@ export const MinesGame: React.FC<MinesGameProps> = ({
 
       onUpdateStats(prev => ({
         ...prev,
-        totalLost: prev.totalLost + betAmount,
-        netProfit: prev.netProfit - betAmount,
+        totalLost: isCash ? prev.totalLost + (betAmount * 1000) : prev.totalLost + betAmount,
+        netProfit: isCash ? prev.netProfit - (betAmount * 1000) : prev.netProfit - betAmount,
       }));
     } else {
       // Revealed a Gem!
@@ -200,7 +232,9 @@ export const MinesGame: React.FC<MinesGameProps> = ({
       // Check if all gems cleared (Auto-Cashout!)
       if (newRevealedCount === maxGems) {
         const finalMult = getMinesMultiplier(mineCount, newRevealedCount);
-        const totalPayout = Math.floor(betAmount * finalMult);
+        const totalPayout = isCash 
+          ? Number((betAmount * finalMult).toFixed(2))
+          : Math.floor(betAmount * finalMult);
         handleAutoVictory(totalPayout, finalMult, updatedTiles);
       }
     }
@@ -214,7 +248,11 @@ export const MinesGame: React.FC<MinesGameProps> = ({
     const mult = currentMultiplier;
 
     sound.playWin();
-    onUpdateBalance(payout);
+    if (isCash && onUpdateCashBalance) {
+      onUpdateCashBalance(payout);
+    } else {
+      onUpdateBalance(payout);
+    }
     setLastWinAmount(payout);
     setWonRound(true);
     setGameActive(false);
@@ -232,9 +270,9 @@ export const MinesGame: React.FC<MinesGameProps> = ({
     // Update Stats
     onUpdateStats(prev => ({
       ...prev,
-      totalWon: prev.totalWon + payout,
-      netProfit: prev.netProfit + (payout - betAmount),
-      biggestWin: Math.max(prev.biggestWin, payout),
+      totalWon: isCash ? prev.totalWon + (payout * 1000) : prev.totalWon + payout,
+      netProfit: isCash ? prev.netProfit + ((payout - betAmount) * 1000) : prev.netProfit + (payout - betAmount),
+      biggestWin: isCash ? Math.max(prev.biggestWin, payout * 1000) : Math.max(prev.biggestWin, payout),
       biggestMultiplier: Math.max(prev.biggestMultiplier, mult),
     }));
   };
@@ -242,7 +280,11 @@ export const MinesGame: React.FC<MinesGameProps> = ({
   // Full board clear victory
   const handleAutoVictory = (payout: number, mult: number, currentTiles: GridTile[]) => {
     sound.playBigWin();
-    onUpdateBalance(payout);
+    if (isCash && onUpdateCashBalance) {
+      onUpdateCashBalance(payout);
+    } else {
+      onUpdateBalance(payout);
+    }
     setLastWinAmount(payout);
     setWonRound(true);
     setGameActive(false);
@@ -258,9 +300,9 @@ export const MinesGame: React.FC<MinesGameProps> = ({
 
     onUpdateStats(prev => ({
       ...prev,
-      totalWon: prev.totalWon + payout,
-      netProfit: prev.netProfit + (payout - betAmount),
-      biggestWin: Math.max(prev.biggestWin, payout),
+      totalWon: isCash ? prev.totalWon + (payout * 1000) : prev.totalWon + payout,
+      netProfit: isCash ? prev.netProfit + ((payout - betAmount) * 1000) : prev.netProfit + (payout - betAmount),
+      biggestWin: isCash ? Math.max(prev.biggestWin, payout * 1000) : Math.max(prev.biggestWin, payout),
       biggestMultiplier: Math.max(prev.biggestMultiplier, mult),
     }));
   };
@@ -285,10 +327,12 @@ export const MinesGame: React.FC<MinesGameProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-base sm:text-lg font-black tracking-tight text-white">
-                Mines Rush
+                Mines Vault
               </h1>
-              <span className="px-2 py-0.2 rounded-full text-[9px] font-black uppercase bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                10% Rakeback
+              <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${
+                isCash ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+              }`}>
+                {isCash ? 'Real Cash Mode' : 'Gold Coins Mode'}
               </span>
             </div>
             <p className="text-[11px] text-zinc-400 hidden xs:block">
@@ -300,15 +344,14 @@ export const MinesGame: React.FC<MinesGameProps> = ({
         <div className="flex items-center gap-2 bg-zinc-900/90 px-3 py-1.5 rounded-xl border border-zinc-800 shrink-0">
           <div className="text-right">
             <span className="text-[8px] uppercase font-bold text-zinc-500 block">Bankroll</span>
-            <span className="text-xs sm:text-sm font-black font-mono text-amber-300 flex items-center gap-1">
-              <Coins className="w-3.5 h-3.5 text-amber-400" />
-              <span>{(isNaN(balance) ? 1000 : balance).toLocaleString()}c</span>
+            <span className={`text-xs sm:text-sm font-black font-mono flex items-center gap-1 ${isCash ? 'text-emerald-300' : 'text-amber-300'}`}>
+              <span>{isCash ? `$${cashBalance.toFixed(2)}` : `${(isNaN(balance) ? 1000 : balance).toLocaleString()} GC`}</span>
             </span>
           </div>
         </div>
       </div>
 
-      {/* Main Game Layout (Side-by-side on desktop, compact on mobile so no scrolling needed) */}
+      {/* Main Game Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 items-start">
         
         {/* Left Side: Controls & Betting Panel (5 cols) */}
@@ -318,26 +361,30 @@ export const MinesGame: React.FC<MinesGameProps> = ({
           <div>
             <div className="flex items-center justify-between mb-1">
               <label className="text-[11px] font-bold uppercase text-zinc-400 flex items-center gap-1">
-                <Coins className="w-3 h-3 text-amber-400" />
+                {isCash ? <span className="text-emerald-400 font-bold">$</span> : <Coins className="w-3 h-3 text-amber-400" />}
                 <span>Wager Amount</span>
               </label>
               <span className="text-[10px] font-mono text-zinc-500">
-                Bal: {(isNaN(balance) ? 1000 : balance).toLocaleString()}c
+                Bal: {isCash ? `$${cashBalance.toFixed(2)}` : `${(isNaN(balance) ? 1000 : balance).toLocaleString()} GC`}
               </span>
             </div>
 
             <div className="relative mb-1.5">
               <input
                 type="number"
-                min={1}
-                max={balance}
+                min={isCash ? 0.10 : 1}
+                step={isCash ? 0.05 : 1}
+                max={effectiveBalance}
                 disabled={gameActive}
                 value={betAmount}
-                onChange={e => setBetAmount(Math.max(1, parseInt(e.target.value) || 0))}
+                onChange={e => {
+                  const val = parseFloat(e.target.value);
+                  setBetAmount(isNaN(val) ? 0 : val);
+                }}
                 className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-white font-mono font-bold text-xs focus:outline-none focus:border-amber-500 transition-all disabled:opacity-50"
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-zinc-500">
-                CHIPS
+                {isCash ? 'USD' : 'GC'}
               </span>
             </div>
 
@@ -354,11 +401,11 @@ export const MinesGame: React.FC<MinesGameProps> = ({
                   }}
                   className={`py-1 rounded-lg text-[10px] font-bold font-mono transition-all cursor-pointer ${
                     betAmount === amt 
-                      ? 'bg-amber-500 text-zinc-950 font-black shadow' 
+                      ? (isCash ? 'bg-emerald-500 text-zinc-950 font-black shadow' : 'bg-amber-500 text-zinc-950 font-black shadow')
                       : 'bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800'
                   } disabled:opacity-40`}
                 >
-                  {formatCompactWager(amt)}
+                  {isCash ? `$${amt.toFixed(2)}` : formatCompactWager(amt)}
                 </button>
               ))}
             </div>
@@ -367,7 +414,7 @@ export const MinesGame: React.FC<MinesGameProps> = ({
               <button
                 type="button"
                 disabled={gameActive}
-                onClick={() => setBetAmount(10)}
+                onClick={() => setBetAmount(isCash ? 0.10 : 10)}
                 className="py-1 rounded-lg text-[9px] font-bold uppercase bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800 cursor-pointer disabled:opacity-40"
               >
                 Min
@@ -375,7 +422,7 @@ export const MinesGame: React.FC<MinesGameProps> = ({
               <button
                 type="button"
                 disabled={gameActive}
-                onClick={() => setBetAmount(prev => Math.max(1, Math.floor(prev / 2)))}
+                onClick={() => setBetAmount(prev => isCash ? Number(Math.max(0.10, prev / 2).toFixed(2)) : Math.max(1, Math.floor(prev / 2)))}
                 className="py-1 rounded-lg text-[9px] font-bold uppercase bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800 cursor-pointer disabled:opacity-40"
               >
                 1/2
@@ -383,7 +430,7 @@ export const MinesGame: React.FC<MinesGameProps> = ({
               <button
                 type="button"
                 disabled={gameActive}
-                onClick={() => setBetAmount(prev => Math.min(balance, prev * 2))}
+                onClick={() => setBetAmount(prev => isCash ? Number(Math.min(cashBalance, prev * 2).toFixed(2)) : Math.min(balance, prev * 2))}
                 className="py-1 rounded-lg text-[9px] font-bold uppercase bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800 cursor-pointer disabled:opacity-40"
               >
                 2X
@@ -391,15 +438,15 @@ export const MinesGame: React.FC<MinesGameProps> = ({
               <button
                 type="button"
                 disabled={gameActive}
-                onClick={() => setBetAmount(balance)}
-                className="py-1 rounded-lg text-[9px] font-bold uppercase bg-zinc-900 hover:bg-zinc-800 text-amber-400 hover:text-amber-300 border border-zinc-800 cursor-pointer disabled:opacity-40"
+                onClick={() => setBetAmount(isCash ? Number(cashBalance.toFixed(2)) : balance)}
+                className={`py-1 rounded-lg text-[9px] font-bold uppercase bg-zinc-900 hover:bg-zinc-800 ${isCash ? 'text-emerald-400 hover:text-emerald-300' : 'text-amber-400 hover:text-amber-300'} border border-zinc-800 cursor-pointer disabled:opacity-40`}
               >
                 Max
               </button>
             </div>
           </div>
 
-          {/* Mines Count Selector: Slider + Direct Number Input + Presets */}
+          {/* Mines Count Selector */}
           <div className="pt-2.5 border-t border-zinc-800/80 space-y-2">
             <div className="flex items-center justify-between">
               <label className="text-[11px] font-bold uppercase text-zinc-400 flex items-center gap-1">
@@ -410,7 +457,6 @@ export const MinesGame: React.FC<MinesGameProps> = ({
                 <span className="text-[10px] font-bold font-mono text-emerald-400">
                   {25 - mineCount} Safe
                 </span>
-                {/* DIRECT NUMBER INPUT FIELD */}
                 <div className="relative w-16">
                   <input
                     type="number"
@@ -477,7 +523,7 @@ export const MinesGame: React.FC<MinesGameProps> = ({
                 onClick={handleStartGame}
                 className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 via-rose-500 to-purple-600 hover:from-amber-400 hover:via-rose-400 hover:to-purple-500 text-zinc-950 font-black text-xs sm:text-sm uppercase tracking-wider shadow-lg shadow-rose-950/40 transition-all cursor-pointer active:scale-98"
               >
-                Start Mines ({betAmount.toLocaleString()}c)
+                Start Mines ({isCash ? `$${betAmount.toFixed(2)}` : `${betAmount.toLocaleString()} GC`})
               </button>
             ) : (
               <div className="space-y-1.5">
@@ -489,7 +535,7 @@ export const MinesGame: React.FC<MinesGameProps> = ({
                 >
                   <span>Cashout</span>
                   <span className="font-mono text-sm font-black">
-                    +{currentCashoutValue.toLocaleString()}c ({currentMultiplier}x)
+                    +{isCash ? `$${currentCashoutValue.toFixed(2)}` : `${currentCashoutValue.toLocaleString()} GC`} ({currentMultiplier}x)
                   </span>
                 </button>
 

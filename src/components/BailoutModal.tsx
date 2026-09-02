@@ -32,7 +32,7 @@ interface BailoutModalProps {
   atmHistory: number[];
   isAdFree?: boolean;
   userAccount?: UserAccount;
-  onClaimRakeback?: () => void;
+  onClaimRakeback?: (mode?: 'gc' | 'cash') => void;
   onClaimDailyDollar?: () => void;
   canClaimDailyDollar?: boolean;
   onOpenPayForAdFree?: () => void;
@@ -156,7 +156,9 @@ export const BailoutModal: React.FC<BailoutModalProps> = ({
 
   const bailoutAmount = ATM_CONSTANTS.AMOUNT;
   const unclaimedRakeback = userAccount?.unclaimedRakeback || 0;
+  const unclaimedCashRakeback = userAccount?.unclaimedCashRakeback || 0;
   const totalRakebackClaimed = userAccount?.totalRakebackClaimed || 0;
+  const totalCashRakebackClaimed = userAccount?.totalCashRakebackClaimed || 0;
 
   // Calculate daily pulls (within last 24h)
   const pullsInLast24h = atmHistory.filter(ts => now - ts < ATM_CONSTANTS.ONE_DAY_MS);
@@ -210,15 +212,29 @@ export const BailoutModal: React.FC<BailoutModalProps> = ({
     }, 2000);
   };
 
-  const handleClaimRakebackAction = () => {
-    if (unclaimedRakeback <= 0 || rakebackClaimed || !onClaimRakeback) return;
-    sound.playProfit();
-    confetti({ particleCount: 70, spread: 50, origin: { y: 0.6 } });
-    setRakebackClaimed(true);
-    onClaimRakeback();
-    setTimeout(() => {
-      setRakebackClaimed(false);
-    }, 2000);
+  const [cashRakebackClaimed, setCashRakebackClaimed] = useState<boolean>(false);
+
+  const handleClaimRakebackAction = (mode: 'gc' | 'cash' = 'gc') => {
+    if (!onClaimRakeback) return;
+    if (mode === 'cash') {
+      if (unclaimedCashRakeback <= 0 || cashRakebackClaimed) return;
+      sound.playProfit();
+      confetti({ particleCount: 70, spread: 50, origin: { y: 0.6 } });
+      setCashRakebackClaimed(true);
+      onClaimRakeback('cash');
+      setTimeout(() => {
+        setCashRakebackClaimed(false);
+      }, 2000);
+    } else {
+      if (unclaimedRakeback <= 0 || rakebackClaimed) return;
+      sound.playProfit();
+      confetti({ particleCount: 70, spread: 50, origin: { y: 0.6 } });
+      setRakebackClaimed(true);
+      onClaimRakeback('gc');
+      setTimeout(() => {
+        setRakebackClaimed(false);
+      }, 2000);
+    }
   };
 
   const sponsor = SPONSOR_ADS[activeSponsorIndex];
@@ -436,7 +452,7 @@ export const BailoutModal: React.FC<BailoutModalProps> = ({
                   <div className="flex items-start justify-between gap-3 mb-2.5">
                     <div className="flex items-center gap-2.5">
                       <div className="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/50 text-purple-300 flex items-center justify-center font-black text-xl">
-                        🔥
+                        💎
                       </div>
                       <div>
                         <span className="text-[10px] font-black uppercase tracking-widest text-purple-400 block">
@@ -450,50 +466,63 @@ export const BailoutModal: React.FC<BailoutModalProps> = ({
 
                     <div className="text-right">
                       <span className="text-[9px] uppercase font-bold text-zinc-400 block">Rate</span>
-                      <span className="text-xs font-mono font-bold text-purple-300">10% Every Wager</span>
+                      <span className="text-xs font-mono font-bold text-purple-300">10% Slots/Games • 2% BJ</span>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2 my-2.5">
-                    <div className="p-2.5 rounded-xl bg-zinc-950/80 border border-zinc-800">
-                      <span className="text-[9px] uppercase font-bold text-zinc-400 block">Available Vault</span>
-                      <span className="text-base font-black font-mono text-amber-300">
-                        {unclaimedRakeback.toLocaleString()} <span className="text-xs text-amber-500 font-normal">GC</span>
-                      </span>
+                    {/* Real Cash Rakeback Tile */}
+                    <div className="p-2.5 rounded-xl bg-zinc-950/80 border border-emerald-500/40 flex flex-col justify-between">
+                      <div>
+                        <span className="text-[9px] uppercase font-black text-emerald-400 block">Real Cash Vault</span>
+                        <span className="text-base font-black font-mono text-emerald-300">
+                          ${unclaimedCashRakeback.toFixed(2)} <span className="text-xs text-emerald-500 font-normal">USD</span>
+                        </span>
+                        <span className="text-[9px] text-zinc-500 block font-mono">
+                          Claimed: ${totalCashRakebackClaimed.toFixed(2)}
+                        </span>
+                      </div>
+
+                      <button
+                        type="button"
+                        disabled={unclaimedCashRakeback <= 0 || cashRakebackClaimed}
+                        onClick={() => handleClaimRakebackAction('cash')}
+                        className={`mt-2 w-full py-1.5 rounded-lg font-black text-[10px] uppercase tracking-wider shadow transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                          unclaimedCashRakeback > 0 && !cashRakebackClaimed
+                            ? 'bg-emerald-500 hover:bg-emerald-400 text-zinc-950 shadow-emerald-500/30 active:scale-95'
+                            : 'bg-zinc-900 border border-zinc-800 text-zinc-500 cursor-not-allowed'
+                        }`}
+                      >
+                        {cashRakebackClaimed ? '✓ Claimed' : 'Claim Cash'}
+                      </button>
                     </div>
-                    <div className="p-2.5 rounded-xl bg-zinc-950/80 border border-zinc-800">
-                      <span className="text-[9px] uppercase font-bold text-zinc-400 block">Total Claimed</span>
-                      <span className="text-base font-black font-mono text-emerald-400">
-                        {totalRakebackClaimed.toLocaleString()} <span className="text-xs text-emerald-600 font-normal">GC</span>
-                      </span>
+
+                    {/* Gold Coins Rakeback Tile */}
+                    <div className="p-2.5 rounded-xl bg-zinc-950/80 border border-amber-500/40 flex flex-col justify-between">
+                      <div>
+                        <span className="text-[9px] uppercase font-black text-amber-400 block">GC Vault</span>
+                        <span className="text-base font-black font-mono text-amber-300">
+                          {unclaimedRakeback.toLocaleString()} <span className="text-xs text-amber-500 font-normal">GC</span>
+                        </span>
+                        <span className="text-[9px] text-zinc-500 block font-mono">
+                          Claimed: {totalRakebackClaimed.toLocaleString()}
+                        </span>
+                      </div>
+
+                      <button
+                        type="button"
+                        disabled={unclaimedRakeback <= 0 || rakebackClaimed}
+                        onClick={() => handleClaimRakebackAction('gc')}
+                        className={`mt-2 w-full py-1.5 rounded-lg font-black text-[10px] uppercase tracking-wider shadow transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                          unclaimedRakeback > 0 && !rakebackClaimed
+                            ? 'bg-amber-500 hover:bg-amber-400 text-zinc-950 shadow-amber-500/30 active:scale-95'
+                            : 'bg-zinc-900 border border-zinc-800 text-zinc-500 cursor-not-allowed'
+                        }`}
+                      >
+                        {rakebackClaimed ? '✓ Claimed' : 'Claim GC'}
+                      </button>
                     </div>
                   </div>
-
-                  <button
-                    id="atm-claim-rakeback-btn"
-                    type="button"
-                    disabled={unclaimedRakeback <= 0 || rakebackClaimed}
-                    onClick={handleClaimRakebackAction}
-                    className={`w-full py-3 rounded-xl font-black text-xs uppercase tracking-wider shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                      unclaimedRakeback > 0 && !rakebackClaimed
-                        ? 'bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-purple-950/60 active:scale-98'
-                        : 'bg-zinc-900 border border-zinc-800 text-zinc-500 cursor-not-allowed'
-                    }`}
-                  >
-                    {rakebackClaimed ? (
-                      <>
-                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                        <span>✓ Rakeback Deposited!</span>
-                      </>
-                    ) : unclaimedRakeback > 0 ? (
-                      <>
-                        <Flame className="w-4 h-4 text-amber-300" />
-                        <span>Claim +{unclaimedRakeback.toLocaleString()} GC Rakeback</span>
-                      </>
-                    ) : (
-                      <span>No Pending Rakeback (Wager to earn 10%)</span>
-                    )}
-                  </button>
                 </div>
 
               </div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Sparkles, RotateCcw, Zap, Play, Square, Trophy, Info, Award } from 'lucide-react';
-import { KenoDifficulty, CasinoStats } from '../types';
+import { KenoDifficulty, CasinoStats, CurrencyMode } from '../types';
 import { 
   TOTAL_KENO_NUMBERS, 
   KENO_DRAW_COUNT, 
@@ -17,7 +17,11 @@ interface KenoGameProps {
   balance: number;
   onUpdateBalance: (delta: number) => void;
   onUpdateStats: React.Dispatch<React.SetStateAction<CasinoStats>>;
-  onAddRakeback?: (wager: number, isBlackjack?: boolean) => void;
+  onAddRakeback?: (wager: number, isBlackjack?: boolean, isCash?: boolean) => void;
+  currencyMode?: CurrencyMode;
+  cashBalance?: number;
+  onUpdateCashBalance?: (amount: number | ((prev: number) => number)) => void;
+  onRecordWager?: (amount: number, isCash: boolean) => void;
 }
 
 export const KenoGame: React.FC<KenoGameProps> = ({
@@ -25,17 +29,36 @@ export const KenoGame: React.FC<KenoGameProps> = ({
   onUpdateBalance,
   onUpdateStats,
   onAddRakeback,
+  currencyMode = 'gc',
+  cashBalance = 0,
+  onUpdateCashBalance,
+  onRecordWager,
 }) => {
+  const isCash = currencyMode === 'cash';
+  const effectiveBalance = isCash ? cashBalance : balance;
+
   const [selectedNumbers, setSelectedNumbers] = useState<number[]>([]);
   const [drawnNumbers, setDrawnNumbers] = useState<number[]>([]);
   const [activeDrawing, setActiveDrawing] = useState<boolean>(false);
   const [difficulty, setDifficulty] = useState<KenoDifficulty>('classic');
-  const [wager, setWager] = useState<number>(10);
+  const [wager, setWager] = useState<number>(isCash ? 0.50 : 10);
   const [gameSpeed, setGameSpeed] = useState<'normal' | 'fast' | 'instant'>('fast');
   const [lastWin, setLastWin] = useState<{ amount: number; multiplier: number; hits: number } | null>(null);
   const [autoPlay, setAutoPlay] = useState<boolean>(false);
   const autoPlayRef = useRef<boolean>(false);
   autoPlayRef.current = autoPlay;
+
+  useEffect(() => {
+    setWager(isCash ? 0.50 : 10);
+  }, [isCash]);
+
+  const modifyBalance = (delta: number) => {
+    if (isCash && onUpdateCashBalance) {
+      onUpdateCashBalance(prev => Number((prev + delta).toFixed(2)));
+    } else {
+      onUpdateBalance(delta);
+    }
+  };
 
   const currentHits = selectedNumbers.filter(n => drawnNumbers.includes(n)).length;
   const currentMultiplier = getKenoMultiplier(selectedNumbers.length, currentHits, difficulty);
@@ -82,16 +105,17 @@ export const KenoGame: React.FC<KenoGameProps> = ({
   const handleStartDraw = async () => {
     if (activeDrawing) return;
     if (selectedNumbers.length === 0) return;
-    if (wager > balance || wager <= 0) return;
+    if (wager > effectiveBalance || wager <= 0) return;
 
     // Deduct bet
-    onUpdateBalance(-wager);
+    modifyBalance(-wager);
+    onRecordWager?.(wager, isCash);
     onUpdateStats(prev => ({
       ...prev,
-      totalWagered: prev.totalWagered + wager,
+      totalWagered: isCash ? prev.totalWagered + (wager * 1000) : prev.totalWagered + wager,
       roundsPlayedKeno: prev.roundsPlayedKeno + 1,
     }));
-    onAddRakeback?.(wager, false);
+    onAddRakeback?.(wager, false, isCash);
 
     setActiveDrawing(true);
     setDrawnNumbers([]);
@@ -128,17 +152,17 @@ export const KenoGame: React.FC<KenoGameProps> = ({
   const finishRound = (allDrawn: number[]) => {
     const hits = selectedNumbers.filter(n => allDrawn.includes(n)).length;
     const mult = getKenoMultiplier(selectedNumbers.length, hits, difficulty);
-    const winAmount = Math.round(wager * mult);
+    const winAmount = isCash ? Number((wager * mult).toFixed(2)) : Math.round(wager * mult);
 
     setLastWin({ amount: winAmount, multiplier: mult, hits });
     setActiveDrawing(false);
 
     if (winAmount > 0) {
-      onUpdateBalance(winAmount);
+      modifyBalance(winAmount);
       onUpdateStats(prev => ({
         ...prev,
-        totalWon: prev.totalWon + winAmount,
-        biggestWin: Math.max(prev.biggestWin, winAmount),
+        totalWon: isCash ? prev.totalWon + (winAmount * 1000) : prev.totalWon + winAmount,
+        biggestWin: isCash ? Math.max(prev.biggestWin, winAmount * 1000) : Math.max(prev.biggestWin, winAmount),
         biggestMultiplier: Math.max(prev.biggestMultiplier, mult),
       }));
 
@@ -157,7 +181,7 @@ export const KenoGame: React.FC<KenoGameProps> = ({
     // Autoplay trigger
     if (autoPlayRef.current) {
       setTimeout(() => {
-        if (autoPlayRef.current && balance >= wager) {
+        if (autoPlayRef.current && effectiveBalance >= wager) {
           handleStartDraw();
         } else {
           setAutoPlay(false);
@@ -380,9 +404,12 @@ export const KenoGame: React.FC<KenoGameProps> = ({
           <ChipSelector
             currentBet={wager}
             onBetChange={setWager}
-            maxBet={balance}
+            maxBet={effectiveBalance}
             disabled={activeDrawing}
-            minBet={1}
+            minBet={isCash ? 0.10 : 1}
+            currencyMode={currencyMode}
+            cashBalance={cashBalance}
+            balance={balance}
           />
 
           {/* Dynamic Paytable Display (Positioned below all controls) */}
@@ -404,7 +431,7 @@ export const KenoGame: React.FC<KenoGameProps> = ({
                 {Array.from({ length: selectedNumbers.length + 1 }, (_, i) => selectedNumbers.length - i).map((hitCount) => {
                   const mult = getKenoMultiplier(selectedNumbers.length, hitCount, difficulty);
                   const isCurrentHitLevel = drawnNumbers.length > 0 && currentHits === hitCount;
-                  const winForBet = Math.round(wager * mult);
+                  const winForBet = isCash ? Number((wager * mult).toFixed(2)) : Math.round(wager * mult);
 
                   return (
                     <div
@@ -425,7 +452,7 @@ export const KenoGame: React.FC<KenoGameProps> = ({
                           {mult > 0 ? `${mult}x` : '—'}
                         </span>
                         <span className="text-[10px] opacity-80">
-                          ({winForBet.toLocaleString()})
+                          ({isCash ? `$${winForBet.toFixed(2)}` : `${winForBet.toLocaleString()} GC`})
                         </span>
                       </div>
                     </div>

@@ -33,7 +33,8 @@ import {
   BattleSeat, 
   CrateBattle, 
   UserAccount, 
-  CasinoStats 
+  CasinoStats,
+  CurrencyMode 
 } from '../types';
 import { 
   LOOT_CRATES, 
@@ -43,7 +44,9 @@ import {
   AI_BATTLE_BOTS, 
   getRandomAIBot, 
   sortCratesByCost,
-  formatDropOdds
+  formatDropOdds,
+  getCrateCost,
+  getItemValue
 } from '../utils/crates';
 import { sound } from '../utils/audio';
 
@@ -52,6 +55,11 @@ interface CrateBattleArenaProps {
   userAccount: UserAccount;
   onUpdateBalance: (delta: number) => void;
   onUpdateStats: (updater: (prev: CasinoStats) => CasinoStats) => void;
+  currencyMode?: CurrencyMode;
+  cashBalance?: number;
+  onUpdateCashBalance?: (amount: number | ((prev: number) => number)) => void;
+  onRecordWager?: (amount: number, isCash: boolean) => void;
+  onAddRakeback?: (wager: number, isBlackjack?: boolean, isCash?: boolean) => void;
 }
 
 interface ActiveReelState {
@@ -66,7 +74,22 @@ export const CrateBattleArena: React.FC<CrateBattleArenaProps> = ({
   userAccount,
   onUpdateBalance,
   onUpdateStats,
+  currencyMode = 'gc',
+  cashBalance = 0,
+  onUpdateCashBalance,
+  onRecordWager,
+  onAddRakeback,
 }) => {
+  const isCash = currencyMode === 'cash';
+  const effectiveBalance = isCash ? cashBalance : balance;
+
+  const modifyBalance = (delta: number) => {
+    if (isCash && onUpdateCashBalance) {
+      onUpdateCashBalance(prev => Number((prev + delta).toFixed(2)));
+    } else {
+      onUpdateBalance(delta);
+    }
+  };
   // Current view inside Battles Arena
   const [viewState, setViewState] = useState<'lobby' | 'create' | 'battle'>('lobby');
   
@@ -309,7 +332,8 @@ export const CrateBattleArena: React.FC<CrateBattleArenaProps> = ({
 
   // Calculate total entry cost per player
   const calculateTotalCost = (playlist: { crate: LootCrate; count: number }[]): number => {
-    return playlist.reduce((sum, item) => sum + (item.crate.cost * item.count), 0);
+    const sum = playlist.reduce((s, item) => s + (getCrateCost(item.crate, currencyMode) * item.count), 0);
+    return isCash ? Number(sum.toFixed(2)) : sum;
   };
 
   // Add/remove crates in playlist creator
@@ -337,8 +361,8 @@ export const CrateBattleArena: React.FC<CrateBattleArenaProps> = ({
     if (sortedCrates.length === 0) return;
 
     const totalCost = calculateTotalCost(selectedPlaylist);
-    if (balance < totalCost) {
-      alert(`Insufficient balance! Battle entry requires ${totalCost.toLocaleString()} chips.`);
+    if (effectiveBalance < totalCost) {
+      alert(`Insufficient balance! Battle entry requires ${isCash ? `$${totalCost.toFixed(2)}` : `${totalCost.toLocaleString()} chips`}.`);
       return;
     }
 
@@ -359,10 +383,11 @@ export const CrateBattleArena: React.FC<CrateBattleArenaProps> = ({
     };
 
     let title = '';
-    if (createMode === '1v1') title = `⚔️ 1v1 Duel (${totalCost.toLocaleString()}c)`;
-    else if (createMode === '2v2') title = `🛡️ 2v2 Squad Clash (${totalCost.toLocaleString()}c)`;
-    else if (createMode === 'group-ffa') title = `👑 ${seatsCount}-Player FFA Versus (${totalCost.toLocaleString()}c)`;
-    else title = `🤝 ${seatsCount}-Player Shared Pot Co-op (${totalCost.toLocaleString()}c)`;
+    const costStr = isCash ? `$${totalCost.toFixed(2)}` : `${totalCost.toLocaleString()}c`;
+    if (createMode === '1v1') title = `⚔️ 1v1 Duel (${costStr})`;
+    else if (createMode === '2v2') title = `🛡️ 2v2 Squad Clash (${costStr})`;
+    else if (createMode === 'group-ffa') title = `👑 ${seatsCount}-Player FFA Versus (${costStr})`;
+    else title = `🤝 ${seatsCount}-Player Shared Pot Co-op (${costStr})`;
 
     const newBattle: CrateBattle = {
       id: `battle-${Date.now()}`,
@@ -387,9 +412,11 @@ export const CrateBattleArena: React.FC<CrateBattleArenaProps> = ({
 
   // Join an existing battle from the lobby
   const handleJoinBattle = (battle: CrateBattle, seatIndex: number) => {
-    const totalCost = battle.crates.reduce((sum, c) => sum + c.cost, 0);
-    if (balance < totalCost) {
-      alert(`Insufficient balance! Battle entry requires ${totalCost.toLocaleString()} chips.`);
+    const totalCost = isCash
+      ? Number(battle.crates.reduce((sum, c) => sum + getCrateCost(c, currencyMode), 0).toFixed(2))
+      : battle.crates.reduce((sum, c) => sum + getCrateCost(c, currencyMode), 0);
+    if (effectiveBalance < totalCost) {
+      alert(`Insufficient balance! Battle entry requires ${isCash ? `$${totalCost.toFixed(2)}` : `${totalCost.toLocaleString()} chips`}.`);
       return;
     }
 
@@ -549,19 +576,23 @@ export const CrateBattleArena: React.FC<CrateBattleArenaProps> = ({
     }
 
     const isUserParticipating = activeBattle.seats.some(s => s?.isUser);
-    const totalCost = activeBattle.crates.reduce((sum, c) => sum + c.cost, 0);
+    const totalCost = isCash
+      ? Number(activeBattle.crates.reduce((sum, c) => sum + getCrateCost(c, currencyMode), 0).toFixed(2))
+      : activeBattle.crates.reduce((sum, c) => sum + getCrateCost(c, currencyMode), 0);
 
     // If user is participating in a seat, deduct balance & log stats
     if (isUserParticipating) {
-      if (balance < totalCost) {
-        alert(`Insufficient balance! Battle entry requires ${totalCost.toLocaleString()} chips.`);
+      if (effectiveBalance < totalCost) {
+        alert(`Insufficient balance! Battle entry requires ${isCash ? `$${totalCost.toFixed(2)}` : `${totalCost.toLocaleString()} chips`}.`);
         setAutoStartCountdown(null);
         return;
       }
-      onUpdateBalance(-totalCost);
+      modifyBalance(-totalCost);
+      onRecordWager?.(totalCost, isCash);
+      onAddRakeback?.(totalCost, false, isCash);
       onUpdateStats(prev => ({
         ...prev,
-        totalWagered: prev.totalWagered + totalCost,
+        totalWagered: isCash ? prev.totalWagered + (totalCost * 1000) : prev.totalWagered + totalCost,
         cratesOpened: prev.cratesOpened + activeBattle.crates.length,
       }));
     }
@@ -703,9 +734,10 @@ export const CrateBattleArena: React.FC<CrateBattleArenaProps> = ({
       const updatedSeats = battle.seats.map((seat, seatIdx) => {
         if (!seat) return null;
         const win = roundWins[seatIdx];
+        const itemVal = getItemValue(win, currencyMode);
         return {
           ...seat,
-          currentTotalValue: seat.currentTotalValue + win.value,
+          currentTotalValue: isCash ? Number((seat.currentTotalValue + itemVal).toFixed(2)) : (seat.currentTotalValue + itemVal),
           unboxedItems: [...seat.unboxedItems, win],
         };
       });
@@ -744,10 +776,7 @@ export const CrateBattleArena: React.FC<CrateBattleArenaProps> = ({
   const resolveFinalBattle = (battle: CrateBattle) => {
     setBattlePhase('completed');
 
-    const totalLootPool = battle.seats.reduce(
-      (sum, s) => sum + (s?.currentTotalValue || 0), 
-      0
-    );
+    const totalLoot = totalLootPool(battle, isCash);
 
     let winnerSeatIdx = 0;
     let winnerTeam: 1 | 2 = 1;
@@ -769,8 +798,10 @@ export const CrateBattleArena: React.FC<CrateBattleArenaProps> = ({
       winnerTeam = team1Val >= team2Val ? 1 : 2;
     } else if (battle.mode === 'group-split') {
       // Shared Pot is evenly divided among active seats
-      const validSeatsCount = battle.seats.filter(Boolean).length;
-      sharedPotPerPlayer = Math.round(totalLootPool / (validSeatsCount || 1));
+      const validSeatsCount = battle.seats.filter(Boolean).length || 1;
+      sharedPotPerPlayer = isCash
+        ? Number((totalLoot / validSeatsCount).toFixed(2))
+        : Math.round(totalLoot / validSeatsCount);
     }
 
     const completedBattle: CrateBattle = {
@@ -785,19 +816,14 @@ export const CrateBattleArena: React.FC<CrateBattleArenaProps> = ({
 
     // Check if user won and auto-collect chips immediately
     const userSeatIndex = battle.seats.findIndex(s => s?.isUser);
-    const userWon = 
-      (battle.mode === '1v1' || battle.mode === 'group-ffa') ? winnerSeatIdx === userSeatIndex :
-      (battle.mode === '2v2') ? (battle.seats[userSeatIndex]?.team === winnerTeam) :
-      true; // Shared Pot means user participates in split!
-
-    const winnings = calculateUserPayout(completedBattle, userSeatIndex);
+    const winnings = calculateUserPayout(completedBattle, userSeatIndex, isCash);
 
     if (winnings > 0) {
-      onUpdateBalance(winnings);
+      modifyBalance(winnings);
       onUpdateStats(prev => ({
         ...prev,
-        totalWon: prev.totalWon + winnings,
-        biggestWin: Math.max(prev.biggestWin, winnings),
+        totalWon: isCash ? prev.totalWon + (winnings * 1000) : prev.totalWon + winnings,
+        biggestWin: isCash ? Math.max(prev.biggestWin, winnings * 1000) : Math.max(prev.biggestWin, winnings),
       }));
       confetti({ particleCount: 150, spread: 100, origin: { y: 0.5 } });
       sound.playProfit();
@@ -920,9 +946,11 @@ export const CrateBattleArena: React.FC<CrateBattleArenaProps> = ({
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {availableBattles.map((battle) => {
-                const totalCost = battle.crates.reduce((sum, c) => sum + c.cost, 0);
+                const totalCost = isCash
+                  ? Number(battle.crates.reduce((sum, c) => sum + getCrateCost(c, currencyMode), 0).toFixed(2))
+                  : battle.crates.reduce((sum, c) => sum + getCrateCost(c, currencyMode), 0);
                 const filledSeatsCount = battle.seats.filter(Boolean).length;
-                const canAfford = balance >= totalCost;
+                const canAfford = effectiveBalance >= totalCost;
 
                 return (
                   <div
@@ -944,7 +972,7 @@ export const CrateBattleArena: React.FC<CrateBattleArenaProps> = ({
                           )}
                         </div>
                         <span className="text-xs font-mono font-black text-amber-300">
-                          {totalCost.toLocaleString()}c / seat
+                          {isCash ? `$${totalCost.toFixed(2)}` : `${totalCost.toLocaleString()}c`} / seat
                         </span>
                       </div>
 
@@ -959,16 +987,21 @@ export const CrateBattleArena: React.FC<CrateBattleArenaProps> = ({
                           <span className="text-purple-400">Sequence →</span>
                         </div>
                         <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-                          {battle.crates.map((crate, cIdx) => (
-                            <div
-                              key={`${crate.id}-${cIdx}`}
-                              className="flex items-center gap-1 px-2 py-1 rounded-lg bg-zinc-950 border border-zinc-800 shrink-0 text-xs"
-                              title={`${crate.name} (${crate.cost}c)`}
-                            >
-                              <span>{crate.icon}</span>
-                              <span className="text-[10px] font-mono text-zinc-300">{crate.cost}c</span>
-                            </div>
-                          ))}
+                          {battle.crates.map((crate, cIdx) => {
+                            const crateCost = getCrateCost(crate, currencyMode);
+                            return (
+                              <div
+                                key={`${crate.id}-${cIdx}`}
+                                className="flex items-center gap-1 px-2 py-1 rounded-lg bg-zinc-950 border border-zinc-800 shrink-0 text-xs"
+                                title={`${crate.name} (${isCash ? `$${crateCost.toFixed(2)}` : `${crateCost}c`})`}
+                              >
+                                <span>{crate.icon}</span>
+                                <span className="text-[10px] font-mono text-zinc-300">
+                                  {isCash ? `$${crateCost.toFixed(2)}` : `${crateCost}c`}
+                                </span>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
 
@@ -1185,7 +1218,7 @@ export const CrateBattleArena: React.FC<CrateBattleArenaProps> = ({
                 {createMode === '1v1' || createMode === '2v2' ? '2.' : '3.'} Select Crate Assortment (10 Tiers Available)
               </label>
               <span className="text-xs text-amber-300 font-mono font-bold">
-                Entry Cost: {calculateTotalCost(selectedPlaylist).toLocaleString()} Chips / Seat
+                Entry Cost: {isCash ? `$${calculateTotalCost(selectedPlaylist).toFixed(2)}` : `${calculateTotalCost(selectedPlaylist).toLocaleString()} Chips`} / Seat
               </span>
             </div>
 
@@ -1197,17 +1230,22 @@ export const CrateBattleArena: React.FC<CrateBattleArenaProps> = ({
                 </span>
                 {getFlatSortedCrates(selectedPlaylist).length > 0 ? (
                   <div className="flex items-center gap-2 flex-wrap">
-                    {getFlatSortedCrates(selectedPlaylist).map((crate, idx) => (
-                      <div
-                        key={`seq-${crate.id}-${idx}`}
-                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-zinc-950 border border-purple-500/40 text-xs shadow"
-                      >
-                        <span className="text-[10px] font-bold text-zinc-500 font-mono">#{idx + 1}</span>
-                        <span>{crate.icon}</span>
-                        <span className="font-black text-zinc-200">{crate.name}</span>
-                        <span className="text-[10px] font-mono text-amber-300 font-bold">{crate.cost}c</span>
-                      </div>
-                    ))}
+                    {getFlatSortedCrates(selectedPlaylist).map((crate, idx) => {
+                      const cost = getCrateCost(crate, currencyMode);
+                      return (
+                        <div
+                          key={`seq-${crate.id}-${idx}`}
+                          className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-zinc-950 border border-purple-500/40 text-xs shadow"
+                        >
+                          <span className="text-[10px] font-bold text-zinc-500 font-mono">#{idx + 1}</span>
+                          <span>{crate.icon}</span>
+                          <span className="font-black text-zinc-200">{crate.name}</span>
+                          <span className="text-[10px] font-mono text-amber-300 font-bold">
+                            {isCash ? `$${cost.toFixed(2)}` : `${cost}c`}
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
                 ) : (
                   <p className="text-xs text-zinc-500 italic">
@@ -1229,6 +1267,7 @@ export const CrateBattleArena: React.FC<CrateBattleArenaProps> = ({
               {LOOT_CRATES.map((crate) => {
                 const inPlaylist = selectedPlaylist.find(p => p.crate.id === crate.id);
                 const count = inPlaylist?.count || 0;
+                const cost = getCrateCost(crate, currencyMode);
 
                 return (
                   <div
@@ -1243,7 +1282,7 @@ export const CrateBattleArena: React.FC<CrateBattleArenaProps> = ({
                       <div className="flex items-center justify-between mb-1.5">
                         <span className="text-2xl">{crate.icon}</span>
                         <span className="text-[10px] font-mono font-black text-amber-300">
-                          {crate.cost.toLocaleString()}c
+                          {isCash ? `$${cost.toFixed(2)}` : `${cost.toLocaleString()}c`}
                         </span>
                       </div>
                       <h5 className="text-xs font-black text-zinc-200 line-clamp-1">{crate.name}</h5>
@@ -1292,7 +1331,7 @@ export const CrateBattleArena: React.FC<CrateBattleArenaProps> = ({
               className="px-7 py-3 rounded-2xl bg-gradient-to-r from-amber-500 via-purple-600 to-pink-600 hover:from-amber-400 hover:to-pink-500 text-white font-black text-xs sm:text-sm uppercase tracking-wider shadow-xl shadow-purple-600/30 flex items-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed transition-all transform hover:scale-105"
             >
               <Zap className="w-4 h-4 text-yellow-300" />
-              <span>Create Battle Room ({calculateTotalCost(selectedPlaylist).toLocaleString()} Chips)</span>
+              <span>Create Battle Room ({isCash ? `$${calculateTotalCost(selectedPlaylist).toFixed(2)}` : `${calculateTotalCost(selectedPlaylist).toLocaleString()} Chips`})</span>
             </button>
           </div>
         </div>
@@ -1448,16 +1487,16 @@ export const CrateBattleArena: React.FC<CrateBattleArenaProps> = ({
 
                 <p className="text-xs sm:text-sm text-zinc-300 mt-1 max-w-lg mx-auto">
                   {activeBattle.mode === 'group-split'
-                    ? `Total grand loot pot of ${totalLootPool(activeBattle).toLocaleString()} chips divided evenly among all ${activeBattle.seats.filter(Boolean).length} participants.`
+                    ? `Total grand loot pot of ${isCash ? `$${totalLootPool(activeBattle, isCash).toFixed(2)}` : `${totalLootPool(activeBattle, isCash).toLocaleString()} chips`} divided evenly among all ${activeBattle.seats.filter(Boolean).length} participants.`
                     : 'The winner takes all unboxed artifacts and chips from all competitors in this arena.'}
                 </p>
 
                 {/* Auto Payout Notification Banner */}
-                {calculateUserPayout(activeBattle, userSeatIdx) > 0 ? (
+                {calculateUserPayout(activeBattle, userSeatIdx, isCash) > 0 ? (
                   <div className="mt-4 p-3.5 rounded-2xl bg-emerald-950/80 border-2 border-emerald-400/80 max-w-md mx-auto flex items-center justify-center gap-2.5 shadow-lg shadow-emerald-950/50">
                     <Coins className="w-5 h-5 text-emerald-400 animate-pulse" />
                     <span className="text-sm font-black text-emerald-300 font-mono">
-                      ✓ +{calculateUserPayout(activeBattle, userSeatIdx).toLocaleString()} Chips Auto-Collected to Balance!
+                      ✓ +{isCash ? `$${calculateUserPayout(activeBattle, userSeatIdx, isCash).toFixed(2)}` : `${calculateUserPayout(activeBattle, userSeatIdx, isCash).toLocaleString()} Chips`} Auto-Collected to Balance!
                     </span>
                   </div>
                 ) : (
@@ -1471,7 +1510,7 @@ export const CrateBattleArena: React.FC<CrateBattleArenaProps> = ({
                   <div>
                     <div className="text-[10px] uppercase font-bold text-zinc-400">Total Pot Value</div>
                     <div className="text-lg sm:text-xl font-black text-amber-300 font-mono">
-                      {totalLootPool(activeBattle).toLocaleString()}c
+                      {isCash ? `$${totalLootPool(activeBattle, isCash).toFixed(2)}` : `${totalLootPool(activeBattle, isCash).toLocaleString()}c`}
                     </div>
                   </div>
                   <div>
@@ -1483,7 +1522,7 @@ export const CrateBattleArena: React.FC<CrateBattleArenaProps> = ({
                   <div className="col-span-2 sm:col-span-1">
                     <div className="text-[10px] uppercase font-bold text-zinc-400">Your Winnings</div>
                     <div className="text-lg sm:text-xl font-black text-emerald-400 font-mono">
-                      {calculateUserPayout(activeBattle, userSeatIdx).toLocaleString()}c
+                      {isCash ? `$${calculateUserPayout(activeBattle, userSeatIdx, isCash).toFixed(2)}` : `${calculateUserPayout(activeBattle, userSeatIdx, isCash).toLocaleString()}c`}
                     </div>
                   </div>
                 </div>
@@ -1544,6 +1583,7 @@ export const CrateBattleArena: React.FC<CrateBattleArenaProps> = ({
               {activeBattle.crates.map((crate, idx) => {
                 const isCurrent = idx === currentRoundIndex && battlePhase !== 'waiting';
                 const isPast = idx < currentRoundIndex;
+                const crateCost = getCrateCost(crate, currencyMode);
 
                 return (
                   <div
@@ -1559,7 +1599,9 @@ export const CrateBattleArena: React.FC<CrateBattleArenaProps> = ({
                     <span className="text-[10px] font-mono font-bold">R{idx + 1}</span>
                     <span>{crate.icon}</span>
                     <span className="font-bold truncate max-w-[120px]">{crate.name}</span>
-                    <span className="font-mono text-[10px] text-amber-300 font-bold">{crate.cost}c</span>
+                    <span className="font-mono text-[10px] text-amber-300 font-bold">
+                      {isCash ? `$${crateCost.toFixed(2)}` : `${crateCost}c`}
+                    </span>
                   </div>
                 );
               })}
@@ -1659,7 +1701,7 @@ export const CrateBattleArena: React.FC<CrateBattleArenaProps> = ({
                         {/* Loot Total Under Name */}
                         <div className="flex items-center gap-1.5 mt-0.5">
                           <span className="text-[10px] sm:text-xs font-black font-mono text-amber-300">
-                            Loot: {seat.currentTotalValue.toLocaleString()}c
+                            Loot: {isCash ? `$${seat.currentTotalValue.toFixed(2)}` : `${seat.currentTotalValue.toLocaleString()}c`}
                           </span>
                           {activeBattle.mode === '2v2' && (
                             <span className={`text-[8px] font-bold uppercase px-1.5 py-0.2 rounded shrink-0 ${
@@ -1720,6 +1762,7 @@ export const CrateBattleArena: React.FC<CrateBattleArenaProps> = ({
                       >
                         {reelState?.items.map((item, idx) => {
                           const rarity = RARITY_CONFIG[item.rarity];
+                          const itemVal = getItemValue(item, currencyMode);
                           return (
                             <div
                               key={`round-${currentRoundIndex}-${item.id}-${idx}`}
@@ -1732,7 +1775,9 @@ export const CrateBattleArena: React.FC<CrateBattleArenaProps> = ({
                               <span className="text-xl sm:text-2xl">{item.icon}</span>
                               <div className="w-full">
                                 <div className="text-[9px] sm:text-[10px] font-black text-zinc-100 truncate">{item.name}</div>
-                                <div className="text-[8px] sm:text-[9px] font-mono text-amber-300 font-bold">{item.value}c</div>
+                                <div className="text-[8px] sm:text-[9px] font-mono text-amber-300 font-bold">
+                                  {isCash ? `$${itemVal.toFixed(2)}` : `${itemVal}c`}
+                                </div>
                               </div>
                             </div>
                           );
@@ -1757,16 +1802,21 @@ export const CrateBattleArena: React.FC<CrateBattleArenaProps> = ({
                     </div>
                     <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-h-12">
                       {seat.unboxedItems.length > 0 ? (
-                        seat.unboxedItems.map((item, iIdx) => (
-                          <div
-                            key={`won-${item.id}-${iIdx}`}
-                            className="px-2 py-1 rounded-lg bg-zinc-900 border border-zinc-800 text-[10px] flex items-center gap-1 shrink-0"
-                            title={`${item.name} (${item.value}c)`}
-                          >
-                            <span>{item.icon}</span>
-                            <span className="font-mono text-amber-300 font-bold">{item.value}c</span>
-                          </div>
-                        ))
+                        seat.unboxedItems.map((item, iIdx) => {
+                          const itemVal = getItemValue(item, currencyMode);
+                          return (
+                            <div
+                              key={`won-${item.id}-${iIdx}`}
+                              className="px-2 py-1 rounded-lg bg-zinc-900 border border-zinc-800 text-[10px] flex items-center gap-1 shrink-0"
+                              title={`${item.name} (${isCash ? `$${itemVal.toFixed(2)}` : `${itemVal}c`})`}
+                            >
+                              <span>{item.icon}</span>
+                              <span className="font-mono text-amber-300 font-bold">
+                                {isCash ? `$${itemVal.toFixed(2)}` : `${itemVal}c`}
+                              </span>
+                            </div>
+                          );
+                        })
                       ) : (
                         <span className="text-[10px] text-zinc-600 italic">No items yet</span>
                       )}
@@ -1788,7 +1838,9 @@ export const CrateBattleArena: React.FC<CrateBattleArenaProps> = ({
                       </div>
                       <div>
                         <span className="text-[10px] uppercase font-black text-blue-400 block">Team 1 (Blue) Total</span>
-                        <span className="text-base sm:text-lg font-mono font-black text-blue-300">{team1Total.toLocaleString()}c</span>
+                        <span className="text-base sm:text-lg font-mono font-black text-blue-300">
+                          {isCash ? `$${team1Total.toFixed(2)}` : `${team1Total.toLocaleString()}c`}
+                        </span>
                       </div>
                     </div>
 
@@ -1801,8 +1853,8 @@ export const CrateBattleArena: React.FC<CrateBattleArenaProps> = ({
                             : team1Total === team2Total
                             ? 'TIED ROUND'
                             : team1Leading
-                            ? `TEAM 1 AHEAD (+${teamDiff.toLocaleString()}c)`
-                            : `TEAM 2 AHEAD (+${teamDiff.toLocaleString()}c)`}
+                            ? `TEAM 1 AHEAD (+${isCash ? `$${teamDiff.toFixed(2)}` : `${teamDiff.toLocaleString()}c`})`
+                            : `TEAM 2 AHEAD (+${isCash ? `$${teamDiff.toFixed(2)}` : `${teamDiff.toLocaleString()}c`})`}
                         </span>
                       </div>
                     </div>
@@ -1813,7 +1865,9 @@ export const CrateBattleArena: React.FC<CrateBattleArenaProps> = ({
                       </div>
                       <div>
                         <span className="text-[10px] uppercase font-black text-rose-400 block">Team 2 (Red) Total</span>
-                        <span className="text-base sm:text-lg font-mono font-black text-rose-300">{team2Total.toLocaleString()}c</span>
+                        <span className="text-base sm:text-lg font-mono font-black text-rose-300">
+                          {isCash ? `$${team2Total.toFixed(2)}` : `${team2Total.toLocaleString()}c`}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -1835,7 +1889,7 @@ export const CrateBattleArena: React.FC<CrateBattleArenaProps> = ({
 
                       <div className="text-right">
                         <span className="text-xs font-black font-mono text-blue-300">
-                          {team1Total.toLocaleString()} Chips
+                          {isCash ? `$${team1Total.toFixed(2)}` : `${team1Total.toLocaleString()} Chips`}
                         </span>
                       </div>
                     </div>
@@ -1864,7 +1918,7 @@ export const CrateBattleArena: React.FC<CrateBattleArenaProps> = ({
 
                       <div className="text-right">
                         <span className="text-xs font-black font-mono text-rose-300">
-                          {team2Total.toLocaleString()} Chips
+                          {isCash ? `$${team2Total.toFixed(2)}` : `${team2Total.toLocaleString()} Chips`}
                         </span>
                       </div>
                     </div>
@@ -1893,7 +1947,9 @@ export const CrateBattleArena: React.FC<CrateBattleArenaProps> = ({
                   <div className="p-3 rounded-2xl bg-zinc-950 border-2 border-zinc-800 flex items-center justify-between gap-3 shadow-lg">
                     <div className="text-left">
                       <span className="text-[10px] uppercase font-black text-purple-400 block">{activeBattle.seats[0]?.name || 'Player 1'}</span>
-                      <span className="text-base sm:text-lg font-mono font-black text-amber-300">{p1Total.toLocaleString()}c</span>
+                      <span className="text-base sm:text-lg font-mono font-black text-amber-300">
+                        {isCash ? `$${p1Total.toFixed(2)}` : `${p1Total.toLocaleString()}c`}
+                      </span>
                     </div>
 
                     <div className="text-center">
@@ -1905,15 +1961,17 @@ export const CrateBattleArena: React.FC<CrateBattleArenaProps> = ({
                             : p1Total === p2Total
                             ? 'TIED MATCH'
                             : p1Leading
-                            ? `${activeBattle.seats[0]?.name} LEADS (+${pDiff.toLocaleString()}c)`
-                            : `${activeBattle.seats[1]?.name} LEADS (+${pDiff.toLocaleString()}c)`}
+                            ? `${activeBattle.seats[0]?.name} LEADS (+${isCash ? `$${pDiff.toFixed(2)}` : `${pDiff.toLocaleString()}c`})`
+                            : `${activeBattle.seats[1]?.name} LEADS (+${isCash ? `$${pDiff.toFixed(2)}` : `${pDiff.toLocaleString()}c`})`}
                         </span>
                       </div>
                     </div>
 
                     <div className="text-right">
                       <span className="text-[10px] uppercase font-black text-purple-400 block">{activeBattle.seats[1]?.name || 'Player 2'}</span>
-                      <span className="text-base sm:text-lg font-mono font-black text-amber-300">{p2Total.toLocaleString()}c</span>
+                      <span className="text-base sm:text-lg font-mono font-black text-amber-300">
+                        {isCash ? `$${p2Total.toFixed(2)}` : `${p2Total.toLocaleString()}c`}
+                      </span>
                     </div>
                   </div>
 
@@ -1942,27 +2000,33 @@ export const CrateBattleArena: React.FC<CrateBattleArenaProps> = ({
 };
 
 // Helper calculations for battle payout
-function totalLootPool(battle: CrateBattle): number {
-  return battle.seats.reduce((sum, s) => sum + (s?.currentTotalValue || 0), 0);
+function totalLootPool(battle: CrateBattle, isCash = false): number {
+  const sum = battle.seats.reduce((s, st) => s + (st?.currentTotalValue || 0), 0);
+  return isCash ? Number(sum.toFixed(2)) : sum;
 }
 
-function calculateUserPayout(battle: CrateBattle, userIdx: number): number {
+function calculateUserPayout(battle: CrateBattle, userIdx: number, isCash = false): number {
   if (userIdx === -1) return 0;
   const userSeat = battle.seats[userIdx];
   if (!userSeat) return 0;
 
+  const total = totalLootPool(battle, isCash);
+
   if (battle.mode === '1v1' || battle.mode === 'group-ffa') {
     if (battle.winnerSeatIndex === userIdx) {
-      return totalLootPool(battle);
+      return isCash ? Number(total.toFixed(2)) : total;
     }
     return 0;
   } else if (battle.mode === '2v2') {
     if (userSeat.team === battle.winnerTeam) {
-      return Math.round(totalLootPool(battle) / 2);
+      return isCash ? Number((total / 2).toFixed(2)) : Math.round(total / 2);
     }
     return 0;
   } else if (battle.mode === 'group-split') {
-    return battle.sharedPotPerPlayer || Math.round(totalLootPool(battle) / battle.seats.filter(Boolean).length);
+    const validSeatsCount = battle.seats.filter(Boolean).length || 1;
+    return isCash 
+      ? Number((total / validSeatsCount).toFixed(2))
+      : (battle.sharedPotPerPlayer || Math.round(total / validSeatsCount));
   }
   return 0;
 }

@@ -495,27 +495,47 @@ export default function App() {
     }));
   };
 
-  // Rakeback System: 10% on general bets, 2% on Blackjack
-  const handleAddRakeback = (wager: number, isBlackjack?: boolean) => {
+  // Rakeback System: 10% on general bets, 2% on Blackjack (Dual Real Cash & GC)
+  const handleAddRakeback = (wager: number, isBlackjack?: boolean, isCash?: boolean) => {
     if (isNaN(wager) || wager <= 0) return;
     const rate = isBlackjack ? 0.02 : 0.10;
-    const rakebackEarned = Math.max(1, Math.round(wager * rate));
-    setUserAccount(prev => ({
-      ...prev,
-      unclaimedRakeback: (isNaN(prev.unclaimedRakeback || 0) ? 0 : (prev.unclaimedRakeback || 0)) + rakebackEarned,
-    }));
+    if (isCash) {
+      const rakebackEarned = Number((wager * rate).toFixed(4));
+      setUserAccount(prev => ({
+        ...prev,
+        unclaimedCashRakeback: Number(((prev.unclaimedCashRakeback || 0) + rakebackEarned).toFixed(4)),
+      }));
+    } else {
+      const rakebackEarned = Math.max(1, Math.round(wager * rate));
+      setUserAccount(prev => ({
+        ...prev,
+        unclaimedRakeback: (isNaN(prev.unclaimedRakeback || 0) ? 0 : (prev.unclaimedRakeback || 0)) + rakebackEarned,
+      }));
+    }
   };
 
-  const handleClaimRakeback = () => {
-    const amount = isNaN(userAccount.unclaimedRakeback || 0) ? 0 : (userAccount.unclaimedRakeback || 0);
-    if (amount <= 0) return;
-    sound.playProfit();
-    handleUpdateBalance(amount);
-    setUserAccount(prev => ({
-      ...prev,
-      unclaimedRakeback: 0,
-      totalRakebackClaimed: (isNaN(prev.totalRakebackClaimed || 0) ? 0 : (prev.totalRakebackClaimed || 0)) + amount,
-    }));
+  const handleClaimRakeback = (mode: 'gc' | 'cash' = 'gc') => {
+    if (mode === 'cash') {
+      const amount = Number((userAccount.unclaimedCashRakeback || 0).toFixed(2));
+      if (amount <= 0) return;
+      sound.playProfit();
+      handleUpdateCashBalance(amount);
+      setUserAccount(prev => ({
+        ...prev,
+        unclaimedCashRakeback: 0,
+        totalCashRakebackClaimed: Number(((prev.totalCashRakebackClaimed || 0) + amount).toFixed(2)),
+      }));
+    } else {
+      const amount = isNaN(userAccount.unclaimedRakeback || 0) ? 0 : (userAccount.unclaimedRakeback || 0);
+      if (amount <= 0) return;
+      sound.playProfit();
+      handleUpdateBalance(amount);
+      setUserAccount(prev => ({
+        ...prev,
+        unclaimedRakeback: 0,
+        totalRakebackClaimed: (isNaN(prev.totalRakebackClaimed || 0) ? 0 : (prev.totalRakebackClaimed || 0)) + amount,
+      }));
+    }
   };
 
   // Milestone Crates Claim Handler
@@ -963,12 +983,14 @@ export default function App() {
         account={userAccount}
         stats={stats}
         balance={balance}
+        cashBalance={cashBalance}
         onUpdateAccount={setUserAccount}
         onSignOut={handleSignOut}
         onOpenStats={() => setIsStatsOpen(true)}
         onOpenRules={() => setIsRulesOpen(true)}
         onOpenPayForAdFree={() => setIsPayForAdFreeOpen(true)}
         onOpenCashier={() => setIsCashierOpen(true)}
+        onClaimRakeback={handleClaimRakeback}
       />
 
       {/* ATM Rewards & Stimulus Vault Modal */}

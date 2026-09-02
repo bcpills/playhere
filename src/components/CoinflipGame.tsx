@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Coins, 
@@ -13,7 +13,7 @@ import {
   Zap,
   CheckCircle2
 } from 'lucide-react';
-import { CasinoStats } from '../types';
+import { CasinoStats, CurrencyMode } from '../types';
 import { sound } from '../utils/audio';
 import { formatCompactWager } from '../utils/leaderboard';
 
@@ -22,9 +22,13 @@ interface CoinflipGameProps {
   onUpdateBalance: (amount: number | ((prev: number) => number)) => void;
   stats: CasinoStats;
   onUpdateStats: (updater: (prev: CasinoStats) => CasinoStats) => void;
-  onAddRakeback?: (wager: number, isBlackjack?: boolean) => void;
+  onAddRakeback?: (wager: number, isBlackjack?: boolean, isCash?: boolean) => void;
   username: string;
   avatar: string;
+  currencyMode?: CurrencyMode;
+  cashBalance?: number;
+  onUpdateCashBalance?: (amount: number | ((prev: number) => number)) => void;
+  onRecordWager?: (amount: number, isCash: boolean) => void;
 }
 
 type CoinSide = 'heads' | 'tails';
@@ -41,8 +45,15 @@ export const CoinflipGame: React.FC<CoinflipGameProps> = ({
   onUpdateBalance,
   onUpdateStats,
   onAddRakeback,
+  currencyMode = 'gc',
+  cashBalance = 0,
+  onUpdateCashBalance,
+  onRecordWager,
 }) => {
-  const [baseWager, setBaseWager] = useState<number>(50);
+  const isCash = currencyMode === 'cash';
+  const effectiveBalance = isCash ? cashBalance : balance;
+
+  const [baseWager, setBaseWager] = useState<number>(isCash ? 1 : 50);
   const [selectedSide, setSelectedSide] = useState<CoinSide>('heads');
   const [selectedOpponent, setSelectedOpponent] = useState(OPPONENT_BOTS[0]);
   const [isFlipping, setIsFlipping] = useState<boolean>(false);
@@ -54,10 +65,26 @@ export const CoinflipGame: React.FC<CoinflipGameProps> = ({
   // Consecutive Streak State
   const [streakCount, setStreakCount] = useState<number>(0);
   const [accumulatedPot, setAccumulatedPot] = useState<number>(0);
-  const [currentInitialBet, setCurrentInitialBet] = useState<number>(50);
+  const [currentInitialBet, setCurrentInitialBet] = useState<number>(isCash ? 1 : 50);
   const [isStreakMode, setIsStreakMode] = useState<boolean>(false);
 
-  const quickBets = [10, 25, 50, 100, 250, 500];
+  useEffect(() => {
+    setBaseWager(isCash ? 1 : 50);
+    setCurrentInitialBet(isCash ? 1 : 50);
+    setStreakCount(0);
+    setAccumulatedPot(0);
+    setIsStreakMode(false);
+  }, [isCash]);
+
+  const modifyBalance = (delta: number) => {
+    if (isCash && onUpdateCashBalance) {
+      onUpdateCashBalance(prev => Number((prev + delta).toFixed(2)));
+    } else {
+      onUpdateBalance(delta);
+    }
+  };
+
+  const quickBets = isCash ? [0.25, 0.50, 1, 2, 5, 10] : [10, 25, 50, 100, 250, 500];
 
   // Multiplier per flip step (1.96x compounded)
   const getStreakMultiplier = (streak: number) => {
@@ -70,8 +97,8 @@ export const CoinflipGame: React.FC<CoinflipGameProps> = ({
 
   // Potential payout if next flip is won
   const nextPotValue = isStreakMode 
-    ? Math.floor(accumulatedPot * 1.96) 
-    : Math.floor(baseWager * 1.96);
+    ? (isCash ? Number((accumulatedPot * 1.96).toFixed(2)) : Math.floor(accumulatedPot * 1.96))
+    : (isCash ? Number((baseWager * 1.96).toFixed(2)) : Math.floor(baseWager * 1.96));
 
   // Start Flip (Either initial from balance OR consecutive flip with accumulated pot)
   const handleFlip = () => {
@@ -83,8 +110,8 @@ export const CoinflipGame: React.FC<CoinflipGameProps> = ({
         setErrorMessage('Enter a valid wager.');
         return;
       }
-      if (baseWager > balance) {
-        setErrorMessage('Insufficient chip balance.');
+      if (baseWager > effectiveBalance) {
+        setErrorMessage('Insufficient balance.');
         sound.playLose();
         return;
       }
@@ -94,18 +121,19 @@ export const CoinflipGame: React.FC<CoinflipGameProps> = ({
       setFlipResult(null);
 
       // Deduct initial wager from balance
-      onUpdateBalance(-baseWager);
+      modifyBalance(-baseWager);
+      onRecordWager?.(baseWager, isCash);
       setCurrentInitialBet(baseWager);
       
-      // 10% rakeback
+      // rakeback
       if (onAddRakeback) {
-        onAddRakeback(baseWager, false);
+        onAddRakeback(baseWager, false, isCash);
       }
 
       // Update stats: wagered
       onUpdateStats(prev => ({
         ...prev,
-        totalWagered: prev.totalWagered + baseWager,
+        totalWagered: isCash ? prev.totalWagered + (baseWager * 1000) : prev.totalWagered + baseWager,
         roundsPlayedCoinflip: (prev.roundsPlayedCoinflip || 0) + 1,
       }));
     } else {
@@ -128,8 +156,9 @@ export const CoinflipGame: React.FC<CoinflipGameProps> = ({
 
       if (userWon) {
         const newStreak = streakCount + 1;
-        const newPot = isStreakMode ? Math.floor(accumulatedPot * 1.96) : Math.floor(baseWager * 1.96);
-        const newMult = getStreakMultiplier(newStreak);
+        const newPot = isStreakMode 
+          ? (isCash ? Number((accumulatedPot * 1.96).toFixed(2)) : Math.floor(accumulatedPot * 1.96))
+          : (isCash ? Number((baseWager * 1.96).toFixed(2)) : Math.floor(baseWager * 1.96));
 
         setStreakCount(newStreak);
         setAccumulatedPot(newPot);
@@ -146,10 +175,11 @@ export const CoinflipGame: React.FC<CoinflipGameProps> = ({
         setOutcomeStatus('lose');
         sound.playLose();
         
+        const lostAmt = isStreakMode ? currentInitialBet : baseWager;
         onUpdateStats(prev => ({
           ...prev,
-          totalLost: prev.totalLost + (isStreakMode ? currentInitialBet : baseWager),
-          netProfit: prev.netProfit - (isStreakMode ? currentInitialBet : baseWager),
+          totalLost: isCash ? prev.totalLost + (lostAmt * 1000) : prev.totalLost + lostAmt,
+          netProfit: isCash ? prev.netProfit - (lostAmt * 1000) : prev.netProfit - lostAmt,
         }));
 
         setFlipHistory(prev => [
@@ -173,13 +203,13 @@ export const CoinflipGame: React.FC<CoinflipGameProps> = ({
     const finalMult = currentMultiplier;
 
     sound.playBigWin();
-    onUpdateBalance(winnings);
+    modifyBalance(winnings);
 
     onUpdateStats(prev => ({
       ...prev,
-      totalWon: prev.totalWon + winnings,
-      netProfit: prev.netProfit + (winnings - currentInitialBet),
-      biggestWin: Math.max(prev.biggestWin, winnings),
+      totalWon: isCash ? prev.totalWon + (winnings * 1000) : prev.totalWon + winnings,
+      netProfit: isCash ? prev.netProfit + ((winnings - currentInitialBet) * 1000) : prev.netProfit + (winnings - currentInitialBet),
+      biggestWin: isCash ? Math.max(prev.biggestWin, winnings * 1000) : Math.max(prev.biggestWin, winnings),
       biggestMultiplier: Math.max(prev.biggestMultiplier, finalMult),
     }));
 
@@ -307,8 +337,8 @@ export const CoinflipGame: React.FC<CoinflipGameProps> = ({
               </label>
               <span className="text-[10px] font-mono text-zinc-500">
                 {isStreakMode 
-                  ? `Next Win: +${nextPotValue.toLocaleString()}c (${nextMultiplier}x)`
-                  : `Win: +${nextPotValue.toLocaleString()}c (${nextMultiplier}x)`
+                  ? `Next Win: +${isCash ? `$${nextPotValue.toFixed(2)}` : `${nextPotValue.toLocaleString()} GC`} (${nextMultiplier}x)`
+                  : `Win: +${isCash ? `$${nextPotValue.toFixed(2)}` : `${nextPotValue.toLocaleString()} GC`} (${nextMultiplier}x)`
                 }
               </span>
             </div>
@@ -318,15 +348,16 @@ export const CoinflipGame: React.FC<CoinflipGameProps> = ({
                 <div className="relative mb-1.5">
                   <input
                     type="number"
-                    min={1}
-                    max={balance}
+                    min={isCash ? 0.10 : 1}
+                    max={effectiveBalance}
+                    step={isCash ? 0.10 : 1}
                     disabled={isFlipping}
                     value={baseWager}
-                    onChange={e => setBaseWager(Math.max(1, parseInt(e.target.value) || 0))}
+                    onChange={e => setBaseWager(isCash ? Math.max(0.10, parseFloat(e.target.value) || 0) : Math.max(1, parseInt(e.target.value) || 0))}
                     className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-white font-mono font-bold text-xs focus:outline-none focus:border-amber-500 transition-all disabled:opacity-50"
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-zinc-500">
-                    CHIPS
+                    {isCash ? 'USD' : 'GC'}
                   </span>
                 </div>
 
@@ -347,7 +378,7 @@ export const CoinflipGame: React.FC<CoinflipGameProps> = ({
                           : 'bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800'
                       }`}
                     >
-                      {formatCompactWager(amt)}
+                      {isCash ? `$${amt}` : formatCompactWager(amt)}
                     </button>
                   ))}
                 </div>
@@ -356,7 +387,7 @@ export const CoinflipGame: React.FC<CoinflipGameProps> = ({
                   <button
                     type="button"
                     disabled={isFlipping}
-                    onClick={() => setBaseWager(10)}
+                    onClick={() => setBaseWager(isCash ? 0.25 : 10)}
                     className="py-1 rounded-lg text-[9px] font-bold uppercase bg-zinc-900 hover:bg-zinc-800 text-zinc-400 border border-zinc-800 cursor-pointer"
                   >
                     Min
@@ -364,7 +395,7 @@ export const CoinflipGame: React.FC<CoinflipGameProps> = ({
                   <button
                     type="button"
                     disabled={isFlipping}
-                    onClick={() => setBaseWager(prev => Math.max(1, Math.floor(prev / 2)))}
+                    onClick={() => setBaseWager(prev => isCash ? Number(Math.max(0.10, prev / 2).toFixed(2)) : Math.max(1, Math.floor(prev / 2)))}
                     className="py-1 rounded-lg text-[9px] font-bold uppercase bg-zinc-900 hover:bg-zinc-800 text-zinc-400 border border-zinc-800 cursor-pointer"
                   >
                     1/2
@@ -372,7 +403,7 @@ export const CoinflipGame: React.FC<CoinflipGameProps> = ({
                   <button
                     type="button"
                     disabled={isFlipping}
-                    onClick={() => setBaseWager(prev => Math.min(balance, prev * 2))}
+                    onClick={() => setBaseWager(prev => isCash ? Number(Math.min(effectiveBalance, prev * 2).toFixed(2)) : Math.min(balance, prev * 2))}
                     className="py-1 rounded-lg text-[9px] font-bold uppercase bg-zinc-900 hover:bg-zinc-800 text-zinc-400 border border-zinc-800 cursor-pointer"
                   >
                     2X
@@ -380,7 +411,7 @@ export const CoinflipGame: React.FC<CoinflipGameProps> = ({
                   <button
                     type="button"
                     disabled={isFlipping}
-                    onClick={() => setBaseWager(balance)}
+                    onClick={() => setBaseWager(effectiveBalance)}
                     className="py-1 rounded-lg text-[9px] font-bold uppercase bg-zinc-900 hover:bg-zinc-800 text-amber-400 border border-zinc-800 cursor-pointer"
                   >
                     Max
@@ -399,12 +430,12 @@ export const CoinflipGame: React.FC<CoinflipGameProps> = ({
                 <div className="flex items-center justify-between">
                   <span className="text-zinc-400 font-bold uppercase text-[10px]">Current Pot:</span>
                   <span className="font-mono font-black text-amber-300 text-sm">
-                    {accumulatedPot.toLocaleString()}c ({currentMultiplier}x)
+                    {isCash ? `$${accumulatedPot.toFixed(2)}` : `${accumulatedPot.toLocaleString()} GC`} ({currentMultiplier}x)
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-[11px] text-emerald-400 pt-1 border-t border-amber-500/30">
                   <span>Consecutive Flip Win:</span>
-                  <span className="font-mono font-black">+{nextPotValue.toLocaleString()}c ({nextMultiplier}x)</span>
+                  <span className="font-mono font-black">+{isCash ? `$${nextPotValue.toFixed(2)}` : `${nextPotValue.toLocaleString()} GC`} ({nextMultiplier}x)</span>
                 </div>
               </div>
             )}
@@ -420,7 +451,7 @@ export const CoinflipGame: React.FC<CoinflipGameProps> = ({
                 className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 hover:from-amber-400 hover:via-yellow-400 hover:to-amber-500 text-zinc-950 font-black text-xs sm:text-sm uppercase tracking-wider shadow-lg shadow-amber-950/50 transition-all cursor-pointer active:scale-98 disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 <Coins className="w-4 h-4" />
-                <span>{isFlipping ? 'Flipping...' : `Flip Coin (${baseWager.toLocaleString()}c)`}</span>
+                <span>{isFlipping ? 'Flipping...' : `Flip Coin (${isCash ? `$${baseWager.toFixed(2)}` : `${baseWager.toLocaleString()} GC`})`}</span>
               </button>
             ) : (
               <div className="grid grid-cols-2 gap-2">
@@ -432,7 +463,7 @@ export const CoinflipGame: React.FC<CoinflipGameProps> = ({
                   className="py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-zinc-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-emerald-950/50 transition-all cursor-pointer active:scale-98 disabled:opacity-50 flex flex-col items-center justify-center"
                 >
                   <span className="text-[10px] opacity-80">Take Winnings</span>
-                  <span className="text-xs font-mono font-black">Collect +{accumulatedPot.toLocaleString()}c</span>
+                  <span className="text-xs font-mono font-black">Collect +{isCash ? `$${accumulatedPot.toFixed(2)}` : `${accumulatedPot.toLocaleString()} GC`}</span>
                 </button>
 
                 {/* 2. RIDE CONSECUTIVE STREAK */}

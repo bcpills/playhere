@@ -44,7 +44,7 @@ interface LobbyHomeProps {
   onOpenRules: () => void;
   onOpenAccount: () => void;
   onOpenMilestones?: () => void;
-  onClaimRakeback?: () => void;
+  onClaimRakeback?: (mode?: 'gc' | 'cash') => void;
   onOpenModeratorLog: () => void;
   onOpenCashier?: () => void;
   onOpenPayForAdFree?: () => void;
@@ -75,7 +75,9 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
   const [countdown, setCountdown] = useState<string>('');
   const isAdmin = isUserAdmin(userAccount);
   const unclaimedMilestones = getUnclaimedMilestoneCount(stats.totalWagered, userAccount.claimedMilestoneCrates);
-  const pendingRakeback = userAccount.unclaimedRakeback || 0;
+  const pendingGcRakeback = userAccount.unclaimedRakeback || 0;
+  const pendingCashRakeback = userAccount.unclaimedCashRakeback || 0;
+  const hasRakeback = pendingGcRakeback > 0 || pendingCashRakeback > 0;
 
   useEffect(() => {
     const updateTime = () => {
@@ -220,6 +222,61 @@ export const LobbyHome: React.FC<LobbyHomeProps> = ({
           </div>
         </div>
       </div>
+
+      {/* RAKEBACK NOTIFICATION BANNER (REAL CASH & GC RAKEBACK) */}
+      {hasRakeback && onClaimRakeback && (
+        <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-purple-950/70 via-indigo-950/50 to-emerald-950/40 border-2 border-purple-500/60 shadow-lg shadow-purple-950/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-in fade-in">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-xl shrink-0">
+              💎
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs sm:text-sm font-black uppercase text-zinc-100">
+                  Unclaimed Instant Rakeback
+                </span>
+                <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-purple-500/20 text-purple-300 border border-purple-500/40">
+                  Ready to Claim
+                </span>
+              </div>
+              <div className="flex items-center gap-3 mt-0.5 text-xs">
+                {pendingCashRakeback > 0 && (
+                  <span className="font-mono font-black text-emerald-400">
+                    +${pendingCashRakeback.toFixed(2)} USD Cash
+                  </span>
+                )}
+                {pendingCashRakeback > 0 && pendingGcRakeback > 0 && <span className="text-zinc-600">•</span>}
+                {pendingGcRakeback > 0 && (
+                  <span className="font-mono font-bold text-amber-300">
+                    +{pendingGcRakeback.toLocaleString()} GC
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+            {pendingCashRakeback > 0 && (
+              <button
+                type="button"
+                onClick={() => onClaimRakeback('cash')}
+                className="flex-1 sm:flex-none px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black text-xs uppercase tracking-wider shadow-md shadow-emerald-500/20 cursor-pointer transition-all active:scale-95"
+              >
+                Claim Cash (${pendingCashRakeback.toFixed(2)})
+              </button>
+            )}
+            {pendingGcRakeback > 0 && (
+              <button
+                type="button"
+                onClick={() => onClaimRakeback('gc')}
+                className="flex-1 sm:flex-none px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black text-xs uppercase tracking-wider shadow-md shadow-amber-500/20 cursor-pointer transition-all active:scale-95"
+              >
+                Claim GC
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* CLEAN 2-COLUMN PROMO STRIP (DAILY DOLLAR & DAILY WAGER RACE) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { sound } from '../utils/audio';
 import { Edit3, Check, Sparkles, ChevronRight } from 'lucide-react';
+import { CurrencyMode } from '../types';
 
 interface ChipSelectorProps {
   // Mode A: Simple Stepper (Keno, etc.)
@@ -20,6 +21,7 @@ interface ChipSelectorProps {
   balance?: number;
   currentBetTotal?: number;
   onCustomBetSubmit?: (customAmount: number) => void;
+  currencyMode?: CurrencyMode;
 }
 
 export const CHIP_VALUES = [
@@ -34,6 +36,18 @@ export const CHIP_VALUES = [
   { value: 5000, label: '5K', color: 'bg-cyan-950 border-cyan-400 text-cyan-200 shadow-cyan-900/40 font-black' },
   { value: 25000, label: '25K', color: 'bg-gradient-to-tr from-amber-700 to-yellow-500 border-yellow-200 text-zinc-950 font-black shadow-amber-500/30' },
   { value: 100000, label: '100K', color: 'bg-gradient-to-tr from-purple-800 via-pink-700 to-amber-400 border-amber-300 text-white font-black shadow-purple-900/50' },
+];
+
+export const CASH_CHIP_VALUES = [
+  { value: 0.25, label: '$0.25', color: 'bg-zinc-800 border-zinc-500 text-zinc-200' },
+  { value: 0.50, label: '$0.50', color: 'bg-blue-800 border-blue-500 text-white' },
+  { value: 1.00, label: '$1', color: 'bg-emerald-800 border-emerald-500 text-white' },
+  { value: 2.50, label: '$2.50', color: 'bg-purple-800 border-purple-500 text-white' },
+  { value: 5.00, label: '$5', color: 'bg-red-800 border-red-500 text-white' },
+  { value: 10.00, label: '$10', color: 'bg-amber-600 border-amber-400 text-zinc-950 font-black' },
+  { value: 25.00, label: '$25', color: 'bg-teal-700 border-teal-400 text-white font-black' },
+  { value: 50.00, label: '$50', color: 'bg-indigo-800 border-indigo-400 text-white font-black' },
+  { value: 100.00, label: '$100', color: 'bg-gradient-to-tr from-amber-600 via-yellow-400 to-amber-200 border-yellow-100 text-zinc-950 font-black shadow-amber-500/40' },
 ];
 
 export const ChipSelector: React.FC<ChipSelectorProps> = ({
@@ -51,9 +65,12 @@ export const ChipSelector: React.FC<ChipSelectorProps> = ({
   balance = 500,
   currentBetTotal = 0,
   onCustomBetSubmit,
+  currencyMode = 'gc',
 }) => {
   const [typedBetInput, setTypedBetInput] = useState<string>('');
   const [isTypingBet, setIsTypingBet] = useState<boolean>(false);
+
+  const activeChips = currencyMode === 'cash' ? CASH_CHIP_VALUES : CHIP_VALUES;
 
   useEffect(() => {
     if (currentBet !== undefined) {
@@ -66,7 +83,10 @@ export const ChipSelector: React.FC<ChipSelectorProps> = ({
     const handleAdd = (val: number) => {
       if (disabled) return;
       sound.playChip();
-      onBetChange(Math.min(maxBet, currentBet + val));
+      const updated = currencyMode === 'cash' 
+        ? Number((Math.min(maxBet, currentBet + val)).toFixed(2))
+        : Math.min(maxBet, currentBet + val);
+      onBetChange(updated);
     };
 
     const handleClear = () => {
@@ -79,7 +99,10 @@ export const ChipSelector: React.FC<ChipSelectorProps> = ({
     const handleDouble = () => {
       if (disabled) return;
       sound.playChip();
-      const doubled = currentBet === 0 ? Math.min(maxBet, 10) : Math.min(maxBet, currentBet * 2);
+      const defaultMin = currencyMode === 'cash' ? 0.25 : 10;
+      const doubled = currentBet === 0 
+        ? Math.min(maxBet, defaultMin) 
+        : (currencyMode === 'cash' ? Number(Math.min(maxBet, currentBet * 2).toFixed(2)) : Math.min(maxBet, currentBet * 2));
       onBetChange(doubled);
       setTypedBetInput(doubled.toString());
     };
@@ -87,7 +110,9 @@ export const ChipSelector: React.FC<ChipSelectorProps> = ({
     const handleHalf = () => {
       if (disabled || currentBet <= 0) return;
       sound.playChip();
-      const halved = Math.max(minBet, Math.floor(currentBet / 2));
+      const halved = currencyMode === 'cash'
+        ? Math.max(minBet, Number((currentBet / 2).toFixed(2)))
+        : Math.max(minBet, Math.floor(currentBet / 2));
       onBetChange(halved);
       setTypedBetInput(halved.toString());
     };
@@ -101,9 +126,11 @@ export const ChipSelector: React.FC<ChipSelectorProps> = ({
 
     const handleApplyTypedWager = (e?: React.FormEvent) => {
       if (e) e.preventDefault();
-      const parsed = parseInt(typedBetInput.replace(/,/g, ''), 10);
+      const parsed = parseFloat(typedBetInput.replace(/[$,]/g, ''));
       if (!isNaN(parsed) && parsed >= 0) {
-        const clamped = Math.min(maxBet, Math.max(0, parsed));
+        const clamped = currencyMode === 'cash'
+          ? Number(Math.min(maxBet, Math.max(0, parsed)).toFixed(2))
+          : Math.min(maxBet, Math.max(0, Math.floor(parsed)));
         sound.playChip();
         onBetChange(clamped);
         setTypedBetInput(clamped.toString());
@@ -124,10 +151,11 @@ export const ChipSelector: React.FC<ChipSelectorProps> = ({
             <form onSubmit={handleApplyTypedWager} className="relative flex items-center flex-1 sm:flex-initial">
               <input
                 type="number"
+                step={currencyMode === 'cash' ? '0.05' : '1'}
                 min={0}
                 max={maxBet}
                 disabled={disabled}
-                value={isTypingBet ? typedBetInput : currentBet.toLocaleString()}
+                value={isTypingBet ? typedBetInput : (currencyMode === 'cash' ? currentBet.toFixed(2) : currentBet.toLocaleString())}
                 onFocus={() => {
                   setIsTypingBet(true);
                   setTypedBetInput(currentBet.toString());
@@ -135,10 +163,14 @@ export const ChipSelector: React.FC<ChipSelectorProps> = ({
                 onChange={(e) => setTypedBetInput(e.target.value)}
                 onBlur={handleApplyTypedWager}
                 placeholder="Type bet..."
-                className="w-28 sm:w-32 px-2.5 py-1 rounded-xl bg-zinc-900 border border-purple-500/50 focus:border-amber-400 font-mono font-black text-amber-300 text-sm focus:outline-none focus:ring-1 focus:ring-amber-400"
+                className={`w-28 sm:w-32 px-2.5 py-1 rounded-xl bg-zinc-900 border font-mono font-black text-sm focus:outline-none focus:ring-1 ${
+                  currencyMode === 'cash' 
+                    ? 'border-emerald-500/50 text-emerald-400 focus:ring-emerald-400' 
+                    : 'border-purple-500/50 text-amber-300 focus:ring-amber-400'
+                }`}
               />
               <span className="absolute right-2 text-[9px] text-zinc-500 font-sans pointer-events-none uppercase font-bold">
-                CHIPS
+                {currencyMode === 'cash' ? 'USD' : 'GC'}
               </span>
             </form>
 
@@ -176,16 +208,20 @@ export const ChipSelector: React.FC<ChipSelectorProps> = ({
               type="button"
               disabled={disabled || maxBet <= 0}
               onClick={handleMax}
-              className="px-2.5 py-1 rounded-lg text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 disabled:opacity-40 cursor-pointer"
+              className={`px-2.5 py-1 rounded-lg text-[10px] font-black border disabled:opacity-40 cursor-pointer ${
+                currencyMode === 'cash'
+                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/30'
+                  : 'bg-amber-500/20 text-amber-300 border-amber-500/40 hover:bg-amber-500/30'
+              }`}
             >
               MAX
             </button>
           </div>
         </div>
 
-        {/* Scrollable Chip Denominations (Supports Micro to Whale Bets) */}
+        {/* Scrollable Chip Denominations */}
         <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
-          {CHIP_VALUES.map((chip) => {
+          {activeChips.map((chip) => {
             const canAfford = currentBet + chip.value <= maxBet;
             return (
               <button
@@ -209,11 +245,12 @@ export const ChipSelector: React.FC<ChipSelectorProps> = ({
   // Mode B: Blackjack Spot-Bettor Chip Rack with Custom Type-In Bet
   const handleCustomTypeBet = (e: React.FormEvent) => {
     e.preventDefault();
-    const val = parseInt(typedBetInput.replace(/,/g, ''), 10);
+    const val = parseFloat(typedBetInput.replace(/[$,]/g, ''));
     if (!isNaN(val) && val > 0) {
       sound.playChip();
-      if (onSelectChip) onSelectChip(val);
-      if (onCustomBetSubmit) onCustomBetSubmit(val);
+      const formatted = currencyMode === 'cash' ? Number(val.toFixed(2)) : Math.floor(val);
+      if (onSelectChip) onSelectChip(formatted);
+      if (onCustomBetSubmit) onCustomBetSubmit(formatted);
       setIsTypingBet(false);
     }
   };
@@ -223,8 +260,10 @@ export const ChipSelector: React.FC<ChipSelectorProps> = ({
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <span className="text-[10px] font-bold uppercase text-zinc-400">Total Bet:</span>
-          <div className="px-2.5 py-1 rounded-xl bg-zinc-900 border border-zinc-700 font-mono font-black text-amber-300 text-sm">
-            {currentBetTotal.toLocaleString()} <span className="text-[9px] text-zinc-500 font-sans">CHIPS</span>
+          <div className={`px-2.5 py-1 rounded-xl bg-zinc-900 border font-mono font-black text-sm ${
+            currencyMode === 'cash' ? 'text-emerald-400 border-emerald-500/40' : 'text-amber-300 border-zinc-700'
+          }`}>
+            {currencyMode === 'cash' ? `$${(currentBetTotal || 0).toFixed(2)}` : `${(currentBetTotal || 0).toLocaleString()} GC`}
           </div>
 
           {/* Quick Custom Type Button */}
@@ -292,7 +331,11 @@ export const ChipSelector: React.FC<ChipSelectorProps> = ({
                 sound.playChip();
                 onMaxBet();
               }}
-              className="px-2.5 py-1 rounded-lg text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 disabled:opacity-40 cursor-pointer"
+              className={`px-2.5 py-1 rounded-lg text-[10px] font-black border disabled:opacity-40 cursor-pointer ${
+                currencyMode === 'cash'
+                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/30'
+                  : 'bg-amber-500/20 text-amber-300 border-amber-500/40 hover:bg-amber-500/30'
+              }`}
             >
               MAX
             </button>
@@ -306,11 +349,12 @@ export const ChipSelector: React.FC<ChipSelectorProps> = ({
           <span className="text-[11px] font-bold text-purple-300 shrink-0">Custom Amount:</span>
           <input
             type="number"
-            min={1}
+            step={currencyMode === 'cash' ? '0.05' : '1'}
+            min={currencyMode === 'cash' ? 0.25 : 1}
             max={balance}
             value={typedBetInput}
             onChange={(e) => setTypedBetInput(e.target.value)}
-            placeholder="e.g. 250, 7500..."
+            placeholder={currencyMode === 'cash' ? 'e.g. 2.50, 10.00...' : 'e.g. 250, 7500...'}
             className="flex-1 px-2.5 py-1 rounded-lg bg-zinc-900 border border-purple-500/60 font-mono font-black text-amber-300 text-xs focus:outline-none focus:ring-1 focus:ring-purple-400"
             autoFocus
           />
@@ -324,9 +368,9 @@ export const ChipSelector: React.FC<ChipSelectorProps> = ({
         </form>
       )}
 
-      {/* Chip Rack with higher denominations */}
+      {/* Chip Rack */}
       <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-1">
-        {CHIP_VALUES.map((chip) => {
+        {activeChips.map((chip) => {
           const isSelected = selectedChip === chip.value;
           const canAfford = balance >= chip.value;
 
@@ -343,7 +387,7 @@ export const ChipSelector: React.FC<ChipSelectorProps> = ({
                 chip.color
               } ${
                 isSelected
-                  ? 'ring-4 ring-amber-400 scale-105 shadow-amber-500/40 z-10'
+                  ? (currencyMode === 'cash' ? 'ring-4 ring-emerald-400 scale-105 shadow-emerald-500/40 z-10' : 'ring-4 ring-amber-400 scale-105 shadow-amber-500/40 z-10')
                   : canAfford
                   ? 'hover:-translate-y-0.5 opacity-90 cursor-pointer'
                   : 'opacity-30 cursor-not-allowed'
@@ -351,7 +395,9 @@ export const ChipSelector: React.FC<ChipSelectorProps> = ({
             >
               <span className="leading-none">{chip.label}</span>
               {isSelected && (
-                <span className="text-[7px] uppercase tracking-tighter text-amber-300 leading-none mt-0.5 font-bold">
+                <span className={`text-[7px] uppercase tracking-tighter leading-none mt-0.5 font-bold ${
+                  currencyMode === 'cash' ? 'text-emerald-300' : 'text-amber-300'
+                }`}>
                   ACTIVE
                 </span>
               )}
@@ -362,3 +408,4 @@ export const ChipSelector: React.FC<ChipSelectorProps> = ({
     </div>
   );
 };
+

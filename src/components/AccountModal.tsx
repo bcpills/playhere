@@ -34,12 +34,14 @@ interface AccountModalProps {
   account: UserAccount;
   stats: CasinoStats;
   balance: number;
+  cashBalance?: number;
   onUpdateAccount: (updater: (prev: UserAccount) => UserAccount) => void;
   onSignOut: () => void;
   onOpenStats: () => void;
   onOpenRules: () => void;
   onOpenPayForAdFree?: () => void;
   onOpenCashier?: () => void;
+  onClaimRakeback?: (mode: 'gc' | 'cash') => void;
 }
 
 export const AccountModal: React.FC<AccountModalProps> = ({
@@ -48,12 +50,14 @@ export const AccountModal: React.FC<AccountModalProps> = ({
   account,
   stats,
   balance,
+  cashBalance = 2.00,
   onUpdateAccount,
   onSignOut,
   onOpenStats,
   onOpenRules,
   onOpenPayForAdFree,
   onOpenCashier,
+  onClaimRakeback,
 }) => {
   const [activeTab, setActiveTab] = useState<'profile' | 'security' | 'session'>('profile');
   const [isEditing, setIsEditing] = useState<boolean>(false);
@@ -613,6 +617,77 @@ export const AccountModal: React.FC<AccountModalProps> = ({
                 {nextTier && (
                   <span>Wager {remainingWager.toLocaleString()} more for {nextTier.tier}</span>
                 )}
+              </div>
+            </div>
+
+            {/* VIP RAKEBACK VAULT (DUAL REAL CASH & GC) */}
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-purple-950/40 via-zinc-900 to-zinc-900 border border-purple-500/40 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-base">
+                    💎
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-black uppercase tracking-wider text-zinc-100">
+                      VIP Instant Rakeback
+                    </h4>
+                    <p className="text-[10px] text-zinc-400">
+                      10% back on house games, 2% back on Blackjack. Real cash & GC earned instantly.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-left">
+                {/* Real Cash Rakeback */}
+                <div className="p-3 rounded-xl bg-zinc-950/70 border border-emerald-500/30 flex flex-col justify-between">
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-emerald-400 block">
+                      Cash Rakeback
+                    </span>
+                    <span className="text-base font-black font-mono text-emerald-300">
+                      ${(account.unclaimedCashRakeback || 0).toFixed(2)}
+                    </span>
+                    <span className="text-[9px] text-zinc-500 block mt-0.5 font-mono">
+                      Claimed: ${(account.totalCashRakebackClaimed || 0).toFixed(2)}
+                    </span>
+                  </div>
+                  {onClaimRakeback && (
+                    <button
+                      type="button"
+                      disabled={(account.unclaimedCashRakeback || 0) <= 0}
+                      onClick={() => onClaimRakeback('cash')}
+                      className="mt-2 w-full py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 disabled:hover:bg-emerald-500 text-zinc-950 font-black text-[10px] uppercase tracking-wider transition-all cursor-pointer"
+                    >
+                      Claim Cash
+                    </button>
+                  )}
+                </div>
+
+                {/* Gold Coins Rakeback */}
+                <div className="p-3 rounded-xl bg-zinc-950/70 border border-amber-500/30 flex flex-col justify-between">
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-amber-400 block">
+                      GC Rakeback
+                    </span>
+                    <span className="text-base font-black font-mono text-amber-300">
+                      {(account.unclaimedRakeback || 0).toLocaleString()} <span className="text-[10px] text-zinc-500">GC</span>
+                    </span>
+                    <span className="text-[9px] text-zinc-500 block mt-0.5 font-mono">
+                      Claimed: {(account.totalRakebackClaimed || 0).toLocaleString()}
+                    </span>
+                  </div>
+                  {onClaimRakeback && (
+                    <button
+                      type="button"
+                      disabled={(account.unclaimedRakeback || 0) <= 0}
+                      onClick={() => onClaimRakeback('gc')}
+                      className="mt-2 w-full py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 disabled:opacity-40 disabled:hover:bg-amber-500 text-zinc-950 font-black text-[10px] uppercase tracking-wider transition-all cursor-pointer"
+                    >
+                      Claim GC
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
 

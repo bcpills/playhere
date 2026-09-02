@@ -1,7 +1,7 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import { Sparkles, Zap } from 'lucide-react';
-import { Card, PlayerHand, BlackjackSideBets, SideBetResults, CasinoStats } from '../types';
+import { Card, PlayerHand, BlackjackSideBets, SideBetResults, CasinoStats, CurrencyMode } from '../types';
 import {
   createShoe,
   calculateHandValue,
@@ -16,7 +16,11 @@ interface BlackjackGameProps {
   balance: number;
   onUpdateBalance: (delta: number) => void;
   onUpdateStats: (updater: (prev: CasinoStats) => CasinoStats) => void;
-  onAddRakeback?: (wager: number, isBlackjack?: boolean) => void;
+  onAddRakeback?: (wager: number, isBlackjack?: boolean, isCash?: boolean) => void;
+  currencyMode?: CurrencyMode;
+  cashBalance?: number;
+  onUpdateCashBalance?: (amount: number | ((prev: number) => number)) => void;
+  onRecordWager?: (amount: number, isCash: boolean) => void;
 }
 
 export const BlackjackGame: React.FC<BlackjackGameProps> = ({
@@ -24,7 +28,14 @@ export const BlackjackGame: React.FC<BlackjackGameProps> = ({
   onUpdateBalance,
   onUpdateStats,
   onAddRakeback,
+  currencyMode = 'gc',
+  cashBalance = 0,
+  onUpdateCashBalance,
+  onRecordWager,
 }) => {
+  const isCash = currencyMode === 'cash';
+  const effectiveBalance = isCash ? cashBalance : balance;
+
   // Shoe & Deck
   const [shoe, setShoe] = useState<Card[]>(() => createShoe(6));
   const [dealerCards, setDealerCards] = useState<Card[]>([]);
@@ -32,13 +43,35 @@ export const BlackjackGame: React.FC<BlackjackGameProps> = ({
   const [activeHandIndex, setActiveHandIndex] = useState<number>(0);
 
   // Betting
-  const [selectedChip, setSelectedChip] = useState<number>(25);
-  const [mainBet, setMainBet] = useState<number>(50);
+  const [selectedChip, setSelectedChip] = useState<number>(isCash ? 1 : 25);
+  const [mainBet, setMainBet] = useState<number>(isCash ? 1 : 50);
   const [sideBets, setSideBets] = useState<BlackjackSideBets>({
     twentyOnePlusThree: 0,
     perfectPairs: 0,
     luckyLadies: 0,
   });
+
+  // Switch chip presets when currency mode changes
+  useEffect(() => {
+    if (isCash) {
+      setSelectedChip(1);
+      setMainBet(1);
+      setSideBets({ twentyOnePlusThree: 0, perfectPairs: 0, luckyLadies: 0 });
+    } else {
+      setSelectedChip(25);
+      setMainBet(50);
+      setSideBets({ twentyOnePlusThree: 0, perfectPairs: 0, luckyLadies: 0 });
+    }
+  }, [isCash]);
+
+  // Balance update helper
+  const modifyBalance = (delta: number) => {
+    if (isCash && onUpdateCashBalance) {
+      onUpdateCashBalance(prev => Number((prev + delta).toFixed(2)));
+    } else {
+      onUpdateBalance(delta);
+    }
+  };
 
   // Game Phases
   const [phase, setPhase] = useState<'betting' | 'dealing' | 'insurance' | 'player' | 'dealer' | 'payout'>('betting');
@@ -46,7 +79,7 @@ export const BlackjackGame: React.FC<BlackjackGameProps> = ({
   const [showPaytableModal, setShowPaytableModal] = useState<boolean>(false);
   const [roundResultSummary, setRoundResultSummary] = useState<string | null>(null);
 
-  const totalCurrentBet = mainBet + sideBets.twentyOnePlusThree + sideBets.perfectPairs + sideBets.luckyLadies;
+  const totalCurrentBet = Number((mainBet + sideBets.twentyOnePlusThree + sideBets.perfectPairs + sideBets.luckyLadies).toFixed(2));
 
   // Reshuffle shoe if low
   const checkShoe = useCallback(() => {
@@ -68,17 +101,17 @@ export const BlackjackGame: React.FC<BlackjackGameProps> = ({
   // Place bet on a spot
   const handleSpotBet = (spot: 'main' | '21+3' | 'pairs' | 'ladies') => {
     if (phase !== 'betting') return;
-    if (balance < selectedChip) return;
+    if (effectiveBalance < totalCurrentBet + selectedChip) return;
 
     sound.playChip();
     if (spot === 'main') {
-      setMainBet(prev => prev + selectedChip);
+      setMainBet(prev => Number((prev + selectedChip).toFixed(2)));
     } else if (spot === '21+3') {
-      setSideBets(prev => ({ ...prev, twentyOnePlusThree: prev.twentyOnePlusThree + selectedChip }));
+      setSideBets(prev => ({ ...prev, twentyOnePlusThree: Number((prev.twentyOnePlusThree + selectedChip).toFixed(2)) }));
     } else if (spot === 'pairs') {
-      setSideBets(prev => ({ ...prev, perfectPairs: prev.perfectPairs + selectedChip }));
+      setSideBets(prev => ({ ...prev, perfectPairs: Number((prev.perfectPairs + selectedChip).toFixed(2)) }));
     } else if (spot === 'ladies') {
-      setSideBets(prev => ({ ...prev, luckyLadies: prev.luckyLadies + selectedChip }));
+      setSideBets(prev => ({ ...prev, luckyLadies: Number((prev.luckyLadies + selectedChip).toFixed(2)) }));
     }
   };
 
@@ -90,43 +123,44 @@ export const BlackjackGame: React.FC<BlackjackGameProps> = ({
 
   const handleDoubleBets = () => {
     if (phase !== 'betting') return;
-    if (balance >= totalCurrentBet * 2) {
-      setMainBet(prev => prev * 2);
+    if (effectiveBalance >= totalCurrentBet * 2) {
+      setMainBet(prev => Number((prev * 2).toFixed(2)));
       setSideBets(prev => ({
-        twentyOnePlusThree: prev.twentyOnePlusThree * 2,
-        perfectPairs: prev.perfectPairs * 2,
-        luckyLadies: prev.luckyLadies * 2,
+        twentyOnePlusThree: Number((prev.twentyOnePlusThree * 2).toFixed(2)),
+        perfectPairs: Number((prev.perfectPairs * 2).toFixed(2)),
+        luckyLadies: Number((prev.luckyLadies * 2).toFixed(2)),
       }));
     }
   };
 
   const handleHalfBets = () => {
     if (phase !== 'betting') return;
-    setMainBet(prev => Math.max(1, Math.floor(prev / 2)));
+    setMainBet(prev => isCash ? Number(Math.max(0.10, prev / 2).toFixed(2)) : Math.max(1, Math.floor(prev / 2)));
     setSideBets(prev => ({
-      twentyOnePlusThree: Math.floor(prev.twentyOnePlusThree / 2),
-      perfectPairs: Math.floor(prev.perfectPairs / 2),
-      luckyLadies: Math.floor(prev.luckyLadies / 2),
+      twentyOnePlusThree: isCash ? Number((prev.twentyOnePlusThree / 2).toFixed(2)) : Math.floor(prev.twentyOnePlusThree / 2),
+      perfectPairs: isCash ? Number((prev.perfectPairs / 2).toFixed(2)) : Math.floor(prev.perfectPairs / 2),
+      luckyLadies: isCash ? Number((prev.luckyLadies / 2).toFixed(2)) : Math.floor(prev.luckyLadies / 2),
     }));
   };
 
   const handleMaxBet = () => {
     if (phase !== 'betting') return;
-    const maxMain = Math.min(balance, 10000);
+    const maxMain = isCash ? Number(Math.min(cashBalance, 100).toFixed(2)) : Math.min(balance, 10000);
     setMainBet(maxMain);
   };
 
   // Start Deal
   const handleDeal = async () => {
-    if (mainBet <= 0 || balance < totalCurrentBet) return;
+    if (mainBet <= 0 || effectiveBalance < totalCurrentBet) return;
 
-    onUpdateBalance(-totalCurrentBet);
+    modifyBalance(-totalCurrentBet);
+    onRecordWager?.(totalCurrentBet, isCash);
     onUpdateStats(prev => ({
       ...prev,
-      totalWagered: prev.totalWagered + totalCurrentBet,
+      totalWagered: isCash ? prev.totalWagered + (totalCurrentBet * 1000) : prev.totalWagered + totalCurrentBet,
       handsPlayedBlackjack: prev.handsPlayedBlackjack + 1,
     }));
-    onAddRakeback?.(totalCurrentBet, true);
+    onAddRakeback?.(totalCurrentBet, true, isCash);
 
     setPhase('dealing');
     setSideBetResults(null);
@@ -177,7 +211,7 @@ export const BlackjackGame: React.FC<BlackjackGameProps> = ({
     if (sideBets.twentyOnePlusThree > 0) {
       const match21 = evaluate21Plus3(p1.card, p2.card, d1.card);
       if (match21) {
-        const win = sideBets.twentyOnePlusThree * (match21.multiplier + 1);
+        const win = Number((sideBets.twentyOnePlusThree * (match21.multiplier + 1)).toFixed(2));
         results.twentyOnePlusThree = { name: match21.name, multiplier: match21.multiplier, win };
         sideBetWinnings += win;
       }
@@ -187,7 +221,7 @@ export const BlackjackGame: React.FC<BlackjackGameProps> = ({
     if (sideBets.perfectPairs > 0) {
       const matchPairs = evaluatePerfectPairs(p1.card, p2.card);
       if (matchPairs) {
-        const win = sideBets.perfectPairs * (matchPairs.multiplier + 1);
+        const win = Number((sideBets.perfectPairs * (matchPairs.multiplier + 1)).toFixed(2));
         results.perfectPairs = { name: matchPairs.name, multiplier: matchPairs.multiplier, win };
         sideBetWinnings += win;
       }
@@ -198,7 +232,7 @@ export const BlackjackGame: React.FC<BlackjackGameProps> = ({
     if (sideBets.luckyLadies > 0) {
       const matchLadies = evaluateLuckyLadies(p1.card, p2.card, dealerHasBJ);
       if (matchLadies) {
-        const win = sideBets.luckyLadies * (matchLadies.multiplier + 1);
+        const win = Number((sideBets.luckyLadies * (matchLadies.multiplier + 1)).toFixed(2));
         results.luckyLadies = { name: matchLadies.name, multiplier: matchLadies.multiplier, win };
         sideBetWinnings += win;
       }
@@ -206,13 +240,13 @@ export const BlackjackGame: React.FC<BlackjackGameProps> = ({
 
     if (sideBetWinnings > 0) {
       setSideBetResults(results);
-      onUpdateBalance(sideBetWinnings);
+      modifyBalance(sideBetWinnings);
       sound.playWin(true);
       onUpdateStats(prev => ({
         ...prev,
         sideBetWinsBlackjack: prev.sideBetWinsBlackjack + 1,
-        totalWon: prev.totalWon + sideBetWinnings,
-        biggestWin: Math.max(prev.biggestWin, sideBetWinnings),
+        totalWon: isCash ? prev.totalWon + (sideBetWinnings * 1000) : prev.totalWon + sideBetWinnings,
+        biggestWin: isCash ? Math.max(prev.biggestWin, sideBetWinnings * 1000) : Math.max(prev.biggestWin, sideBetWinnings),
       }));
     }
 
@@ -237,12 +271,10 @@ export const BlackjackGame: React.FC<BlackjackGameProps> = ({
 
   // Insurance handler
   const handleInsurance = async (take: boolean) => {
-    const insuranceCost = Math.floor(mainBet / 2);
-    let currentBalDelta = 0;
+    const insuranceCost = isCash ? Number((mainBet / 2).toFixed(2)) : Math.floor(mainBet / 2);
 
-    if (take && balance >= insuranceCost) {
-      currentBalDelta -= insuranceCost;
-      onUpdateBalance(-insuranceCost);
+    if (take && effectiveBalance >= insuranceCost) {
+      modifyBalance(-insuranceCost);
     }
 
     const unhiddenDealer = dealerCards.map(c => ({ ...c, hidden: false }));
@@ -251,8 +283,8 @@ export const BlackjackGame: React.FC<BlackjackGameProps> = ({
     if (dScore.isBlackjack) {
       setDealerCards(unhiddenDealer);
       if (take) {
-        const insuranceWin = insuranceCost * 3;
-        onUpdateBalance(insuranceWin);
+        const insuranceWin = Number((insuranceCost * 3).toFixed(2));
+        modifyBalance(insuranceWin);
         sound.playWin(false);
       }
       concludeGame(shoe, unhiddenDealer, hands);
@@ -304,7 +336,7 @@ export const BlackjackGame: React.FC<BlackjackGameProps> = ({
     if (!currentHand) return;
 
     const newHands = [...hands];
-    newHands[activeHandIndex] = { ...currentHand, status: 'stood' };
+    newHands[activeHandIndex] = { ...currentHand, status: 'standing' };
     setHands(newHands);
 
     moveToNextHand(shoe, dealerCards, newHands);
@@ -314,11 +346,12 @@ export const BlackjackGame: React.FC<BlackjackGameProps> = ({
   const handleDoubleDown = async () => {
     if (phase !== 'player') return;
     const currentHand = hands[activeHandIndex];
-    if (!currentHand || balance < currentHand.bet) return;
+    if (!currentHand || effectiveBalance < currentHand.bet) return;
 
-    onUpdateBalance(-currentHand.bet);
-    onUpdateStats(prev => ({ ...prev, totalWagered: prev.totalWagered + currentHand.bet }));
-    onAddRakeback?.(currentHand.bet, true);
+    modifyBalance(-currentHand.bet);
+    onRecordWager?.(currentHand.bet, isCash);
+    onUpdateStats(prev => ({ ...prev, totalWagered: isCash ? prev.totalWagered + (currentHand.bet * 1000) : prev.totalWagered + currentHand.bet }));
+    onAddRakeback?.(currentHand.bet, true, isCash);
 
     sound.playChip();
     sound.playCardDeal();
@@ -332,7 +365,7 @@ export const BlackjackGame: React.FC<BlackjackGameProps> = ({
     const updatedHand: PlayerHand = {
       ...currentHand,
       cards: updatedCards,
-      bet: currentHand.bet * 2,
+      bet: Number((currentHand.bet * 2).toFixed(2)),
       status: score.isBust ? 'busted' : 'doubled',
     };
 
@@ -347,11 +380,12 @@ export const BlackjackGame: React.FC<BlackjackGameProps> = ({
   const handleSplit = () => {
     if (phase !== 'player') return;
     const currentHand = hands[activeHandIndex];
-    if (!currentHand || currentHand.cards.length !== 2 || balance < currentHand.bet || hands.length > 1) return;
+    if (!currentHand || currentHand.cards.length !== 2 || effectiveBalance < currentHand.bet || hands.length > 1) return;
 
-    onUpdateBalance(-currentHand.bet);
-    onUpdateStats(prev => ({ ...prev, totalWagered: prev.totalWagered + currentHand.bet }));
-    onAddRakeback?.(currentHand.bet, true);
+    modifyBalance(-currentHand.bet);
+    onRecordWager?.(currentHand.bet, isCash);
+    onUpdateStats(prev => ({ ...prev, totalWagered: isCash ? prev.totalWagered + (currentHand.bet * 1000) : prev.totalWagered + currentHand.bet }));
+    onAddRakeback?.(currentHand.bet, true, isCash);
     sound.playChip();
 
     let currentDeck = shoe;
@@ -442,17 +476,17 @@ export const BlackjackGame: React.FC<BlackjackGameProps> = ({
           msg = `Push! Both had Blackjack.`;
         } else {
           outcome = 'blackjack';
-          payout = hand.bet + Math.floor(hand.bet * 1.5);
-          msg = `Natural 21! Won ${Math.floor(hand.bet * 1.5)} chips (3:2).`;
+          payout = isCash ? Number((hand.bet * 2.5).toFixed(2)) : (hand.bet + Math.floor(hand.bet * 1.5));
+          msg = `Natural 21! Won ${isCash ? `$${(hand.bet * 1.5).toFixed(2)}` : `${Math.floor(hand.bet * 1.5)} GC`} (3:2).`;
         }
       } else if (dVal.isBust) {
         outcome = 'win';
-        payout = hand.bet * 2;
-        msg = `Dealer Busted! Won ${hand.bet} chips.`;
+        payout = Number((hand.bet * 2).toFixed(2));
+        msg = `Dealer Busted! Won ${isCash ? `$${hand.bet.toFixed(2)}` : `${hand.bet} GC`}.`;
       } else if (pVal.total > dVal.total) {
         outcome = 'win';
-        payout = hand.bet * 2;
-        msg = `${pVal.total} beats ${dVal.total}! Won ${hand.bet} chips.`;
+        payout = Number((hand.bet * 2).toFixed(2));
+        msg = `${pVal.total} beats ${dVal.total}! Won ${isCash ? `$${hand.bet.toFixed(2)}` : `${hand.bet} GC`}.`;
       } else if (pVal.total === dVal.total) {
         outcome = 'push';
         payout = hand.bet;
@@ -479,7 +513,7 @@ export const BlackjackGame: React.FC<BlackjackGameProps> = ({
     const totalHandsBet = finalHands.reduce((acc, h) => acc + h.bet, 0);
 
     if (totalWonThisRound > 0) {
-      onUpdateBalance(totalWonThisRound);
+      modifyBalance(totalWonThisRound);
       const isBigWin = totalWonThisRound >= mainBet * 3;
       if (isBigWin) {
         confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } });
@@ -496,8 +530,8 @@ export const BlackjackGame: React.FC<BlackjackGameProps> = ({
     setRoundResultSummary(breakdownMsgs.join(' • '));
     onUpdateStats(prev => ({
       ...prev,
-      totalWon: prev.totalWon + totalWonThisRound,
-      biggestWin: Math.max(prev.biggestWin, totalWonThisRound),
+      totalWon: isCash ? prev.totalWon + (totalWonThisRound * 1000) : prev.totalWon + totalWonThisRound,
+      biggestWin: isCash ? Math.max(prev.biggestWin, totalWonThisRound * 1000) : Math.max(prev.biggestWin, totalWonThisRound),
     }));
   };
 
@@ -512,8 +546,8 @@ export const BlackjackGame: React.FC<BlackjackGameProps> = ({
 
   const dealerScore = calculateHandValue(dealerCards);
   const activeHand = hands[activeHandIndex];
-  const canSplit = phase === 'player' && activeHand && activeHand.cards.length === 2 && activeHand.cards[0].rank === activeHand.cards[1].rank && hands.length === 1 && balance >= activeHand.bet;
-  const canDouble = phase === 'player' && activeHand && activeHand.cards.length === 2 && balance >= activeHand.bet;
+  const canSplit = phase === 'player' && activeHand && activeHand.cards.length === 2 && activeHand.cards[0].rank === activeHand.cards[1].rank && hands.length === 1 && effectiveBalance >= activeHand.bet;
+  const canDouble = phase === 'player' && activeHand && activeHand.cards.length === 2 && effectiveBalance >= activeHand.bet;
 
   return (
     <div className="w-full max-w-5xl mx-auto space-y-3">
@@ -528,19 +562,24 @@ export const BlackjackGame: React.FC<BlackjackGameProps> = ({
             <span className="text-xs sm:text-sm font-black uppercase tracking-wider text-amber-300">
               Classic Blackjack
             </span>
-            <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-600/40 hidden sm:inline-block">
-              Pays 3:2 • Dealer Hits Soft 17
+            <span className={`text-[10px] uppercase font-mono px-2 py-0.5 rounded-full ${isCash ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : 'bg-emerald-950/80 text-emerald-300 border border-emerald-600/40'} hidden sm:inline-block`}>
+              {isCash ? 'Real Cash Mode • Pays 3:2' : 'Pays 3:2 • Dealer Hits Soft 17'}
             </span>
           </div>
 
-          <button
-            id="side-bet-paytable-btn"
-            onClick={() => setShowPaytableModal(true)}
-            className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold rounded-xl bg-zinc-950/80 hover:bg-zinc-900 text-amber-300 border border-amber-500/40 transition-colors"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            <span>Paytables</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <span className={`text-xs font-mono font-bold ${isCash ? 'text-emerald-300' : 'text-amber-300'}`}>
+              Bal: {isCash ? `$${cashBalance.toFixed(2)}` : `${balance.toLocaleString()} GC`}
+            </span>
+            <button
+              id="side-bet-paytable-btn"
+              onClick={() => setShowPaytableModal(true)}
+              className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold rounded-xl bg-zinc-950/80 hover:bg-zinc-900 text-amber-300 border border-amber-500/40 transition-colors"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              <span>Paytables</span>
+            </button>
+          </div>
         </div>
 
         {/* DEALER AREA (Compact) */}
@@ -798,7 +837,7 @@ export const BlackjackGame: React.FC<BlackjackGameProps> = ({
         </div>
       </div>
 
-      {/* Chip Selector Rack (Directly under felt table, no scrolling needed) */}
+      {/* Chip Selector Rack */}
       {phase === 'betting' && (
         <ChipSelector
           selectedChip={selectedChip}
@@ -808,6 +847,8 @@ export const BlackjackGame: React.FC<BlackjackGameProps> = ({
           onHalfBets={handleHalfBets}
           onMaxBet={handleMaxBet}
           balance={balance}
+          currencyMode={currencyMode}
+          cashBalance={cashBalance}
           currentBetTotal={totalCurrentBet}
         />
       )}

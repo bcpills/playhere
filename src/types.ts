@@ -66,12 +66,15 @@ export interface KenoPayoutTier {
 
 export type ItemRarity = 'common' | 'uncommon' | 'rare' | 'classified' | 'covert' | 'mythic' | 'exotic';
 
+export type CurrencyMode = 'cash' | 'gc';
+
 export interface LootItem {
   id: string;
   name: string;
   description: string;
   rarity: ItemRarity;
-  value: number; // chip resale / instant cash value
+  value: number; // chip resale / instant cash value (GC)
+  cashValue?: number; // Real Money cash resale value ($USD)
   icon: string;
   color: string;
   bgGradient: string;
@@ -84,6 +87,7 @@ export interface LootCrate {
   name: string;
   tagline: string;
   cost: number;
+  cashCost?: number;
   icon: string;
   accentColor: string;
   glowColor: string;
@@ -178,8 +182,10 @@ export interface UserAccount {
   peakBalanceAllTime: number; // Highest chip count reached
   cashBalance?: number; // Real Money / Sweeps Cash in $USD (Starts with $2.00 Sign Up Bonus)
   lastDailyDollarClaimEstDate?: string; // YYYY-MM-DD for Daily Dollar Reload ($1.00 + 100k GC at Midnight EST)
-  unclaimedRakeback?: number; // Accumulated instant rakeback
-  totalRakebackClaimed?: number; // Total rakeback redeemed all-time
+  unclaimedRakeback?: number; // Accumulated instant GC rakeback
+  totalRakebackClaimed?: number; // Total GC rakeback redeemed all-time
+  unclaimedCashRakeback?: number; // Accumulated instant Real Cash USD rakeback
+  totalCashRakebackClaimed?: number; // Total Real Cash USD rakeback redeemed all-time
   claimedMilestoneCrates?: string[]; // IDs of claimed VIP milestone crates
   authMethod?: 'google' | 'email' | 'guest';
   email?: string;
